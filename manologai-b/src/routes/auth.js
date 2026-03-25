@@ -1,19 +1,19 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+
 const User = require("../models/user");
 
 const router = express.Router();
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+const JWT_SECRET = "your-secret-key"; // Must match `src/middleware/auth.js`
 
 const cookieOptions = {
   httpOnly: true,
   sameSite: "lax",
   secure: process.env.NODE_ENV === "production",
   path: "/",
-  // Keep in sync with JWT expiresIn below.
-  maxAge: 24 * 60 * 60 * 1000,
+  maxAge: 24 * 60 * 60 * 1000, // 1 day
 };
 
 router.post("/signup", async (req, res) => {
@@ -23,6 +23,7 @@ router.post("/signup", async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required" });
     }
+
     if (typeof password !== "string" || password.length < 6) {
       return res
         .status(400)
@@ -35,7 +36,7 @@ router.post("/signup", async (req, res) => {
       return res.status(409).json({ error: "Email already registered" });
     }
 
-    // bcrypt.gensalt (named genSalt in JS) to generate a unique salt per user.
+    // gensalt -> unique salt per password hash
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
@@ -46,9 +47,11 @@ router.post("/signup", async (req, res) => {
       lastName,
     });
 
-    const token = jwt.sign({ userId: user._id.toString() }, JWT_SECRET, {
-      expiresIn: "1d",
-    });
+    const token = jwt.sign(
+      { userId: user._id.toString() },
+      JWT_SECRET,
+      { expiresIn: "1d" }
+    );
 
     res.cookie("token", token, cookieOptions);
 
@@ -62,7 +65,6 @@ router.post("/signup", async (req, res) => {
       },
     });
   } catch (error) {
-    // Handles race conditions where another signup wins the unique email constraint.
     if (error && error.code === 11000) {
       return res.status(409).json({ error: "Email already registered" });
     }
@@ -91,9 +93,11 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
-    const token = jwt.sign({ userId: user._id.toString() }, JWT_SECRET, {
-      expiresIn: "1d",
-    });
+    const token = jwt.sign(
+      { userId: user._id.toString() },
+      JWT_SECRET,
+      { expiresIn: "1d" }
+    );
 
     res.cookie("token", token, cookieOptions);
 
@@ -113,8 +117,7 @@ router.post("/login", async (req, res) => {
 });
 
 router.post("/logout", (req, res) => {
-  // Clear cookie even if it doesn't exist.
-  res.clearCookie("token", cookieOptions);
+  res.clearCookie("token", { path: "/" });
   return res.status(200).json({ message: "Logout successful" });
 });
 
