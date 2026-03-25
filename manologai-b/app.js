@@ -3,6 +3,7 @@ const express = require("express");
 const cookieParser = require("cookie-parser");
 const connectDB = require("./src/config/database");
 const authRoutes = require("./src/routes/auth");
+const profileRoutes = require("./src/routes/profile");
 
 const app = express();
 const PORT = process.env.PORT || 4545;
@@ -17,7 +18,8 @@ app.get("/", (req, res) => {
   res.status(200).json({ message: "ManologAI backend is running" });
 });
 
-app.use("/api/auth", authRoutes);
+app.use("/auth", authRoutes);
+app.use("/profile", profileRoutes);
 
 // Database connection + server start
 connectDB()
