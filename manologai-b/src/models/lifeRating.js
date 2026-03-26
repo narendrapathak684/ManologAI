@@ -6,9 +6,9 @@ const lifeRatingSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
-  week: {
-    type: String,
-    required: true, // e.g., '2026-W12' or ISO week
+  date: {
+    type: Date,
+    required: true, // stored as midnight local time (YYYY-MM-DD)
   },
   ratings: {
     partner: {
@@ -74,8 +74,8 @@ const lifeRatingSchema = new mongoose.Schema({
   },
 });
 
-// Compound index for unique user-week
-lifeRatingSchema.index({ user: 1, week: 1 }, { unique: true });
+// Compound index: one entry per user per day
+lifeRatingSchema.index({ user: 1, date: 1 }, { unique: true });
 
 // Update updatedAt on save
 lifeRatingSchema.pre("save", function (next) {

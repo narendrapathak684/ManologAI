@@ -8,6 +8,7 @@ const diaryRoutes = require("./src/routes/diary");
 const padsRoutes = require("./src/routes/pads");
 const timeTrackerRoutes = require("./src/routes/timeTracker");
 const timetableRoutes = require("./src/routes/timetable");
+const lifeRatingsRoutes = require("./src/routes/lifeRatings");
 
 const app = express();
 const PORT = process.env.PORT || 4545;
@@ -28,6 +29,7 @@ app.use("/diary", diaryRoutes);
 app.use("/pads", padsRoutes);
 app.use("/time-tracker", timeTrackerRoutes);
 app.use("/timetable", timetableRoutes);
+app.use("/life-ratings", lifeRatingsRoutes);
 
 // Database connection + server start
 connectDB()
