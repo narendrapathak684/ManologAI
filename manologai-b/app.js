@@ -10,6 +10,7 @@ const timeTrackerRoutes = require("./src/routes/timeTracker");
 const timetableRoutes = require("./src/routes/timetable");
 const lifeRatingsRoutes = require("./src/routes/lifeRatings");
 const emotionsRoutes = require("./src/routes/emotions");
+const habitsRoutes = require("./src/routes/habits");
 
 const app = express();
 const PORT = process.env.PORT || 4545;
@@ -32,6 +33,7 @@ app.use("/time-tracker", timeTrackerRoutes);
 app.use("/timetable", timetableRoutes);
 app.use("/life-ratings", lifeRatingsRoutes);
 app.use("/emotions", emotionsRoutes);
+app.use("/habits", habitsRoutes);
 
 // Database connection + server start
 connectDB()
