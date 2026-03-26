@@ -4,6 +4,8 @@ const cookieParser = require("cookie-parser");
 const connectDB = require("./src/config/database");
 const authRoutes = require("./src/routes/auth");
 const profileRoutes = require("./src/routes/profile");
+const diaryRoutes = require("./src/routes/diary");
+const padsRoutes = require("./src/routes/pads");
 
 const app = express();
 const PORT = process.env.PORT || 4545;
@@ -20,6 +22,8 @@ app.get("/", (req, res) => {
 
 app.use("/auth", authRoutes);
 app.use("/profile", profileRoutes);
+app.use("/diary", diaryRoutes);
+app.use("/pads", padsRoutes);
 
 // Database connection + server start
 connectDB()
