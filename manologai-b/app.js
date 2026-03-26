@@ -6,6 +6,7 @@ const authRoutes = require("./src/routes/auth");
 const profileRoutes = require("./src/routes/profile");
 const diaryRoutes = require("./src/routes/diary");
 const padsRoutes = require("./src/routes/pads");
+const timeTrackerRoutes = require("./src/routes/timeTracker");
 
 const app = express();
 const PORT = process.env.PORT || 4545;
@@ -24,6 +25,7 @@ app.use("/auth", authRoutes);
 app.use("/profile", profileRoutes);
 app.use("/diary", diaryRoutes);
 app.use("/pads", padsRoutes);
+app.use("/time-tracker", timeTrackerRoutes);
 
 // Database connection + server start
 connectDB()
