@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   BookOpen,
   PieChart,
@@ -121,6 +121,7 @@ const itemVariants = {
 };
 
 export default function WelcomePage() {
+  const navigate = useNavigate();
   return (
     <div className="min-h-screen relative overflow-hidden text-slate-100 flex flex-col">
       {/* Background Gradients */}
