@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
@@ -10,7 +11,11 @@ import {
   LayoutDashboard,
   Sparkles,
   Target,
+  User,
+  X,
+  Menu,
 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -24,9 +29,9 @@ import {
 const navItems = [
   { label: "Today", icon: LayoutDashboard, to: "/dashboard", active: true },
   { label: "Journal", icon: BookOpenText, to: "/journal" },
-  { label: "Track", icon: CheckCircle2, to: "/dashboard" },
-  { label: "Analytics", icon: ChartColumnBig, to: "/dashboard" },
-  { label: "Organise", icon: FolderKanban, to: "/dashboard" },
+  { label: "Track", icon: CheckCircle2, to: "/track" },
+  { label: "Analytics", icon: ChartColumnBig, to: "/analytics" },
+  { label: "Organise", icon: FolderKanban, to: "/organise" },
 ];
 
 const todayCards = [
@@ -70,24 +75,59 @@ const organiseItems = [
 ];
 
 export default function DashboardPage() {
+  const { user } = useAuth();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    const saved = localStorage.getItem("sidebar-collapsed");
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("sidebar-collapsed", JSON.stringify(isSidebarOpen));
+  }, [isSidebarOpen]);
+
   return (
     <div className="min-h-screen overflow-hidden bg-slate-950 text-slate-100">
       <div className="pointer-events-none absolute left-[-10%] top-8 h-80 w-80 rounded-full bg-pink-600/10 blur-[140px]" />
       <div className="pointer-events-none absolute right-[-8%] top-40 h-96 w-96 rounded-full bg-emerald-600/10 blur-[150px]" />
 
       <div className="relative z-10 flex min-h-screen">
-        <aside className="hidden w-72 shrink-0 border-r border-white/10 bg-slate-900/60 p-6 backdrop-blur-xl lg:flex lg:flex-col">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 shadow-lg shadow-pink-500/20">
-              <span className="text-xl font-bold text-white">M</span>
-            </div>
-            <div>
-              <p className="text-lg font-semibold text-white">Manolog</p>
-              <p className="text-sm text-slate-400">Your daily command center</p>
-            </div>
+        <motion.aside
+          initial={false}
+          animate={{ 
+            width: isSidebarOpen ? 288 : 88,
+          }}
+          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          className="hidden shrink-0 border-r border-white/10 bg-slate-900/60 p-6 backdrop-blur-xl lg:flex lg:flex-col relative group"
+        >
+          <div className={`flex items-center gap-3 mb-10 overflow-hidden ${isSidebarOpen ? "justify-between" : "justify-center"}`}>
+            {isSidebarOpen && (
+              <div className="flex items-center gap-3 shrink-0">
+                 <Link to="/profile" className="flex h-11 w-11 items-center justify-center rounded-xl border border-transparent bg-white/5 text-slate-400 hover:border-pink-500/30 hover:bg-pink-500/10 hover:text-white transition-all">
+                    <User className="h-5 w-5" />
+                 </Link>
+                 <motion.div
+                   initial={{ opacity: 0, x: -10 }}
+                   animate={{ opacity: 1, x: 0 }}
+                   exit={{ opacity: 0, x: -10 }}
+                   className="whitespace-nowrap"
+                 >
+                   <p className="text-lg font-semibold text-white truncate max-w-[140px]">
+                     {user?.firstName || "ManologAI"}
+                   </p>
+                   <p className="text-sm text-slate-400">Command Center</p>
+                 </motion.div>
+              </div>
+            )}
+            
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className={`p-2 rounded-lg text-slate-500 hover:text-white hover:bg-white/5 transition-all ${isSidebarOpen ? "-mr-2" : ""}`}
+            >
+              {isSidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </button>
           </div>
 
-          <nav className="mt-10 space-y-2">
+          <nav className="space-y-1 overflow-hidden">
             {navItems.map(({ label, icon: Icon, active, to }) => (
               <Button
                 key={label}
@@ -99,32 +139,51 @@ export default function DashboardPage() {
                     : "border-transparent bg-white/0 text-slate-400 hover:border-white/10 hover:bg-white/5 hover:text-slate-200"
                 }`}
               >
-                <Link to={to}>
-                  <Icon className={`mr-3 h-4 w-4 ${active ? "text-pink-300" : ""}`} />
-                  {label}
+                <Link to={to} className="flex items-center">
+                  <Icon className={`mr-3 h-4 w-4 shrink-0 ${active ? "text-pink-300" : ""}`} />
+                  {isSidebarOpen && (
+                    <motion.span
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="whitespace-nowrap"
+                    >
+                      {label}
+                    </motion.span>
+                  )}
                 </Link>
               </Button>
             ))}
           </nav>
 
-          <Card className="mt-auto border-white/10 bg-white/5">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base text-white">
-                <Sparkles className="h-4 w-4 text-pink-400" />
-                Daily intention
-              </CardTitle>
-              <CardDescription>
-                Keep the dashboard focused on what actually matters today.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm leading-6 text-slate-300">
-                Protect your attention, finish one meaningful thing, and leave a
-                clean note for tomorrow.
-              </p>
-            </CardContent>
-          </Card>
-        </aside>
+          {isSidebarOpen && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="mt-auto"
+            >
+              <Card className="border-white/10 bg-white/5 overflow-hidden">
+                <CardHeader className="p-4 pb-2">
+                  <CardTitle className="flex items-center gap-2 text-sm text-white">
+                    <Sparkles className="h-4 w-4 text-pink-400" />
+                    Daily intention
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                  <p className="text-xs leading-5 text-slate-400">
+                    Protect your attention, finish one meaningful thing, and leave a
+                    clean note for tomorrow.
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {!isSidebarOpen && (
+            <div className="mt-auto flex justify-center">
+               <Sparkles className="h-5 w-5 text-pink-500/40" />
+            </div>
+          )}
+        </motion.aside>
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8">
           <div className="mx-auto max-w-7xl">
@@ -158,10 +217,13 @@ export default function DashboardPage() {
                     </Link>
                   </Button>
                   <Button
+                    asChild
                     variant="outline"
                     className="border-white/10 bg-white/5 text-slate-200 hover:bg-white/10"
                   >
-                    Review analytics
+                    <Link to="/analytics">
+                      Review analytics
+                    </Link>
                   </Button>
                 </div>
               </div>

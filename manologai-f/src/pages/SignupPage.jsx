@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -6,9 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Sparkles } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 export default function SignupPage() {
   const navigate = useNavigate();
+  const { user, setUser } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -17,6 +19,12 @@ export default function SignupPage() {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [navigate, user]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -60,7 +68,8 @@ export default function SignupPage() {
       }
 
       console.log("Signup successful:", data);
-      navigate("/dashboard");
+      setUser(data.user);
+      navigate("/dashboard", { replace: true });
     } catch (err) {
       setError(err.message || "Failed to create account. Please try again.");
     } finally {

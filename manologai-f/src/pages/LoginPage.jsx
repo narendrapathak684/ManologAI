@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,12 +18,19 @@ import {
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { user, setUser } = useAuth();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [navigate, user]);
 
   const handleChange = (event) => {
     setFormData((current) => ({
@@ -52,7 +60,8 @@ export default function LoginPage() {
         throw new Error(data.error || "Failed to log in. Please try again.");
       }
 
-      navigate("/dashboard");
+      setUser(data.user);
+      navigate("/dashboard", { replace: true });
     } catch (err) {
       setError(err.message || "Failed to log in. Please try again.");
     } finally {

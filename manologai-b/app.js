@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const cookieParser = require("cookie-parser");
+const cors = require("cors");
 const connectDB = require("./src/config/database");
 const authRoutes = require("./src/routes/auth");
 const profileRoutes = require("./src/routes/profile");
@@ -16,6 +17,7 @@ const app = express();
 const PORT = process.env.PORT || 4545;
 
 // Built-in middleware
+app.use(cors({ origin: 'http://localhost:5173', credentials: true })); // Adjust frontend URL as needed
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());

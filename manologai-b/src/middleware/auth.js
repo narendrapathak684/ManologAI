@@ -1,26 +1,32 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
 
-const JWT_SECRET = "your-secret-key"; // Must match `src/routes/auth.js`
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
-async function auth(req, res, next) {
+const auth = async (req, res, next) => {
   try {
-    const token = req.cookies?.token;
+    const token =
+      req.cookies?.token ||
+      req.headers.authorization?.replace(/^Bearer\s+/i, "").trim();
+
     if (!token) {
-      return res.status(401).json({ error: "Not authenticated. Please login." });
+      return res.status(401).json({ error: "Authentication required" });
     }
 
     const decoded = jwt.verify(token, JWT_SECRET);
-    const user = await User.findById(decoded.userId).select("-passwordHash");
+    const user = await User.findById(decoded.userId).select(
+      "_id email firstName lastName profile"
+    );
+
     if (!user) {
-      return res.status(401).json({ error: "User not found. Please login again." });
+      return res.status(401).json({ error: "Invalid authentication token" });
     }
 
     req.user = user;
     next();
-  } catch (err) {
-    return res.status(401).json({ error: "Invalid or expired token. Please login again." });
+  } catch (error) {
+    return res.status(401).json({ error: "Invalid or expired token" });
   }
-}
+};
 
 module.exports = auth;

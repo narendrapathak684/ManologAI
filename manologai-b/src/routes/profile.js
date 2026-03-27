@@ -6,6 +6,26 @@ const User = require("../models/user");
 
 const router = express.Router();
 
+// Get currently logged-in user profile info
+router.get("/me", auth, async (req, res) => {
+  try {
+    const userId = req.user?._id;
+    if (!userId) {
+      return res.status(401).json({ error: "Please login first" });
+    }
+
+    const user = await User.findById(userId).select("-passwordHash");
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    return res.status(200).json({ user });
+  } catch (error) {
+    console.error("Fetch profile error:", error);
+    return res.status(500).json({ error: "Failed to fetch profile" });
+  }
+});
+
 // Reset password for the currently logged-in user (cookie/JWT protected).
 // Body: { currentPassword, newPassword }
 router.post("/reset-password", auth, async (req, res) => {

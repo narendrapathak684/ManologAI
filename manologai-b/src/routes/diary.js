@@ -20,16 +20,17 @@ function parseDateOnlyToLocalMidnight(dateInput) {
   return dt;
 }
 
-// POST /diary - create/update today entry
-router.post("/diary", auth, async (req, res) => {
+// POST /api/diary - create/update entry for a given date (defaults to today)
+router.post("/api/diary", auth, async (req, res) => {
   try {
     const userId = req.user?._id;
     if (!userId) return res.status(401).json({ error: "Please login first" });
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const { text, rating, metrics, date: rawDate } = req.body || {};
+    const entryDate =
+      parseDateOnlyToLocalMidnight(rawDate) ||
+      parseDateOnlyToLocalMidnight(new Date());
 
-    const { text, rating, metrics } = req.body || {};
     if (rating !== undefined && rating !== null) {
       if (typeof rating !== "number" || rating < 0 || rating > 10) {
         return res
@@ -46,7 +47,7 @@ router.post("/diary", auth, async (req, res) => {
 
     // Upsert based on (user, date).
     const entry = await DailyEntry.findOneAndUpdate(
-      { user: userId, date: today },
+      { user: userId, date: entryDate },
       { $set: update },
       { new: true, upsert: true, select: "-mood" }
     );
@@ -58,8 +59,8 @@ router.post("/diary", auth, async (req, res) => {
   }
 });
 
-// GET /diary/:date - get entry for a specific date
-router.get("/diary/:date", auth, async (req, res) => {
+// GET /api/diary/:date - get entry for a specific date
+router.get("/api/diary/:date", auth, async (req, res) => {
   try {
     const userId = req.user?._id;
     if (!userId) return res.status(401).json({ error: "Please login first" });
@@ -79,8 +80,8 @@ router.get("/diary/:date", auth, async (req, res) => {
   }
 });
 
-// GET /diary - recent entries
-router.get("/diary", auth, async (req, res) => {
+// GET /api/diary - recent entries
+router.get("/api/diary", auth, async (req, res) => {
   try {
     const userId = req.user?._id;
     if (!userId) return res.status(401).json({ error: "Please login first" });
@@ -102,52 +103,4 @@ router.get("/diary", auth, async (req, res) => {
   }
 });
 
-// POST /diary/edit/:date - edit diary entry only within 24 hours
-router.post("/diary/edit/:date", auth, async (req, res) => {
-  try {
-    const userId = req.user?._id;
-    if (!userId) return res.status(401).json({ error: "Please login first" });
-
-    const date = parseDateOnlyToLocalMidnight(req.params.date);
-    if (!date) return res.status(400).json({ error: "Invalid date format" });
-
-    const entry = await DailyEntry.findOne({ user: userId, date });
-    if (!entry) return res.status(404).json({ error: "No entry found" });
-
-    // Allow edit only before lockedUntil (model default: + 24 hours from creation).
-    if (entry.lockedUntil && new Date() > entry.lockedUntil) {
-      return res.status(403).json({ error: "Diary entry is locked" });
-    }
-
-    const { text, rating, metrics } = req.body || {};
-
-    if (rating !== undefined && rating !== null) {
-      if (typeof rating !== "number" || rating < 0 || rating > 10) {
-        return res
-          .status(400)
-          .json({ error: "rating must be a number between 0 and 10" });
-      }
-    }
-
-    const update = {
-      ...(text !== undefined ? { text } : {}),
-      ...(rating !== undefined ? { rating } : {}),
-      ...(metrics !== undefined ? { metrics } : {}),
-    };
-
-    // Keep lockedUntil as-is; only text/rating/metrics can change.
-    const updated = await DailyEntry.findOneAndUpdate(
-      { _id: entry._id },
-      { $set: update },
-      { new: true, select: "-mood" }
-    );
-
-    return res.status(200).json({ entry: updated });
-  } catch (error) {
-    console.error("Diary edit error:", error);
-    return res.status(500).json({ error: "Failed to edit diary entry" });
-  }
-});
-
 module.exports = router;
-
