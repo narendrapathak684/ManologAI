@@ -33,14 +33,36 @@ export default function SignupPage() {
 
     setLoading(true);
     
-    // TODO: Hook up with real backend API
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      console.log("Signup data:", formData);
+      // Split name into firstName and lastName
+      const nameParts = formData.name.trim().split(" ");
+      const firstName = nameParts[0];
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
+
+      const response = await fetch("http://localhost:4545/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          firstName: firstName,
+          lastName: lastName,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to create account. Please try again.");
+      }
+
+      console.log("Signup successful:", data);
       navigate("/dashboard");
     } catch (err) {
-      setError("Failed to create account. Please try again.");
+      setError(err.message || "Failed to create account. Please try again.");
     } finally {
       setLoading(false);
     }

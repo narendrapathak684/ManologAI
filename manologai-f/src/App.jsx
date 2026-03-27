@@ -1,16 +1,19 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import WelcomePage from "./pages/WelcomePage";
 import SignupPage from "./pages/SignupPage";
+import LoginPage from "./pages/LoginPage";
+import DashboardPage from "./pages/DashboardPage";
+import JournalPage from "./pages/JournalPage";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<WelcomePage />} />
-        {/* Placeholder routes for the future */}
-        <Route path="/login" element={<div className="text-white p-8">Login Page (Coming Soon)</div>} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
-        <Route path="/dashboard" element={<div className="text-white p-8">Dashboard (Coming Soon)</div>} />
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/journal" element={<JournalPage />} />
       </Routes>
     </BrowserRouter>
   );
