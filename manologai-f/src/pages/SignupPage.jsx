@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Sparkles } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { api, getApiErrorMessage } from "../lib/api";
 
 export default function SignupPage() {
   const navigate = useNavigate();
@@ -47,31 +48,18 @@ export default function SignupPage() {
       const firstName = nameParts[0];
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
 
-      const response = await fetch("http://localhost:4545/auth/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-          firstName: firstName,
-          lastName: lastName,
-        }),
+      const { data } = await api.post("/auth/signup", {
+        email: formData.email,
+        password: formData.password,
+        firstName,
+        lastName,
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to create account. Please try again.");
-      }
 
       console.log("Signup successful:", data);
       setUser(data.user);
       navigate("/dashboard", { replace: true });
     } catch (err) {
-      setError(err.message || "Failed to create account. Please try again.");
+      setError(getApiErrorMessage(err, "Failed to create account. Please try again."));
     } finally {
       setLoading(false);
     }

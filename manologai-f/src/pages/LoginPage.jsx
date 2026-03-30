@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { api, getApiErrorMessage } from "../lib/api";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,25 +46,12 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:4545/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to log in. Please try again.");
-      }
+      const { data } = await api.post("/auth/login", formData);
 
       setUser(data.user);
       navigate("/dashboard", { replace: true });
     } catch (err) {
-      setError(err.message || "Failed to log in. Please try again.");
+      setError(getApiErrorMessage(err, "Failed to log in. Please try again."));
     } finally {
       setLoading(false);
     }

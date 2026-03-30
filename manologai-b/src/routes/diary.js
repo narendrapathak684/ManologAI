@@ -49,7 +49,7 @@ router.post("/api/diary", auth, async (req, res) => {
     const entry = await DailyEntry.findOneAndUpdate(
       { user: userId, date: entryDate },
       { $set: update },
-      { new: true, upsert: true, select: "-mood" }
+      { new: true, upsert: true }
     );
 
     return res.status(200).json({ entry });
@@ -68,9 +68,7 @@ router.get("/api/diary/:date", auth, async (req, res) => {
     const date = parseDateOnlyToLocalMidnight(req.params.date);
     if (!date) return res.status(400).json({ error: "Invalid date format" });
 
-    const entry = await DailyEntry.findOne({ user: userId, date }).select(
-      "-mood"
-    );
+    const entry = await DailyEntry.findOne({ user: userId, date });
     if (!entry) return res.status(404).json({ error: "No entry found" });
 
     return res.status(200).json({ entry });
@@ -92,7 +90,6 @@ router.get("/api/diary", auth, async (req, res) => {
     const safeLimit = Number.isFinite(limit) ? Math.max(1, Math.min(limit, 50)) : 10;
 
     const entries = await DailyEntry.find({ user: userId })
-      .select("-mood")
       .sort({ date: -1 })
       .limit(safeLimit);
 

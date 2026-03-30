@@ -47,6 +47,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { api } from "../lib/api";
 
 const navItems = [
   { label: "Today", icon: LayoutDashboard, to: "/dashboard" },
@@ -92,9 +93,8 @@ export default function AnalyticsPage() {
     setLoading(true);
     try {
       // 1. Fetch Today's Life Ratings for Radar Chart
-      const lifeRes = await fetch("http://localhost:4545/life-ratings/day", { credentials: "include" });
-      const lifeJson = await lifeRes.json();
-      if (lifeRes.ok && lifeJson.entry) {
+      const { data: lifeJson } = await api.get("/life-ratings/day");
+      if (lifeJson.entry) {
         const ratings = lifeJson.entry.ratings;
         const radarData = [
           { subject: 'Health', A: ratings.health || 0, fullMark: 10 },
@@ -110,36 +110,27 @@ export default function AnalyticsPage() {
       }
 
       // 2. Fetch Last 30 Days of Emotions
-      const emoRes = await fetch("http://localhost:4545/emotions/month", { credentials: "include" });
-      const emoJson = await emoRes.json();
-      if (emoRes.ok) {
-        const formattedMoods = emoJson.emotions.map(e => ({
-          date: new Date(e.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-          score: EMOTION_SCORES[e.emotion] || 3,
-          emotion: e.emotion
-        }));
-        setMoodData(formattedMoods);
-      }
+      const { data: emoJson } = await api.get("/emotions/month");
+      const formattedMoods = emoJson.emotions.map(e => ({
+        date: new Date(e.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+        score: EMOTION_SCORES[e.emotion] || 3,
+        emotion: e.emotion
+      }));
+      setMoodData(formattedMoods);
 
       // 3. Fetch Time Tracking Metrics (Last 7 Days)
-      const timeRes = await fetch("http://localhost:4545/time-tracker?limit=7", { credentials: "include" });
-      const timeJson = await timeRes.json();
-      if (timeRes.ok) {
-        const formattedTime = timeJson.entries.map(e => ({
-          name: new Date(e.date).toLocaleDateString(undefined, { weekday: 'short' }),
-          Sleep: e.sleep || 0,
-          Work: e.workStudy || 0,
-          Screen: e.screen || 0
-        }));
-        setTimeData(formattedTime);
-      }
+      const { data: timeJson } = await api.get("/time-tracker", { params: { limit: 7 } });
+      const formattedTime = timeJson.entries.map(e => ({
+        name: new Date(e.date).toLocaleDateString(undefined, { weekday: 'short' }),
+        Sleep: e.sleep || 0,
+        Work: e.workStudy || 0,
+        Screen: e.screen || 0
+      }));
+      setTimeData(formattedTime);
 
       // 4. Fetch Habits
-      const habitsRes = await fetch("http://localhost:4545/habits", { credentials: "include" });
-      const habitsJson = await habitsRes.json();
-      if (habitsRes.ok) {
-        setHabits(habitsJson.habits);
-      }
+      const { data: habitsJson } = await api.get("/habits");
+      setHabits(habitsJson.habits);
 
     } catch (err) {
       console.error("Analytics fetch failed:", err);

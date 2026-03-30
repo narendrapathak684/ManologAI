@@ -38,6 +38,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useSaveAlert } from "../context/SaveAlertContext";
+import { api, getApiErrorMessage } from "../lib/api";
 
 const navItems = [
   { label: "Today", icon: LayoutDashboard, to: "/dashboard" },
@@ -47,6 +49,58 @@ const navItems = [
   { label: "Organise", icon: FolderKanban, to: "/organise" },
 ];
 
+const defaultLifeRatings = {
+  partner: 5,
+  familyFriends: 5,
+  health: 5,
+  finances: 5,
+  career: 5,
+  physicalEnvironment: 5,
+  funRecreation: 5,
+  personalGrowth: 5,
+};
+
+const emotionOptions = [
+  { value: "happy", label: "Happy", emoji: "😄", accent: "border-emerald-500/30 bg-emerald-500/10 text-emerald-200", idle: "border-emerald-500/20 bg-emerald-500/5 text-emerald-100/90 hover:bg-emerald-500/10", glow: "shadow-[0_0_24px_-14px_rgba(16,185,129,0.8)]" },
+  { value: "calm", label: "Calm", emoji: "😌", accent: "border-sky-500/30 bg-sky-500/10 text-sky-200", idle: "border-sky-500/20 bg-sky-500/5 text-sky-100/90 hover:bg-sky-500/10", glow: "shadow-[0_0_24px_-14px_rgba(14,165,233,0.8)]" },
+  { value: "neutral", label: "Neutral", emoji: "🙂", accent: "border-slate-500/30 bg-slate-500/10 text-slate-200", idle: "border-slate-500/20 bg-slate-500/5 text-slate-100/90 hover:bg-slate-500/10", glow: "shadow-[0_0_24px_-14px_rgba(100,116,139,0.8)]" },
+  { value: "sad", label: "Sad", emoji: "😔", accent: "border-blue-500/30 bg-blue-500/10 text-blue-200", idle: "border-blue-500/20 bg-blue-500/5 text-blue-100/90 hover:bg-blue-500/10", glow: "shadow-[0_0_24px_-14px_rgba(59,130,246,0.8)]" },
+  { value: "stressed", label: "Stressed", emoji: "😣", accent: "border-amber-500/30 bg-amber-500/10 text-amber-200", idle: "border-amber-500/20 bg-amber-500/5 text-amber-100/90 hover:bg-amber-500/10", glow: "shadow-[0_0_24px_-14px_rgba(245,158,11,0.8)]" },
+  { value: "angry", label: "Angry", emoji: "😠", accent: "border-rose-500/30 bg-rose-500/10 text-rose-200", idle: "border-rose-500/20 bg-rose-500/5 text-rose-100/90 hover:bg-rose-500/10", glow: "shadow-[0_0_24px_-14px_rgba(244,63,94,0.8)]" },
+  { value: "tired", label: "Tired", emoji: "😴", accent: "border-violet-500/30 bg-violet-500/10 text-violet-200", idle: "border-violet-500/20 bg-violet-500/5 text-violet-100/90 hover:bg-violet-500/10", glow: "shadow-[0_0_24px_-14px_rgba(139,92,246,0.8)]" },
+  { value: "excited", label: "Excited", emoji: "🤩", accent: "border-pink-500/30 bg-pink-500/10 text-pink-200", idle: "border-pink-500/20 bg-pink-500/5 text-pink-100/90 hover:bg-pink-500/10", glow: "shadow-[0_0_24px_-14px_rgba(236,72,153,0.8)]" },
+];
+
+const lifeRatingCategories = [
+  { key: "health", label: "Health", icon: Activity, color: "text-emerald-400" },
+  { key: "career", label: "Career", icon: Briefcase, color: "text-blue-400" },
+  { key: "finances", label: "Finances", icon: Wallet, color: "text-amber-400" },
+  { key: "partner", label: "Partner", icon: Heart, color: "text-rose-400" },
+  { key: "familyFriends", label: "Family & Friends", icon: Users, color: "text-indigo-400" },
+  { key: "physicalEnvironment", label: "Environment", icon: Home, color: "text-orange-400" },
+  { key: "funRecreation", label: "Fun", icon: Palmtree, color: "text-cyan-400" },
+  { key: "personalGrowth", label: "Growth", icon: TrendingUp, color: "text-pink-400" },
+];
+
+const mapEntryToLifeRatings = (entry) => ({
+  partner: entry?.ratings?.partner ?? defaultLifeRatings.partner,
+  familyFriends: entry?.ratings?.familyFriends ?? defaultLifeRatings.familyFriends,
+  health: entry?.ratings?.health ?? defaultLifeRatings.health,
+  finances: entry?.ratings?.finances ?? defaultLifeRatings.finances,
+  career: entry?.ratings?.career ?? defaultLifeRatings.career,
+  physicalEnvironment: entry?.ratings?.physicalEnvironment ?? defaultLifeRatings.physicalEnvironment,
+  funRecreation: entry?.ratings?.funRecreation ?? defaultLifeRatings.funRecreation,
+  personalGrowth: entry?.ratings?.personalGrowth ?? defaultLifeRatings.personalGrowth,
+});
+
+const getLocalDateKey = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 export default function TrackPage() {
   const [habits, setHabits] = useState([]);
   const [metrics, setMetrics] = useState({
@@ -55,23 +109,23 @@ export default function TrackPage() {
     workStudy: "",
     expense: ""
   });
-  const [lifeRatings, setLifeRatings] = useState({
-    partner: 5,
-    familyFriends: 5,
-    health: 5,
-    finances: 5,
-    career: 5,
-    physicalEnvironment: 5,
-    funRecreation: 5,
-    personalGrowth: 5,
-  });
+  const [lifeRatings, setLifeRatings] = useState(defaultLifeRatings);
+  const [lifeRatingsLocked, setLifeRatingsLocked] = useState(false);
+  const [lifeRatingsLoaded, setLifeRatingsLoaded] = useState(false);
+  const [selectedEmotion, setSelectedEmotion] = useState("neutral");
+  const [emotionLocked, setEmotionLocked] = useState(false);
+  const [emotionLoaded, setEmotionLoaded] = useState(false);
   const [newHabitName, setNewHabitName] = useState("");
   const [loading, setLoading] = useState(true);
+  const [addingHabit, setAddingHabit] = useState(false);
+  const [habitActionId, setHabitActionId] = useState(null);
   const [savingMetrics, setSavingMetrics] = useState(false);
   const [savingLifeRatings, setSavingLifeRatings] = useState(false);
+  const [savingEmotion, setSavingEmotion] = useState(false);
   const [error, setError] = useState("");
+  const { showSaveAlert, clearSaveAlert } = useSaveAlert();
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = getLocalDateKey();
   const { user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
     const saved = localStorage.getItem("sidebar-collapsed");
@@ -86,80 +140,97 @@ export default function TrackPage() {
     fetchData();
   }, []);
 
+  const refreshHabits = async () => {
+    const { data: habitsData } = await api.get("/habits");
+    setHabits(habitsData?.habits || []);
+  };
+
   const fetchData = async () => {
     setLoading(true);
     try {
+      setError("");
+
       // Fetch habits
-      const habitsRes = await fetch("http://localhost:4545/habits", {
-        credentials: "include"
-      });
-      const habitsData = await habitsRes.json();
-      if (habitsRes.ok) {
-        setHabits(habitsData.habits);
-      }
+      await refreshHabits();
 
       // Fetch today's metrics
-      const metricsRes = await fetch("http://localhost:4545/time-tracker/today", {
-        credentials: "include"
-      });
-      const metricsData = await metricsRes.json();
-      if (metricsRes.ok) {
+      try {
+        const { data: metricsData } = await api.get("/time-tracker/today");
         setMetrics({
           sleep: metricsData.entry.sleep || "",
           screen: metricsData.entry.screen || "",
           workStudy: metricsData.entry.workStudy || "",
           expense: metricsData.entry.expense || ""
         });
+      } catch (err) {
+        if (err?.response?.status !== 404) {
+          throw err;
+        }
       }
 
       // Fetch today's life ratings
-      const lifeRatingsRes = await fetch("http://localhost:4545/life-ratings/day", {
-        credentials: "include"
-      });
-      const lifeRatingsData = await lifeRatingsRes.json();
-      if (lifeRatingsRes.ok && lifeRatingsData.entry && lifeRatingsData.entry.ratings) {
-        setLifeRatings({
-          partner: lifeRatingsData.entry.ratings.partner ?? 5,
-          familyFriends: lifeRatingsData.entry.ratings.familyFriends ?? 5,
-          health: lifeRatingsData.entry.ratings.health ?? 5,
-          finances: lifeRatingsData.entry.ratings.finances ?? 5,
-          career: lifeRatingsData.entry.ratings.career ?? 5,
-          physicalEnvironment: lifeRatingsData.entry.ratings.physicalEnvironment ?? 5,
-          funRecreation: lifeRatingsData.entry.ratings.funRecreation ?? 5,
-          personalGrowth: lifeRatingsData.entry.ratings.personalGrowth ?? 5,
-        });
+      try {
+        const { data: lifeRatingsData } = await api.get("/life-ratings/day");
+        if (lifeRatingsData.entry) {
+          setLifeRatings(mapEntryToLifeRatings(lifeRatingsData.entry));
+          setLifeRatingsLocked(Boolean(lifeRatingsData.locked));
+          setLifeRatingsLoaded(true);
+        }
+      } catch (err) {
+        if (err?.response?.status === 404) {
+          setLifeRatings(defaultLifeRatings);
+          setLifeRatingsLocked(false);
+          setLifeRatingsLoaded(true);
+        } else {
+          throw err;
+        }
+      }
+
+      // Fetch today's emotion
+      try {
+        const { data: emotionData } = await api.get("/emotions/today");
+        setSelectedEmotion(emotionData?.emotion || "neutral");
+        setEmotionLocked(Boolean(emotionData?.locked));
+        setEmotionLoaded(true);
+      } catch (err) {
+        if (err?.response?.status === 404) {
+          setSelectedEmotion("neutral");
+          setEmotionLocked(false);
+          setEmotionLoaded(true);
+        } else {
+          throw err;
+        }
       }
     } catch (err) {
       console.error("Failed to fetch tracking data:", err);
-      setError("Failed to load tracking data. Please try again.");
+      setError(getApiErrorMessage(err, "Failed to load tracking data. Please try again."));
     } finally {
       setLoading(false);
     }
   };
 
   const handleToggleHabit = async (habitId, isCompleted) => {
+    setHabitActionId(habitId);
+    setError("");
+    clearSaveAlert();
     try {
       const url = isCompleted 
-        ? `http://localhost:4545/habits/${habitId}/check/${today}`
-        : `http://localhost:4545/habits/${habitId}/check`;
+        ? `/habits/${habitId}/check/${today}`
+        : `/habits/${habitId}/check`;
       
       const method = isCompleted ? "DELETE" : "POST";
+      await api.request({ url, method });
 
-      const res = await fetch(url, {
-        method,
-        credentials: "include"
+      await refreshHabits();
+      showSaveAlert({
+        title: "Daily Habits",
+        message: isCompleted ? "Habit completion was removed for today." : "Habit marked complete for today.",
       });
-
-      if (res.ok) {
-        // Refresh habits to update streaks and completion status
-        const habitsRes = await fetch("http://localhost:4545/habits", {
-          credentials: "include"
-        });
-        const habitsData = await habitsRes.json();
-        setHabits(habitsData.habits);
-      }
     } catch (err) {
       console.error("Failed to toggle habit:", err);
+      setError(getApiErrorMessage(err, "Failed to update habit."));
+    } finally {
+      setHabitActionId(null);
     }
   };
 
@@ -167,62 +238,92 @@ export default function TrackPage() {
     e.preventDefault();
     if (!newHabitName.trim()) return;
 
+    setAddingHabit(true);
+    setError("");
+    clearSaveAlert();
     try {
-      const res = await fetch("http://localhost:4545/habits", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ name: newHabitName, frequency: "daily" })
-      });
+      const { data } = await api.post("/habits", { name: newHabitName, frequency: "daily" });
 
-      if (res.ok) {
-        setNewHabitName("");
-        fetchData();
+      if (data?.habit) {
+        setHabits((current) => [...current, data.habit]);
       }
+      setNewHabitName("");
+      showSaveAlert({
+        title: "Daily Habits",
+        message: `"${data.habit?.name || "Habit"}" was added successfully.`,
+      });
     } catch (err) {
       console.error("Failed to add habit:", err);
+      setError(getApiErrorMessage(err, "Failed to add habit."));
+    } finally {
+      setAddingHabit(false);
     }
   };
 
   const handleSaveMetrics = async () => {
     setSavingMetrics(true);
+    clearSaveAlert();
     try {
-      const res = await fetch("http://localhost:4545/time-tracker", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(metrics)
+      await api.post("/time-tracker", metrics);
+      showSaveAlert({
+        title: "Daily Metrics",
+        message: "Today's metrics were saved successfully.",
       });
-
-      if (res.ok) {
-        // Show success state briefly if needed
-      }
     } catch (err) {
       console.error("Failed to save metrics:", err);
+      setError(getApiErrorMessage(err, "Failed to save metrics."));
     } finally {
       setSavingMetrics(false);
     }
   };
 
   const handleSaveLifeRatings = async () => {
-    setSavingLifeRatings(true);
-    try {
-      const res = await fetch("http://localhost:4545/life-ratings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(lifeRatings)
-      });
+    if (lifeRatingsLocked) return;
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to save life ratings");
+    setSavingLifeRatings(true);
+    clearSaveAlert();
+    setError("");
+    try {
+      const { data } = await api.post("/life-ratings", lifeRatings);
+      if (data.entry) {
+        setLifeRatings(mapEntryToLifeRatings(data.entry));
       }
+      setLifeRatingsLocked(Boolean(data.locked));
+      setLifeRatingsLoaded(true);
+
+      showSaveAlert({
+        title: "Life Ratings",
+        message: "Your life balance scores were saved successfully.",
+      });
     } catch (err) {
       console.error("Failed to save life ratings:", err);
-      setError(err.message);
+      setError(getApiErrorMessage(err, "Failed to save life ratings"));
     } finally {
       setSavingLifeRatings(false);
+    }
+  };
+
+  const handleSaveEmotion = async () => {
+    if (emotionLocked) return;
+
+    setSavingEmotion(true);
+    clearSaveAlert();
+    setError("");
+    try {
+      const { data } = await api.post("/emotions", { emotion: selectedEmotion });
+      setSelectedEmotion(data?.emotion || selectedEmotion);
+      setEmotionLocked(Boolean(data?.locked));
+      setEmotionLoaded(true);
+
+      showSaveAlert({
+        title: "Daily Emotion",
+        message: "Today's emotion was saved successfully.",
+      });
+    } catch (err) {
+      console.error("Failed to save emotion:", err);
+      setError(getApiErrorMessage(err, "Failed to save emotion."));
+    } finally {
+      setSavingEmotion(false);
     }
   };
 
@@ -349,10 +450,16 @@ export default function TrackPage() {
               </div>
             </motion.section>
 
-            <div className="mt-6 grid gap-6 xl:grid-cols-2">
+            {error && (
+              <div className="mt-4 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+                {error}
+              </div>
+            )}
+
+            <div className="mt-6 grid items-stretch gap-6 xl:grid-cols-3">
               {/* Habits Section */}
-              <Card className="border-white/10 bg-slate-900/50 backdrop-blur-xl h-fit">
-                <CardHeader>
+              <Card className="flex h-full flex-col border-white/10 bg-slate-900/50 backdrop-blur-xl">
+                <CardHeader className="space-y-3">
                   <CardTitle className="text-white flex items-center gap-2">
                     <Zap className="h-5 w-5 text-pink-400" />
                     Daily Habits
@@ -360,18 +467,22 @@ export default function TrackPage() {
                   <CardDescription>
                     Small wins every day lead to big results.
                   </CardDescription>
+                  <p className="text-xs text-slate-500">
+                    New habits are created through the backend `POST /habits` route and refreshed from your saved list.
+                  </p>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <form onSubmit={handleAddHabit} className="flex gap-2 mb-6">
+                <CardContent className="flex flex-1 flex-col space-y-4">
+                  <form onSubmit={handleAddHabit} className="mb-6 flex flex-col gap-2 sm:flex-row">
                     <Input 
                       placeholder="New habit name..." 
                       value={newHabitName}
                       onChange={(e) => setNewHabitName(e.target.value)}
+                      disabled={addingHabit}
                       className="bg-black/20 border-white/10 text-white placeholder:text-slate-600 focus-visible:ring-pink-500"
                     />
-                    <Button type="submit" className="bg-pink-600 hover:bg-pink-500 text-white shrink-0">
+                    <Button type="submit" disabled={addingHabit} className="bg-pink-600 hover:bg-pink-500 text-white shrink-0 sm:w-auto">
                       <Plus className="h-4 w-4 mr-2" />
-                      Add
+                      {addingHabit ? "Adding..." : "Add"}
                     </Button>
                   </form>
 
@@ -386,9 +497,9 @@ export default function TrackPage() {
                         return (
                           <div 
                             key={habit._id} 
-                            className="flex items-center justify-between p-4 rounded-2xl border border-white/10 bg-white/5"
+                            className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 sm:flex-row sm:items-center sm:justify-between"
                           >
-                            <div>
+                            <div className="min-w-0">
                               <p className="font-medium text-slate-200">{habit.name}</p>
                               <p className="text-xs text-slate-500 mt-1">
                                 Streak: <span className="text-pink-400">{habit.currentStreak} days</span> (Best: {habit.longestStreak})
@@ -396,12 +507,13 @@ export default function TrackPage() {
                             </div>
                             <Button
                               onClick={() => handleToggleHabit(habit._id, done)}
+                              disabled={habitActionId === habit._id}
                               variant={done ? "default" : "outline"}
                               className={done 
-                                ? "bg-emerald-600/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-600/30" 
-                                : "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10"}
+                                ? "w-full bg-emerald-600/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-600/30 sm:w-auto" 
+                                : "w-full bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 sm:w-auto"}
                             >
-                              {done ? "Completed" : "Mark Done"}
+                              {habitActionId === habit._id ? "Saving..." : done ? "Completed" : "Mark Done"}
                             </Button>
                           </div>
                         );
@@ -412,8 +524,8 @@ export default function TrackPage() {
               </Card>
 
               {/* Metrics Section */}
-              <Card className="border-white/10 bg-slate-900/50 backdrop-blur-xl h-fit">
-                <CardHeader>
+              <Card className="flex h-full flex-col border-white/10 bg-slate-900/50 backdrop-blur-xl">
+                <CardHeader className="space-y-3">
                   <CardTitle className="text-white flex items-center gap-2">
                     <CalendarDays className="h-5 w-5 text-emerald-400" />
                     Daily Metrics
@@ -422,7 +534,7 @@ export default function TrackPage() {
                     Quantify your day to understand your baseline.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="flex flex-1 flex-col space-y-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 flex items-center gap-2">
@@ -477,10 +589,70 @@ export default function TrackPage() {
                   <Button 
                     onClick={handleSaveMetrics} 
                     disabled={savingMetrics}
-                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white mt-4"
+                    className="mt-auto w-full bg-emerald-600 text-white hover:bg-emerald-500"
                   >
                     <Save className="h-4 w-4 mr-2" />
                     {savingMetrics ? "Saving..." : "Save Today's Metrics"}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="flex h-full flex-col border-white/10 bg-slate-900/50 backdrop-blur-xl">
+                <CardHeader className="space-y-3">
+                  <div className="flex flex-col gap-2">
+                    <CardTitle className="text-white flex items-center gap-2">
+                      <Heart className="h-5 w-5 text-rose-400" />
+                      Daily Emotion
+                    </CardTitle>
+                    <CardDescription>
+                      Select how you feel today and sync it with the backend emotion tracker.
+                    </CardDescription>
+                    {emotionLoaded && (
+                      <p className="text-xs text-slate-500">
+                        {emotionLocked
+                          ? "Today's emotion entry is locked by the backend after 24 hours."
+                          : "Your selected emotion is saved through the backend `/emotions` route."}
+                      </p>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent className="flex flex-1 flex-col space-y-5">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {emotionOptions.map((option) => {
+                      const isSelected = selectedEmotion === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          disabled={emotionLocked}
+                          onClick={() => setSelectedEmotion(option.value)}
+                          className={`rounded-2xl border px-4 py-3 text-left text-sm font-medium transition-all ${
+                            isSelected
+                              ? `${option.accent} ${option.glow} scale-[1.02]`
+                              : option.idle
+                          } ${emotionLocked ? "cursor-not-allowed opacity-60" : ""}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-lg leading-none">{option.emoji}</span>
+                            <span className="flex flex-col">
+                              <span className="font-semibold">{option.label}</span>
+                              <span className="text-[10px] uppercase tracking-[0.18em] text-current/70">
+                                {option.value}
+                              </span>
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <Button
+                    onClick={handleSaveEmotion}
+                    disabled={savingEmotion || emotionLocked}
+                    className="mt-auto w-full bg-rose-600 text-white hover:bg-rose-500"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    {savingEmotion ? "Saving..." : emotionLocked ? "Emotion Locked" : "Save Today's Emotion"}
                   </Button>
                 </CardContent>
               </Card>
@@ -489,7 +661,7 @@ export default function TrackPage() {
             {/* Life Ratings Section */}
             <Card className="mt-6 border-white/10 bg-slate-900/50 backdrop-blur-xl">
               <CardHeader>
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <CardTitle className="text-white flex items-center gap-2">
                       <Star className="h-5 w-5 text-amber-400" />
@@ -498,29 +670,27 @@ export default function TrackPage() {
                     <CardDescription>
                       Rate your satisfaction across 8 key areas of your life (0-10).
                     </CardDescription>
+                    {lifeRatingsLoaded && (
+                      <p className="mt-2 text-xs text-slate-500">
+                        {lifeRatingsLocked
+                          ? "Today's life rating entry is locked by the backend after 24 hours."
+                          : "These 8 sliders are synced with today's backend life rating entry."}
+                      </p>
+                    )}
                   </div>
                   <Button 
                     onClick={handleSaveLifeRatings} 
-                    disabled={savingLifeRatings}
-                    className="bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-900/20"
+                    disabled={savingLifeRatings || lifeRatingsLocked}
+                    className="w-full bg-amber-600 text-white shadow-lg shadow-amber-900/20 hover:bg-amber-500 sm:w-auto"
                   >
                     <Save className="h-4 w-4 mr-2" />
-                    {savingLifeRatings ? "Saving..." : "Save Life Ratings"}
+                    {savingLifeRatings ? "Saving..." : lifeRatingsLocked ? "Life Ratings Locked" : "Save Life Ratings"}
                   </Button>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 py-4">
-                  {[
-                    { key: "health", label: "Health", icon: Activity, color: "text-emerald-400" },
-                    { key: "career", label: "Career", icon: Briefcase, color: "text-blue-400" },
-                    { key: "finances", label: "Finances", icon: Wallet, color: "text-amber-400" },
-                    { key: "partner", label: "Partner", icon: Heart, color: "text-rose-400" },
-                    { key: "familyFriends", label: "Family & Friends", icon: Users, color: "text-indigo-400" },
-                    { key: "physicalEnvironment", label: "Environment", icon: Home, color: "text-orange-400" },
-                    { key: "funRecreation", label: "Fun", icon: Palmtree, color: "text-cyan-400" },
-                    { key: "personalGrowth", label: "Growth", icon: TrendingUp, color: "text-pink-400" },
-                  ].map((cat) => (
+                  {lifeRatingCategories.map((cat) => (
                     <div key={cat.key} className="space-y-4">
                       <div className="flex items-center justify-between">
                         <label className="text-xs font-semibold uppercase tracking-widest text-slate-400 flex items-center gap-2">
@@ -537,7 +707,10 @@ export default function TrackPage() {
                           max="10"
                           step="1"
                           value={lifeRatings[cat.key]}
-                          onChange={(e) => setLifeRatings({ ...lifeRatings, [cat.key]: parseInt(e.target.value) })}
+                          disabled={lifeRatingsLocked}
+                          onChange={(e) =>
+                            setLifeRatings({ ...lifeRatings, [cat.key]: parseInt(e.target.value, 10) })
+                          }
                           className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-amber-500 group-hover:bg-white/20 transition-all"
                         />
                         <div className="flex justify-between mt-2 px-0.5">

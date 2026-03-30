@@ -24,6 +24,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useSaveAlert } from "../context/SaveAlertContext";
+import { api, getApiErrorMessage } from "../lib/api";
 
 const navItems = [
   { label: "Today", icon: LayoutDashboard, to: "/dashboard" },
@@ -63,6 +65,7 @@ export default function JournalPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const { user } = useAuth();
+  const { showSaveAlert, clearSaveAlert } = useSaveAlert();
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
     const saved = localStorage.getItem("sidebar-collapsed");
     return saved !== null ? JSON.parse(saved) : true;
@@ -82,14 +85,14 @@ export default function JournalPage() {
       setError("");
 
       try {
-        const response = await fetch(
-          `http://localhost:4545/diary/api/diary/${selectedDate}`,
-          {
-            credentials: "include",
-          }
-        );
+        const { data } = await api.get(`/diary/api/diary/${selectedDate}`);
 
-        if (response.status === 404) {
+        if (!ignore) {
+          setDraft(data.entry?.text || "");
+          setSavedAt("");
+        }
+      } catch (err) {
+        if (err?.response?.status === 404) {
           if (!ignore) {
             setDraft("");
             setSavedAt("");
@@ -97,27 +100,15 @@ export default function JournalPage() {
           return;
         }
 
-        const data = await response.json();
+        const message =
+          err?.response?.status === 401
+            ? "Your session expired. Please log in again."
+            : getApiErrorMessage(err, "Failed to load diary entry.");
 
-        if (response.status === 401) {
-          throw new Error("Your session expired. Please log in again.");
-        }
-
-        if (!response.ok) {
-          throw new Error(data.error || "Failed to load diary entry.");
-        }
-
-        if (!ignore) {
-          setDraft(data.entry?.text || "");
-          setSavedAt("");
-        }
-      } catch (err) {
         if (!ignore) {
           setDraft("");
-          setError(err.message || "Failed to load diary entry.");
-          if (
-            String(err.message || "").toLowerCase().includes("log in again")
-          ) {
+          setError(message);
+          if (String(message).toLowerCase().includes("log in again")) {
             navigate("/login");
           }
         }
@@ -138,29 +129,13 @@ export default function JournalPage() {
   const handleSave = async () => {
     setSaving(true);
     setError("");
+    clearSaveAlert();
 
     try {
-      const response = await fetch("http://localhost:4545/diary/api/diary", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          date: selectedDate,
-          text: draft,
-        }),
+      const { data } = await api.post("/diary/api/diary", {
+        date: selectedDate,
+        text: draft,
       });
-
-      const data = await response.json();
-
-      if (response.status === 401) {
-        throw new Error("Your session expired. Please log in again.");
-      }
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to save diary entry.");
-      }
 
       setDraft(data.entry?.text || "");
       setSavedAt(
@@ -169,9 +144,17 @@ export default function JournalPage() {
           minute: "2-digit",
         })
       );
+      showSaveAlert({
+        title: "Daily Matrix",
+        message: "Your note was saved successfully.",
+      });
     } catch (err) {
-      setError(err.message || "Failed to save diary entry.");
-      if (String(err.message || "").toLowerCase().includes("log in again")) {
+      const message =
+        err?.response?.status === 401
+          ? "Your session expired. Please log in again."
+          : getApiErrorMessage(err, "Failed to save diary entry.");
+      setError(message);
+      if (String(message).toLowerCase().includes("log in again")) {
         navigate("/login");
       }
     } finally {

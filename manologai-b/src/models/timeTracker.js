@@ -48,9 +48,8 @@ const timeTrackerSchema = new mongoose.Schema({
 timeTrackerSchema.index({ user: 1, date: 1 }, { unique: true });
 
 // Update updatedAt on save
-timeTrackerSchema.pre("save", function (next) {
+timeTrackerSchema.pre("save", function () {
   this.updatedAt = new Date();
-  next();
 });
 
 module.exports = mongoose.model("TimeTracker", timeTrackerSchema);

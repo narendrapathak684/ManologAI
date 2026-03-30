@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { api } from "../lib/api";
 
 const AuthContext = createContext();
 
@@ -8,11 +9,8 @@ export function AuthProvider({ children }) {
 
   const fetchUser = async () => {
     try {
-      const res = await fetch("http://localhost:4545/profile/me", {
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (res.ok && data.user) {
+      const { data } = await api.get("/profile/me");
+      if (data.user) {
         setUser(data.user);
       } else {
         setUser(null);
@@ -31,10 +29,7 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     try {
-      await fetch("http://localhost:4545/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      });
+      await api.post("/auth/logout");
       setUser(null);
       window.location.href = "/login";
     } catch (err) {

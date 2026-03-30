@@ -3,6 +3,10 @@ const mongoose = require("mongoose");
 const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
 
 const blockSchema = new mongoose.Schema({
+  groupId: {
+    type: String,
+    default: null,
+  },
   day: {
     type: String,
     enum: DAYS,
@@ -45,9 +49,8 @@ const timetableSchema = new mongoose.Schema({
   },
 });
 
-timetableSchema.pre("save", function (next) {
+timetableSchema.pre("save", function () {
   this.updatedAt = new Date();
-  next();
 });
 
 module.exports = mongoose.model("Timetable", timetableSchema);

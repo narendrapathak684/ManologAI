@@ -50,9 +50,8 @@ const padSchema = new mongoose.Schema({
 });
 
 // Update updatedAt on save
-padSchema.pre("save", function (next) {
+padSchema.pre("save", function () {
   this.updatedAt = new Date();
-  next();
 });
 
 module.exports = mongoose.model("Pad", padSchema);

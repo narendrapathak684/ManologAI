@@ -24,6 +24,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { api, getApiErrorMessage } from "../lib/api";
 
 const navItems = [
   { label: "Today", icon: LayoutDashboard, to: "/dashboard" },
@@ -44,21 +45,14 @@ export default function ProfilePage() {
     setIsResetting(true);
     setStatus({ type: null, message: "" });
     try {
-      const res = await fetch("http://localhost:4545/profile/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(passForm),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setStatus({ type: "success", message: "Password reset successfully" });
-        setPassForm({ currentPassword: "", newPassword: "" });
-      } else {
-        setStatus({ type: "error", message: data.error || "Failed to reset password" });
-      }
+      await api.post("/profile/reset-password", passForm);
+      setStatus({ type: "success", message: "Password reset successfully" });
+      setPassForm({ currentPassword: "", newPassword: "" });
     } catch (err) {
-      setStatus({ type: "error", message: "Failed to connect to server" });
+      setStatus({
+        type: "error",
+        message: getApiErrorMessage(err, "Failed to connect to server"),
+      });
     } finally {
       setIsResetting(false);
     }

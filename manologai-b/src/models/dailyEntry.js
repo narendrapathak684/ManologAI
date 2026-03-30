@@ -14,20 +14,6 @@ const dailyEntrySchema = new mongoose.Schema({
     type: String,
     default: "",
   },
-  mood: {
-    type: String,
-    enum: [
-      "happy",
-      "calm",
-      "neutral",
-      "sad",
-      "stressed",
-      "angry",
-      "tired",
-      "excited",
-    ],
-    default: "neutral",
-  },
   rating: {
     type: Number,
     min: 0,

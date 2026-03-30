@@ -60,9 +60,8 @@ const habitSchema = new mongoose.Schema({
 });
 
 // Update updatedAt on save
-habitSchema.pre("save", function (next) {
+habitSchema.pre("save", function () {
   this.updatedAt = new Date();
-  next();
 });
 
 module.exports = mongoose.model("Habit", habitSchema);

@@ -78,9 +78,8 @@ const lifeRatingSchema = new mongoose.Schema({
 lifeRatingSchema.index({ user: 1, date: 1 }, { unique: true });
 
 // Update updatedAt on save
-lifeRatingSchema.pre("save", function (next) {
+lifeRatingSchema.pre("save", function () {
   this.updatedAt = new Date();
-  next();
 });
 
 module.exports = mongoose.model("LifeRating", lifeRatingSchema);
