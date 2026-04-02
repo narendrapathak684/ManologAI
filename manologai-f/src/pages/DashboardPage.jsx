@@ -6,6 +6,8 @@ import {
   CalendarDays,
   ChartColumnBig,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Clock3,
   FolderKanban,
   LayoutDashboard,
@@ -56,10 +58,68 @@ const organiseItems = [
   "Plan tomorrow's top 3 priorities",
 ];
 
-const HEATMAP_DAYS = 35;
 const HEATMAP_BASE = { r: 236, g: 72, b: 153 };
 const heatmapWeekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const HEATMAP_HABIT_WEIGHT = 0.5;
+const HEATMAP_MAX_MONTHS_BACK = 11;
+
+function toDateKey(dateInput) {
+  const date = new Date(dateInput);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getMonthRange(offset) {
+  const start = new Date();
+  start.setDate(1);
+  start.setHours(0, 0, 0, 0);
+  start.setMonth(start.getMonth() + offset);
+
+  const end = new Date(start);
+  end.setMonth(end.getMonth() + 1);
+  end.setDate(0);
+  end.setHours(23, 59, 59, 999);
+
+  return { start, end };
+}
+
+function buildHeatmapRange(start, end) {
+  const items = [];
+  const cursor = new Date(start);
+  cursor.setHours(0, 0, 0, 0);
+  const last = new Date(end);
+  last.setHours(0, 0, 0, 0);
+
+  while (cursor <= last) {
+    items.push({
+      date: new Date(cursor),
+      key: toDateKey(cursor),
+      count: 0,
+    });
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return items;
+}
+
+function entryHasDiaryInput(entry) {
+  if (!entry) return false;
+  if (entry.text && String(entry.text).trim().length > 0) return true;
+  if (entry.rating !== undefined && entry.rating !== null) return true;
+  if (entry.metrics && Object.keys(entry.metrics).length > 0) return true;
+  return false;
+}
+
+function countLifeRatings(entry) {
+  if (!entry?.ratings) return 0;
+  return Object.values(entry.ratings).reduce(
+    (total, value) =>
+      value !== null && value !== undefined ? total + 1 : total,
+    0,
+  );
+}
 
 const journalEntryThemes = [
   "border-pink-500/20 bg-pink-500/5",
@@ -134,6 +194,9 @@ export default function DashboardPage() {
   const [heatmapError, setHeatmapError] = useState("");
   const [heatmapMax, setHeatmapMax] = useState(0);
   const [heatmapLoading, setHeatmapLoading] = useState(true);
+  const [heatmapMonthOffset, setHeatmapMonthOffset] = useState(0);
+  const [heatmapJumpDate, setHeatmapJumpDate] = useState("");
+  const [heatmapJumpError, setHeatmapJumpError] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
     const saved = localStorage.getItem("sidebar-collapsed");
     return saved !== null ? JSON.parse(saved) : true;
@@ -186,63 +249,59 @@ export default function DashboardPage() {
       }
     }
 
-    function toDateKey(dateInput) {
-      const date = new Date(dateInput);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-      return `${year}-${month}-${day}`;
-    }
+    fetchAverages();
+    fetchHabitScore();
 
-    function buildHeatmapRange(days) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const items = [];
-      for (let i = days - 1; i >= 0; i -= 1) {
-        const date = new Date(today);
-        date.setDate(today.getDate() - i);
-        items.push({
-          date,
-          key: toDateKey(date),
-          count: 0,
-        });
-      }
-      return items;
-    }
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
-    function entryHasDiaryInput(entry) {
-      if (!entry) return false;
-      if (entry.text && String(entry.text).trim().length > 0) return true;
-      if (entry.rating !== undefined && entry.rating !== null) return true;
-      if (entry.metrics && Object.keys(entry.metrics).length > 0) return true;
-      return false;
-    }
+  const heatmapMonthRange = useMemo(
+    () => getMonthRange(heatmapMonthOffset),
+    [heatmapMonthOffset],
+  );
+  const heatmapMonthLabel = useMemo(
+    () =>
+      heatmapMonthRange.start.toLocaleDateString(undefined, {
+        month: "long",
+        year: "numeric",
+      }),
+    [heatmapMonthRange],
+  );
 
-    function countLifeRatings(entry) {
-      if (!entry?.ratings) return 0;
-      return Object.values(entry.ratings).reduce(
-        (total, value) =>
-          value !== null && value !== undefined ? total + 1 : total,
-        0,
-      );
-    }
+  useEffect(() => {
+    let isMounted = true;
 
     async function fetchHeatmap() {
       setHeatmapLoading(true);
       try {
-        const range = buildHeatmapRange(HEATMAP_DAYS);
-        const from = range[0].key;
-        const to = range[range.length - 1].key;
+        const range = buildHeatmapRange(
+          heatmapMonthRange.start,
+          heatmapMonthRange.end,
+        );
+        const from = range[0]?.key;
+        const to = range[range.length - 1]?.key;
+        if (!from || !to) {
+          if (isMounted) {
+            setHeatmapDays([]);
+            setHeatmapMax(0);
+            setHeatmapError("");
+          }
+          return;
+        }
+
         const dayMap = new Map(range.map((item) => [item.key, { ...item }]));
+        const limit = range.length;
 
         const [diaryRes, timeRes, lifeRes, emotionRes, habitsRes] =
           await Promise.all([
-            api.get(`/diary/api/diary?limit=${HEATMAP_DAYS}`),
             api.get(
-              `/time-tracker?from=${from}&to=${to}&limit=${HEATMAP_DAYS}`,
+              `/diary/api/diary/range?from=${from}&to=${to}&limit=${limit}`,
             ),
-            api.get("/life-ratings/month"),
-            api.get("/emotions/range/month"),
+            api.get(`/time-tracker?from=${from}&to=${to}&limit=${limit}`),
+            api.get(`/life-ratings/range?from=${from}&to=${to}&limit=${limit}`),
+            api.get(`/emotions/range?from=${from}&to=${to}&limit=${limit}`),
             api.get("/habits"),
           ]);
 
@@ -316,14 +375,12 @@ export default function DashboardPage() {
       }
     }
 
-    fetchAverages();
-    fetchHabitScore();
     fetchHeatmap();
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [heatmapMonthRange]);
 
   const heatmapCells = useMemo(() => {
     if (heatmapDays.length === 0) return [];
@@ -342,6 +399,43 @@ export default function DashboardPage() {
       Math.ceil(heatmapMax * 0.75),
     ];
   }, [heatmapMax]);
+
+  const canGoPrevMonth = heatmapMonthOffset > -HEATMAP_MAX_MONTHS_BACK;
+  const canGoNextMonth = heatmapMonthOffset < 0;
+
+  const clampMonthOffset = (offset) =>
+    Math.min(0, Math.max(-HEATMAP_MAX_MONTHS_BACK, offset));
+
+  const getMonthOffsetForDate = (date) => {
+    const now = new Date();
+    return (
+      (date.getFullYear() - now.getFullYear()) * 12 +
+      (date.getMonth() - now.getMonth())
+    );
+  };
+
+  const handleHeatmapJump = () => {
+    if (!heatmapJumpDate) {
+      setHeatmapJumpError("Choose a date to jump to.");
+      return;
+    }
+    const parsed = new Date(`${heatmapJumpDate}T00:00:00`);
+    if (Number.isNaN(parsed.getTime())) {
+      setHeatmapJumpError("Enter a valid date.");
+      return;
+    }
+    const offset = getMonthOffsetForDate(parsed);
+    if (offset > 0) {
+      setHeatmapJumpError("Pick a date in the past.");
+      return;
+    }
+    if (offset < -HEATMAP_MAX_MONTHS_BACK) {
+      setHeatmapJumpError("Pick a date within the last 12 months.");
+      return;
+    }
+    setHeatmapJumpError("");
+    setHeatmapMonthOffset(clampMonthOffset(offset));
+  };
 
   function getHeatmapStyle(count) {
     if (!count || heatmapMax === 0) {
@@ -634,6 +728,156 @@ export default function DashboardPage() {
                   ))}
                 </div>
 
+                <Card className="border-pink-500/20 bg-gradient-to-br from-pink-500/10 via-slate-900/70 to-slate-950/95 backdrop-blur-xl">
+                  <CardHeader>
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <CardTitle className="flex items-center gap-2 text-white">
+                        <CalendarDays className="h-5 w-5 text-pink-300" />
+                        Consistency heatmap
+                      </CardTitle>
+                      <div className="flex items-center gap-2 text-xs font-semibold text-slate-200">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setHeatmapMonthOffset((prev) => prev - 1)
+                          }
+                          disabled={!canGoPrevMonth}
+                          className={`flex h-7 w-7 items-center justify-center rounded-full border transition-all ${
+                            canGoPrevMonth
+                              ? "border-white/15 bg-white/5 text-slate-200 hover:border-pink-500/40 hover:text-white"
+                              : "border-white/5 text-slate-600 opacity-60"
+                          }`}
+                          aria-label="Previous month"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </button>
+                        <span className="min-w-[120px] text-center text-slate-300">
+                          {heatmapMonthLabel}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setHeatmapMonthOffset((prev) => prev + 1)
+                          }
+                          disabled={!canGoNextMonth}
+                          className={`flex h-7 w-7 items-center justify-center rounded-full border transition-all ${
+                            canGoNextMonth
+                              ? "border-white/15 bg-white/5 text-slate-200 hover:border-pink-500/40 hover:text-white"
+                              : "border-white/5 text-slate-600 opacity-60"
+                          }`}
+                          aria-label="Next month"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                    <CardDescription>
+                      Darker cells mean more inputs logged that day.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {heatmapError && (
+                      <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-xs text-rose-200">
+                        {heatmapError}
+                      </div>
+                    )}
+                    <div className="flex flex-wrap items-center gap-3">
+                      <label className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                        Jump to date
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="date"
+                          value={heatmapJumpDate}
+                          onChange={(event) =>
+                            setHeatmapJumpDate(event.target.value)
+                          }
+                          className="h-8 rounded-lg border border-white/10 bg-white/5 px-3 text-xs text-slate-200 focus:border-pink-500/40 focus:outline-none"
+                          max={toDateKey(new Date())}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleHeatmapJump}
+                          className="h-8 rounded-lg border border-white/10 bg-white/5 px-3 text-xs font-semibold text-slate-200 transition-all hover:border-pink-500/40 hover:text-white"
+                        >
+                          Go
+                        </button>
+                      </div>
+                    </div>
+                    {heatmapJumpError && (
+                      <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-200">
+                        {heatmapJumpError}
+                      </div>
+                    )}
+                    {heatmapLoading && (
+                      <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-slate-400">
+                        Loading {heatmapMonthLabel}…
+                      </div>
+                    )}
+                    {!heatmapLoading && heatmapDays.length > 0 && (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-7 gap-2 text-[10px] uppercase tracking-[0.2em] text-slate-500">
+                          {heatmapWeekdays.map((label) => (
+                            <span key={label} className="text-center">
+                              {label}
+                            </span>
+                          ))}
+                        </div>
+                        <div className="grid grid-cols-7 gap-2">
+                          {heatmapCells.map((day, index) => {
+                            if (!day) {
+                              return (
+                                <div
+                                  key={`empty-${index}`}
+                                  className="h-9 rounded-lg border border-transparent"
+                                />
+                              );
+                            }
+                            const label = day.date.toLocaleDateString(
+                              undefined,
+                              {
+                                month: "short",
+                                day: "numeric",
+                              },
+                            );
+                            const countLabel = Number.isInteger(day.count)
+                              ? `${day.count}`
+                              : day.count.toFixed(1);
+                            return (
+                              <div
+                                key={day.key}
+                                className="h-9 rounded-lg border transition-all hover:scale-[1.02]"
+                                style={getHeatmapStyle(day.count)}
+                                title={`${label}: ${countLabel} inputs`}
+                              />
+                            );
+                          })}
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-slate-400">
+                          <span>Less</span>
+                          <div className="flex items-center gap-2">
+                            {heatmapLegend.map((value) => (
+                              <div
+                                key={`legend-${value}`}
+                                className="h-3 w-3 rounded border"
+                                style={getHeatmapStyle(value)}
+                              />
+                            ))}
+                          </div>
+                          <span>More</span>
+                        </div>
+                      </div>
+                    )}
+                    {!heatmapLoading &&
+                      heatmapDays.length === 0 &&
+                      !heatmapError && (
+                        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-slate-400">
+                          Start logging to see your consistency heatmap.
+                        </div>
+                      )}
+                  </CardContent>
+                </Card>
+
                 <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
                   <Card className="border-pink-500/20 bg-gradient-to-br from-pink-500/10 via-slate-900/70 to-slate-950/95 backdrop-blur-xl">
                     <CardHeader>
@@ -701,169 +945,93 @@ export default function DashboardPage() {
               </div>
 
               <div className="grid gap-6">
-                <Card className="border-pink-500/20 bg-gradient-to-br from-pink-500/10 via-slate-900/70 to-slate-950/95 backdrop-blur-xl">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-white">
-                      <CalendarDays className="h-5 w-5 text-pink-300" />
-                      Consistency heatmap
-                    </CardTitle>
-                    <CardDescription>
-                      Darker cells mean more inputs logged that day.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {heatmapError && (
-                      <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-xs text-rose-200">
-                        {heatmapError}
+                <div className="grid gap-6">
+                  <Card className="border-indigo-500/20 bg-gradient-to-br from-indigo-500/10 via-slate-900/70 to-slate-950/95 backdrop-blur-xl">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-white">
+                        <ChartColumnBig className="h-5 w-5 text-indigo-400" />
+                        Analytics
+                      </CardTitle>
+                      <CardDescription>
+                        A fast read on momentum across your week.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="rounded-2xl border border-indigo-500/30 bg-indigo-500/15 p-5">
+                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-indigo-300">
+                          Weekly trend
+                        </p>
+                        <p className="mt-3 text-3xl font-black text-white">
+                          +18%
+                        </p>
+                        <p className="mt-2 text-sm leading-6 text-slate-300">
+                          Your consistency is up compared with last week, mostly
+                          driven by lower screen time and stronger morning
+                          focus.
+                        </p>
                       </div>
-                    )}
-                    {heatmapLoading && (
-                      <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-slate-400">
-                        Loading your last 5 weeks…
-                      </div>
-                    )}
-                    {!heatmapLoading && heatmapDays.length > 0 && (
-                      <div className="space-y-3">
-                        <div className="grid grid-cols-7 gap-2 text-[10px] uppercase tracking-[0.2em] text-slate-500">
-                          {heatmapWeekdays.map((label) => (
-                            <span key={label} className="text-center">
-                              {label}
-                            </span>
-                          ))}
-                        </div>
-                        <div className="grid grid-cols-7 gap-2">
-                          {heatmapCells.map((day, index) => {
-                            if (!day) {
-                              return (
-                                <div
-                                  key={`empty-${index}`}
-                                  className="h-9 rounded-lg border border-transparent"
-                                />
-                              );
-                            }
-                            const label = day.date.toLocaleDateString(
-                              undefined,
-                              {
-                                month: "short",
-                                day: "numeric",
-                              },
-                            );
-                            const countLabel = Number.isInteger(day.count)
-                              ? `${day.count}`
-                              : day.count.toFixed(1);
-                            return (
-                              <div
-                                key={day.key}
-                                className="h-9 rounded-lg border transition-all hover:scale-[1.02]"
-                                style={getHeatmapStyle(day.count)}
-                                title={`${label}: ${countLabel} inputs`}
-                              />
-                            );
-                          })}
-                        </div>
-                        <div className="flex items-center justify-between text-xs text-slate-400">
-                          <span>Less</span>
-                          <div className="flex items-center gap-2">
-                            {heatmapLegend.map((value) => (
-                              <div
-                                key={`legend-${value}`}
-                                className="h-3 w-3 rounded border"
-                                style={getHeatmapStyle(value)}
-                              />
-                            ))}
-                          </div>
-                          <span>More</span>
-                        </div>
-                      </div>
-                    )}
-                    {!heatmapLoading &&
-                      heatmapDays.length === 0 &&
-                      !heatmapError && (
-                        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-slate-400">
-                          Start logging to see your consistency heatmap.
-                        </div>
-                      )}
-                  </CardContent>
-                </Card>
 
-                <Card className="border-indigo-500/20 bg-gradient-to-br from-indigo-500/10 via-slate-900/70 to-slate-950/95 backdrop-blur-xl">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-white">
-                      <ChartColumnBig className="h-5 w-5 text-indigo-400" />
-                      Analytics
-                    </CardTitle>
-                    <CardDescription>
-                      A fast read on momentum across your week.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="rounded-2xl border border-indigo-500/30 bg-indigo-500/15 p-5">
-                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-indigo-300">
-                        Weekly trend
-                      </p>
-                      <p className="mt-3 text-3xl font-black text-white">
-                        +18%
-                      </p>
-                      <p className="mt-2 text-sm leading-6 text-slate-300">
-                        Your consistency is up compared with last week, mostly
-                        driven by lower screen time and stronger morning focus.
-                      </p>
-                    </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        <div
+                          className={`rounded-xl border p-4 text-center ${analyticsStatThemes[0]}`}
+                        >
+                          <p className="text-xs uppercase tracking-widest text-slate-500">
+                            Mood
+                          </p>
+                          <p className="mt-2 text-lg font-bold text-white">
+                            8.4
+                          </p>
+                        </div>
+                        <div
+                          className={`rounded-xl border p-4 text-center ${analyticsStatThemes[1]}`}
+                        >
+                          <p className="text-xs uppercase tracking-widest text-slate-500">
+                            Sleep
+                          </p>
+                          <p className="mt-2 text-lg font-bold text-white">
+                            7.2h
+                          </p>
+                        </div>
+                        <div
+                          className={`rounded-xl border p-4 text-center ${analyticsStatThemes[2]}`}
+                        >
+                          <p className="text-xs uppercase tracking-widest text-slate-500">
+                            Focus
+                          </p>
+                          <p className="mt-2 text-lg font-bold text-white">
+                            81%
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                    <div className="grid grid-cols-3 gap-3">
-                      <div
-                        className={`rounded-xl border p-4 text-center ${analyticsStatThemes[0]}`}
-                      >
-                        <p className="text-xs uppercase tracking-widest text-slate-500">
-                          Mood
-                        </p>
-                        <p className="mt-2 text-lg font-bold text-white">8.4</p>
-                      </div>
-                      <div
-                        className={`rounded-xl border p-4 text-center ${analyticsStatThemes[1]}`}
-                      >
-                        <p className="text-xs uppercase tracking-widest text-slate-500">
-                          Sleep
-                        </p>
-                        <p className="mt-2 text-lg font-bold text-white">
-                          7.2h
-                        </p>
-                      </div>
-                      <div
-                        className={`rounded-xl border p-4 text-center ${analyticsStatThemes[2]}`}
-                      >
-                        <p className="text-xs uppercase tracking-widest text-slate-500">
-                          Focus
-                        </p>
-                        <p className="mt-2 text-lg font-bold text-white">81%</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-slate-900/70 to-slate-950/95 backdrop-blur-xl">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-white">
-                      <Target className="h-5 w-5 text-amber-400" />
-                      Organise
-                    </CardTitle>
-                    <CardDescription>
-                      Small planning moves that keep tomorrow lighter.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {organiseItems.map((item, index) => (
-                      <div
-                        key={item}
-                        className={`rounded-2xl border p-4 text-sm leading-6 text-slate-300 ${
-                          organiseItemThemes[index % organiseItemThemes.length]
-                        }`}
-                      >
-                        {item}
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
+                  <Card className="border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-slate-900/70 to-slate-950/95 backdrop-blur-xl">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-white">
+                        <Target className="h-5 w-5 text-amber-400" />
+                        Organise
+                      </CardTitle>
+                      <CardDescription>
+                        Small planning moves that keep tomorrow lighter.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {organiseItems.map((item, index) => (
+                        <div
+                          key={item}
+                          className={`rounded-2xl border p-4 text-sm leading-6 text-slate-300 ${
+                            organiseItemThemes[
+                              index % organiseItemThemes.length
+                            ]
+                          }`}
+                        >
+                          {item}
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
             </section>
           </div>

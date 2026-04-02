@@ -234,6 +234,52 @@ router.get("/day", auth, async (req, res) => {
   }
 });
 
+// GET /life-ratings/range
+// Get entries within a date range.
+// Query params: ?from=YYYY-MM-DD&to=YYYY-MM-DD&limit=N
+router.get("/range", auth, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { from, to, limit } = req.query;
+    if (!from || !to) {
+      return res
+        .status(400)
+        .json({ error: "from and to query params are required" });
+    }
+
+    const fromDate = toLocalMidnight(from);
+    const toDate = toLocalMidnight(to);
+    if (!fromDate || !toDate) {
+      return res.status(400).json({ error: "Invalid date format" });
+    }
+    if (toDate < fromDate) {
+      return res.status(400).json({ error: "to must be on or after from" });
+    }
+
+    toDate.setHours(23, 59, 59, 999);
+    const safeLimit =
+      limit !== undefined
+        ? Math.max(1, Math.min(Number(limit) || 62, 400))
+        : 62;
+
+    const entries = await LifeRating.find({
+      user: userId,
+      date: { $gte: fromDate, $lte: toDate },
+    })
+      .sort({ date: 1 })
+      .limit(safeLimit);
+
+    return res
+      .status(200)
+      .json({ entries, range: { from: fromDate, to: toDate } });
+  } catch (err) {
+    console.error("GET /life-ratings/range error:", err);
+    return res
+      .status(500)
+      .json({ error: "Failed to fetch life rating entries" });
+  }
+});
+
 // GET /life-ratings/month
 // Get the last 30 days of life ratings (for monthly graph/analysis).
 router.get("/month", auth, async (req, res) => {
