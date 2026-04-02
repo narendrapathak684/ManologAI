@@ -841,20 +841,19 @@ export default function TrackPage() {
                       Daily Emotion
                     </CardTitle>
                     <CardDescription>
-                      Select how you feel today and sync it with the backend
-                      emotion tracker.
+                      Select how you feel today and save it to your log.
                     </CardDescription>
                     {emotionLoaded && (
                       <p className="text-xs text-slate-500">
                         {emotionLocked
                           ? "Today's emotion entry is locked by the backend after 24 hours."
-                          : "Your selected emotion is saved through the backend `/emotions` route."}
+                          : ""}
                       </p>
                     )}
                   </div>
                 </CardHeader>
                 <CardContent className="flex flex-1 flex-col space-y-5">
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2">
                     {emotionOptions.map((option) => {
                       const isSelected = selectedEmotion === option.value;
                       return (
@@ -876,9 +875,6 @@ export default function TrackPage() {
                             <span className="flex flex-col">
                               <span className="font-semibold">
                                 {option.label}
-                              </span>
-                              <span className="text-[10px] uppercase tracking-[0.18em] text-current/70">
-                                {option.value}
                               </span>
                             </span>
                           </div>

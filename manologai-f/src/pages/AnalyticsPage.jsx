@@ -18,6 +18,8 @@ import {
   Tooltip,
   BarChart,
   Bar,
+  PieChart,
+  Pie,
   Cell,
   Legend,
 } from "recharts";
@@ -73,6 +75,17 @@ const EMOTION_SCORES = {
   angry: 1,
 };
 
+const EMOTION_COLORS = {
+  excited: "#f472b6",
+  happy: "#34d399",
+  calm: "#38bdf8",
+  neutral: "#94a3b8",
+  tired: "#a78bfa",
+  stressed: "#f59e0b",
+  sad: "#60a5fa",
+  angry: "#fb7185",
+};
+
 const EMOTION_LABELS = Object.entries(EMOTION_SCORES).reduce(
   (acc, [emotion, score]) => {
     acc[score] = emotion;
@@ -90,15 +103,23 @@ const formatEmotionLabel = (value) => {
 export default function AnalyticsPage() {
   const [pageLoading, setPageLoading] = useState(true);
   const [lifeData, setLifeData] = useState([]);
-  const [moodData, setMoodData] = useState([]);
+  const [moodBarData, setMoodBarData] = useState([]);
+  const [moodLineData, setMoodLineData] = useState([]);
+  const [moodPieData, setMoodPieData] = useState([]);
   const [timeData, setTimeData] = useState([]);
   const [expenseData, setExpenseData] = useState([]);
   const [habits, setHabits] = useState([]);
   const [lifeLoading, setLifeLoading] = useState(false);
+  const [moodBarLoading, setMoodBarLoading] = useState(false);
+  const [moodLineLoading, setMoodLineLoading] = useState(false);
+  const [moodPieLoading, setMoodPieLoading] = useState(false);
   const [timeLoading, setTimeLoading] = useState(false);
   const [expenseLoading, setExpenseLoading] = useState(false);
   const [error, setError] = useState("");
   const [lifeAverageRange, setLifeAverageRange] = useState("month");
+  const [moodBarRange, setMoodBarRange] = useState("month");
+  const [moodLineRange, setMoodLineRange] = useState("month");
+  const [moodPieRange, setMoodPieRange] = useState("month");
   const [timeRange, setTimeRange] = useState("week");
   const [expenseRange, setExpenseRange] = useState("week");
   const { user } = useAuth();
@@ -119,7 +140,14 @@ export default function AnalyticsPage() {
       try {
         await Promise.all([
           fetchLifeData(lifeAverageRange, true),
-          fetchMoodData(true),
+          fetchMoodData(moodBarRange, setMoodBarData, setMoodBarLoading, true),
+          fetchMoodData(
+            moodLineRange,
+            setMoodLineData,
+            setMoodLineLoading,
+            true,
+          ),
+          fetchMoodData(moodPieRange, setMoodPieData, setMoodPieLoading, true),
           fetchTimeData(timeRange, true),
           fetchExpenseData(expenseRange, true),
           fetchHabits(true),
@@ -137,6 +165,21 @@ export default function AnalyticsPage() {
     if (!hasInitialized.current) return;
     fetchLifeData(lifeAverageRange);
   }, [lifeAverageRange]);
+
+  useEffect(() => {
+    if (!hasInitialized.current) return;
+    fetchMoodData(moodBarRange, setMoodBarData, setMoodBarLoading);
+  }, [moodBarRange]);
+
+  useEffect(() => {
+    if (!hasInitialized.current) return;
+    fetchMoodData(moodLineRange, setMoodLineData, setMoodLineLoading);
+  }, [moodLineRange]);
+
+  useEffect(() => {
+    if (!hasInitialized.current) return;
+    fetchMoodData(moodPieRange, setMoodPieData, setMoodPieLoading);
+  }, [moodPieRange]);
 
   useEffect(() => {
     if (!hasInitialized.current) return;
@@ -187,26 +230,37 @@ export default function AnalyticsPage() {
     }
   };
 
-  const fetchMoodData = async (isInitial = false) => {
+  const fetchMoodData = async (
+    range,
+    setData,
+    setLoading,
+    isInitial = false,
+  ) => {
+    setLoading(true);
     if (!isInitial) {
       setError("");
     }
     try {
-      const { data: emoJson } = await api.get("/emotions/month");
+      const { data: emoJson } = await api.get(`/emotions/range/${range}`);
+      const moodLabelOptions =
+        range === "week"
+          ? { weekday: "short" }
+          : { month: "short", day: "numeric" };
       const formattedMoods = emoJson.emotions.map((e) => ({
         date: new Date(e.date).toLocaleDateString(undefined, {
-          month: "short",
-          day: "numeric",
+          ...moodLabelOptions,
         }),
         score: EMOTION_SCORES[e.emotion] || 3,
         emotion: e.emotion,
       }));
-      setMoodData(formattedMoods);
+      setData(formattedMoods);
     } catch (err) {
       console.error("Analytics fetch failed:", err);
       setError(
         "Unable to connect to the intelligence engine. Please check your connection.",
       );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -290,13 +344,36 @@ export default function AnalyticsPage() {
   };
 
   const avgMood = useMemo(() => {
-    if (moodData.length === 0) return "Neutral";
-    const sum = moodData.reduce((acc, curr) => acc + curr.score, 0);
-    const avg = sum / moodData.length;
+    if (moodBarData.length === 0) return "Neutral";
+    const sum = moodBarData.reduce((acc, curr) => acc + curr.score, 0);
+    const avg = sum / moodBarData.length;
     if (avg >= 4) return "Positive";
     if (avg >= 2.5) return "Stable";
     return "Volatile";
-  }, [moodData]);
+  }, [moodBarData]);
+
+  const moodRangeLabel = useMemo(() => {
+    if (moodBarRange === "week") return "last 7d";
+    if (moodBarRange === "year") return "last 365d";
+    return "last 30d";
+  }, [moodBarRange]);
+
+  const emotionDistribution = useMemo(() => {
+    if (moodPieData.length === 0) return [];
+    const counts = moodPieData.reduce((acc, curr) => {
+      const key = curr.emotion || "neutral";
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
+
+    return Object.entries(counts)
+      .map(([emotion, value]) => ({
+        name: `${emotion[0].toUpperCase()}${emotion.slice(1)}`,
+        value,
+        color: EMOTION_COLORS[emotion] || "#f472b6",
+      }))
+      .sort((a, b) => b.value - a.value);
+  }, [moodPieData]);
 
   const expenseCurrency = user?.currency || "USD";
   const expenseSymbol = (() => {
@@ -492,7 +569,9 @@ export default function AnalyticsPage() {
                       <span className="text-3xl font-bold text-white">
                         {avgMood}
                       </span>
-                      <span className="text-xs text-slate-500">last 30d</span>
+                      <span className="text-xs text-slate-500">
+                        {moodRangeLabel}
+                      </span>
                     </div>
                     <div className="flex items-center gap-1 text-[10px] text-emerald-400 mt-2">
                       <ArrowUpRight className="w-3 h-3" /> Stabilising
@@ -583,11 +662,31 @@ export default function AnalyticsPage() {
                     <CardDescription>
                       Fluctuations in your reported emotional state over time.
                     </CardDescription>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {["week", "month", "year"].map((range) => (
+                        <button
+                          key={range}
+                          type="button"
+                          onClick={() => setMoodBarRange(range)}
+                          className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-widest transition-all ${
+                            moodBarRange === range
+                              ? "border-pink-400/60 bg-pink-400/10 text-pink-200"
+                              : "border-white/10 text-slate-400 hover:border-white/30 hover:text-slate-200"
+                          }`}
+                        >
+                          {range}
+                        </button>
+                      ))}
+                    </div>
                   </CardHeader>
                   <CardContent className="h-[300px] w-full pr-6">
-                    {moodData.length > 0 ? (
+                    {moodBarLoading ? (
+                      <div className="h-full flex items-center justify-center">
+                        <div className="h-10 w-10 rounded-full border-2 border-pink-400/40 border-t-pink-400 animate-spin" />
+                      </div>
+                    ) : moodBarData.length > 0 ? (
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={moodData}>
+                        <BarChart data={moodBarData}>
                           <CartesianGrid
                             strokeDasharray="3 3"
                             stroke="#ffffff10"
@@ -622,16 +721,203 @@ export default function AnalyticsPage() {
                               "Emotion",
                             ]}
                           />
-                          <Bar
-                            dataKey="score"
-                            fill="#ec4899"
-                            radius={[6, 6, 0, 0]}
-                          />
+                          <Bar dataKey="score" radius={[6, 6, 0, 0]}>
+                            {moodBarData.map((entry) => (
+                              <Cell
+                                key={`bar-${entry.date}`}
+                                fill={
+                                  EMOTION_COLORS[entry.emotion] || "#ec4899"
+                                }
+                              />
+                            ))}
+                          </Bar>
                         </BarChart>
                       </ResponsiveContainer>
                     ) : (
                       <div className="h-full flex items-center justify-center text-slate-600 text-sm font-mono italic">
                         Log more emotions to see trends
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* Emotion Over Time Line Chart */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.45 }}
+              >
+                <Card className="border-indigo-500/20 bg-gradient-to-br from-indigo-500/8 via-slate-900/70 to-slate-950/95 backdrop-blur-xl overflow-hidden min-h-[420px]">
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center gap-2">
+                      <Activity className="h-5 w-5 text-indigo-400" />
+                      Emotion Over Time
+                    </CardTitle>
+                    <CardDescription>
+                      Timeline view of your daily emotion entries.
+                    </CardDescription>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {["week", "month", "year"].map((range) => (
+                        <button
+                          key={range}
+                          type="button"
+                          onClick={() => setMoodLineRange(range)}
+                          className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-widest transition-all ${
+                            moodLineRange === range
+                              ? "border-indigo-400/60 bg-indigo-400/10 text-indigo-200"
+                              : "border-white/10 text-slate-400 hover:border-white/30 hover:text-slate-200"
+                          }`}
+                        >
+                          {range}
+                        </button>
+                      ))}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="h-[300px] w-full pr-6">
+                    {moodLineLoading ? (
+                      <div className="h-full flex items-center justify-center">
+                        <div className="h-10 w-10 rounded-full border-2 border-indigo-400/40 border-t-indigo-400 animate-spin" />
+                      </div>
+                    ) : moodLineData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={moodLineData}>
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            stroke="#ffffff10"
+                            vertical={false}
+                          />
+                          <XAxis
+                            dataKey="date"
+                            stroke="#64748b"
+                            fontSize={10}
+                            tickLine={false}
+                            axisLine={false}
+                          />
+                          <YAxis
+                            domain={[1, 5]}
+                            ticks={[1, 1.5, 2, 2.5, 3, 3.5, 4, 5]}
+                            stroke="#64748b"
+                            fontSize={10}
+                            tickLine={false}
+                            axisLine={false}
+                            tickFormatter={formatEmotionLabel}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: "#0f172a",
+                              borderRadius: "12px",
+                              border: "1px solid #ffffff10",
+                              fontSize: "10px",
+                            }}
+                            formatter={(value) => [
+                              formatEmotionLabel(value),
+                              "Emotion",
+                            ]}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="score"
+                            stroke="#64748b"
+                            strokeWidth={3}
+                            dot={({ cx, cy, payload }) => (
+                              <circle
+                                cx={cx}
+                                cy={cy}
+                                r={4}
+                                fill={
+                                  EMOTION_COLORS[payload?.emotion] || "#818cf8"
+                                }
+                                stroke="#0f172a"
+                                strokeWidth={1}
+                              />
+                            )}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-full flex items-center justify-center text-slate-600 text-sm font-mono italic">
+                        Log more emotions to see the timeline
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* Emotion Distribution Pie Chart */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                <Card className="border-cyan-500/20 bg-gradient-to-br from-cyan-500/8 via-slate-900/70 to-slate-950/95 backdrop-blur-xl overflow-hidden min-h-[420px]">
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center gap-2">
+                      <Activity className="h-5 w-5 text-cyan-400" />
+                      Emotion Distribution
+                    </CardTitle>
+                    <CardDescription>
+                      Breakdown of emotions logged in this period.
+                    </CardDescription>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {["week", "month", "year"].map((range) => (
+                        <button
+                          key={range}
+                          type="button"
+                          onClick={() => setMoodPieRange(range)}
+                          className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-widest transition-all ${
+                            moodPieRange === range
+                              ? "border-cyan-400/60 bg-cyan-400/10 text-cyan-200"
+                              : "border-white/10 text-slate-400 hover:border-white/30 hover:text-slate-200"
+                          }`}
+                        >
+                          {range}
+                        </button>
+                      ))}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="h-[300px] w-full">
+                    {moodPieLoading ? (
+                      <div className="h-full flex items-center justify-center">
+                        <div className="h-10 w-10 rounded-full border-2 border-cyan-400/40 border-t-cyan-400 animate-spin" />
+                      </div>
+                    ) : emotionDistribution.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: "#0f172a",
+                              borderRadius: "12px",
+                              border: "1px solid #ffffff10",
+                              fontSize: "10px",
+                            }}
+                            formatter={(value) => [value, "Days"]}
+                          />
+                          <Legend
+                            wrapperStyle={{
+                              paddingTop: "12px",
+                              fontSize: "10px",
+                            }}
+                          />
+                          <Pie
+                            data={emotionDistribution}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={100}
+                            paddingAngle={2}
+                          >
+                            {emotionDistribution.map((entry) => (
+                              <Cell key={entry.name} fill={entry.color} />
+                            ))}
+                          </Pie>
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-full flex items-center justify-center text-slate-600 text-sm font-mono italic">
+                        Log more emotions to see distribution
                       </div>
                     )}
                   </CardContent>
