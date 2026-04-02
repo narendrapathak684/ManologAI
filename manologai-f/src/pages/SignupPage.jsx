@@ -224,6 +224,7 @@ export default function SignupPage() {
     password: "",
     confirmPassword: "",
   });
+  const maxNameLength = 30;
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -251,8 +252,20 @@ export default function SignupPage() {
     try {
       // Split name into firstName and lastName
       const nameParts = formData.name.trim().split(" ");
-      const firstName = nameParts[0];
+      const firstName = nameParts[0] || "";
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
+
+      if (firstName.length > maxNameLength) {
+        setError(`First name must be ${maxNameLength} characters or fewer`);
+        setLoading(false);
+        return;
+      }
+
+      if (lastName.length > maxNameLength) {
+        setError(`Last name must be ${maxNameLength} characters or fewer`);
+        setLoading(false);
+        return;
+      }
 
       const { data } = await api.post("/auth/signup", {
         email: formData.email,
@@ -317,6 +330,7 @@ export default function SignupPage() {
                   name="name"
                   placeholder="John Doe"
                   required
+                  maxLength={maxNameLength * 2 + 1}
                   value={formData.name}
                   onChange={handleChange}
                   className="bg-black/20 border-white/10 text-white placeholder:text-slate-600 focus-visible:ring-pink-500"

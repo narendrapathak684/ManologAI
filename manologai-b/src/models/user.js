@@ -19,10 +19,12 @@ const userSchema = new mongoose.Schema({
   firstName: {
     type: String,
     trim: true,
+    maxlength: 30,
   },
   lastName: {
     type: String,
     trim: true,
+    maxlength: 30,
   },
   country: {
     type: String,

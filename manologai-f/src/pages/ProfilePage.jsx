@@ -54,6 +54,7 @@ export default function ProfilePage() {
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
   });
+  const maxNameLength = 30;
   const [profileStatus, setProfileStatus] = useState({
     type: null,
     message: "",
@@ -129,6 +130,22 @@ export default function ProfilePage() {
     e.preventDefault();
     setIsSavingProfile(true);
     setProfileStatus({ type: null, message: "" });
+    if (profileForm.firstName.length > maxNameLength) {
+      setProfileStatus({
+        type: "error",
+        message: `First name must be ${maxNameLength} characters or fewer`,
+      });
+      setIsSavingProfile(false);
+      return;
+    }
+    if (profileForm.lastName.length > maxNameLength) {
+      setProfileStatus({
+        type: "error",
+        message: `Last name must be ${maxNameLength} characters or fewer`,
+      });
+      setIsSavingProfile(false);
+      return;
+    }
     try {
       const res = await api.patch("/profile/me", profileForm);
       setProfileStatus({
@@ -393,6 +410,7 @@ export default function ProfilePage() {
                                   firstName: e.target.value,
                                 })
                               }
+                              maxLength={maxNameLength}
                               required
                             />
                           </div>
@@ -409,6 +427,7 @@ export default function ProfilePage() {
                                   lastName: e.target.value,
                                 })
                               }
+                              maxLength={maxNameLength}
                             />
                           </div>
                         </div>

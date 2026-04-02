@@ -36,6 +36,31 @@ router.patch("/me", auth, async (req, res) => {
     }
 
     const updates = req.body;
+    const maxNameLength = 30;
+
+    if (updates.firstName !== undefined) {
+      if (typeof updates.firstName !== "string") {
+        return res.status(400).json({ error: "First name must be a string" });
+      }
+      updates.firstName = updates.firstName.trim();
+      if (updates.firstName.length > maxNameLength) {
+        return res.status(400).json({
+          error: `First name must be ${maxNameLength} characters or fewer`,
+        });
+      }
+    }
+
+    if (updates.lastName !== undefined) {
+      if (typeof updates.lastName !== "string") {
+        return res.status(400).json({ error: "Last name must be a string" });
+      }
+      updates.lastName = updates.lastName.trim();
+      if (updates.lastName.length > maxNameLength) {
+        return res.status(400).json({
+          error: `Last name must be ${maxNameLength} characters or fewer`,
+        });
+      }
+    }
 
     // Security: explicitly prevent updating email and password via this route
     delete updates.email;

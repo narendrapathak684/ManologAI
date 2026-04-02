@@ -20,6 +20,23 @@ const cookieOptions = {
 router.post("/signup", async (req, res) => {
   try {
     const { email, password, firstName, lastName, country } = req.body || {};
+    const normalizedFirstName =
+      typeof firstName === "string" ? firstName.trim() : "";
+    const normalizedLastName =
+      typeof lastName === "string" ? lastName.trim() : "";
+    const maxNameLength = 30;
+
+    if (normalizedFirstName.length > maxNameLength) {
+      return res.status(400).json({
+        error: `First name must be ${maxNameLength} characters or fewer`,
+      });
+    }
+
+    if (normalizedLastName.length > maxNameLength) {
+      return res.status(400).json({
+        error: `Last name must be ${maxNameLength} characters or fewer`,
+      });
+    }
 
     if (!country || typeof country !== "string" || !country.trim()) {
       return res.status(400).json({ error: "Country is required" });
@@ -55,8 +72,8 @@ router.post("/signup", async (req, res) => {
     const user = await User.create({
       email: normalizedEmail,
       passwordHash,
-      firstName,
-      lastName,
+      firstName: normalizedFirstName,
+      lastName: normalizedLastName,
       country: normalizedCountry,
       currency: getCurrencyForCountry(normalizedCountry),
     });
