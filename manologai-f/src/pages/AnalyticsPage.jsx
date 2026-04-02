@@ -97,6 +97,20 @@ const EMOTION_LABELS = Object.entries(EMOTION_SCORES).reduce(
   {},
 );
 
+const LIFE_RATING_FIELDS = [
+  { key: "health", label: "Health" },
+  { key: "finances", label: "Finances" },
+  { key: "career", label: "Career" },
+  { key: "partner", label: "Partner" },
+  { key: "familyFriends", label: "Family" },
+  { key: "physicalEnvironment", label: "Environment" },
+  { key: "funRecreation", label: "Fun" },
+  { key: "personalGrowth", label: "Growth" },
+];
+
+const HABIT_IMPACT_THRESHOLD = 1;
+const HABIT_IMPACT_MIN_SAMPLES = 2;
+
 const formatEmotionLabel = (value) => {
   const label = EMOTION_LABELS[value];
   if (!label) return value;
@@ -144,6 +158,16 @@ const WEEKDAY_FULL = {
   Sun: "Sunday",
 };
 
+const getRangeWindow = (range) => {
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+  const from = new Date(today);
+  const daysBack = range === "year" ? 364 : range === "week" ? 6 : 29;
+  from.setDate(from.getDate() - daysBack);
+  from.setHours(0, 0, 0, 0);
+  return { from, to: today, days: daysBack + 1 };
+};
+
 export default function AnalyticsPage() {
   const location = useLocation();
   const [pageLoading, setPageLoading] = useState(true);
@@ -155,6 +179,7 @@ export default function AnalyticsPage() {
   const [expenseData, setExpenseData] = useState([]);
   const [sleepEmotionData, setSleepEmotionData] = useState([]);
   const [dayEmotionData, setDayEmotionData] = useState([]);
+  const [habitImpactData, setHabitImpactData] = useState([]);
   const [habits, setHabits] = useState([]);
   const [lifeLoading, setLifeLoading] = useState(false);
   const [moodBarLoading, setMoodBarLoading] = useState(false);
@@ -164,6 +189,7 @@ export default function AnalyticsPage() {
   const [expenseLoading, setExpenseLoading] = useState(false);
   const [sleepEmotionLoading, setSleepEmotionLoading] = useState(false);
   const [dayEmotionLoading, setDayEmotionLoading] = useState(false);
+  const [habitImpactLoading, setHabitImpactLoading] = useState(false);
   const [error, setError] = useState("");
   const [lifeAverageRange, setLifeAverageRange] = useState("month");
   const [moodBarRange, setMoodBarRange] = useState("month");
@@ -175,6 +201,7 @@ export default function AnalyticsPage() {
   const [sleepEmotionView, setSleepEmotionView] = useState("scatter");
   const [insightMetric, setInsightMetric] = useState("sleep");
   const [dayEmotionRange, setDayEmotionRange] = useState("month");
+  const [habitImpactRange, setHabitImpactRange] = useState("month");
   const { user } = useAuth();
   const hasInitialized = useRef(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
@@ -228,6 +255,7 @@ export default function AnalyticsPage() {
           fetchExpenseData(expenseRange, true),
           fetchSleepEmotionData(sleepEmotionRange, true),
           fetchDayEmotionData(dayEmotionRange, true),
+          fetchHabitImpactData(habitImpactRange, true),
           fetchHabits(true),
         ]);
       } finally {
@@ -278,6 +306,11 @@ export default function AnalyticsPage() {
     if (!hasInitialized.current) return;
     fetchDayEmotionData(dayEmotionRange);
   }, [dayEmotionRange]);
+
+  useEffect(() => {
+    if (!hasInitialized.current) return;
+    fetchHabitImpactData(habitImpactRange);
+  }, [habitImpactRange]);
 
   const buildLifeRadarData = (averages) => [
     { subject: "Health", A: averages?.health ?? 0, fullMark: 10 },
@@ -512,6 +545,111 @@ export default function AnalyticsPage() {
     }
   };
 
+  const fetchHabitImpactData = async (range, isInitial = false) => {
+    setHabitImpactLoading(true);
+    if (!isInitial) {
+      setError("");
+    }
+    try {
+      const { from, to, days } = getRangeWindow(range);
+      const fromKey = toDateKey(from);
+      const toKey = toDateKey(to);
+      const [{ data: ratingsJson }, { data: habitsJson }] = await Promise.all([
+        api.get(
+          `/life-ratings/range?from=${fromKey}&to=${toKey}&limit=${days}`,
+        ),
+        api.get("/habits"),
+      ]);
+
+      const entries = ratingsJson.entries || [];
+      const habitsList = habitsJson.habits || [];
+      if (entries.length === 0 || habitsList.length === 0) {
+        setHabitImpactData([]);
+        return;
+      }
+
+      const ratingByDate = new Map();
+      entries.forEach((entry) => {
+        ratingByDate.set(toDateKey(entry.date), entry.ratings || {});
+      });
+
+      const baseline = LIFE_RATING_FIELDS.reduce((acc, field) => {
+        const values = entries
+          .map((entry) => entry.ratings?.[field.key])
+          .filter((value) => Number.isFinite(value));
+        acc[field.key] = values.length
+          ? values.reduce((sum, v) => sum + v, 0) / values.length
+          : null;
+        return acc;
+      }, {});
+
+      const impacts = [];
+      habitsList.forEach((habit) => {
+        const completedSet = new Set(
+          (habit.history || [])
+            .filter((entry) => entry.completed)
+            .map((entry) => toDateKey(entry.date)),
+        );
+
+        LIFE_RATING_FIELDS.forEach((field) => {
+          const withValues = [];
+          const withoutValues = [];
+
+          ratingByDate.forEach((ratings, dateKey) => {
+            const value = ratings?.[field.key];
+            if (!Number.isFinite(value)) return;
+            if (completedSet.has(dateKey)) {
+              withValues.push(value);
+            } else {
+              withoutValues.push(value);
+            }
+          });
+
+          if (
+            withValues.length < HABIT_IMPACT_MIN_SAMPLES ||
+            withoutValues.length < HABIT_IMPACT_MIN_SAMPLES
+          ) {
+            return;
+          }
+
+          const avgWith =
+            withValues.reduce((sum, v) => sum + v, 0) / withValues.length;
+          const avgWithout =
+            withoutValues.reduce((sum, v) => sum + v, 0) / withoutValues.length;
+          const impact = avgWith - avgWithout;
+
+          if (Math.abs(impact) < HABIT_IMPACT_THRESHOLD) {
+            return;
+          }
+
+          impacts.push({
+            habitId: habit._id,
+            habitName: habit.name,
+            ratingKey: field.key,
+            ratingLabel: field.label,
+            impact,
+            avgWith,
+            avgWithout,
+            baseline: baseline[field.key],
+            countWith: withValues.length,
+            countWithout: withoutValues.length,
+          });
+        });
+      });
+
+      impacts.sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact));
+      setHabitImpactData(impacts);
+    } catch (err) {
+      console.error("Analytics fetch failed:", err);
+      setError(
+        "Unable to connect to the intelligence engine. Please check your connection.",
+      );
+      setHabitImpactData([]);
+    } finally {
+      setHabitImpactLoading(false);
+    }
+  };
+
   const fetchExpenseData = async (range, isInitial = false) => {
     setExpenseLoading(true);
     if (!isInitial) {
@@ -665,6 +803,37 @@ export default function AnalyticsPage() {
     }
     return `You tend to feel more ${bestDay.emotionLabel.toLowerCase()} on ${dayLabel}.`;
   }, [dayEmotionData]);
+
+  const habitImpactTop = useMemo(
+    () => habitImpactData.slice(0, 8),
+    [habitImpactData],
+  );
+
+  const habitImpactInsights = useMemo(() => {
+    if (habitImpactData.length === 0) {
+      return ["Log habits and life ratings to unlock impact insights."];
+    }
+    const positives = habitImpactData
+      .filter((item) => item.impact > 0)
+      .slice(0, 2);
+    const negatives = habitImpactData
+      .filter((item) => item.impact < 0)
+      .slice(0, 2);
+
+    const formatImpact = (item) => {
+      const baseline = Number.isFinite(item.baseline)
+        ? item.baseline.toFixed(1)
+        : "—";
+      const avg = item.avgWith.toFixed(1);
+      const delta = Math.abs(item.impact).toFixed(1);
+      if (item.impact > 0) {
+        return `On days you do ${item.habitName}, ${item.ratingLabel} averages ${avg} vs baseline ${baseline} (+${delta}).`;
+      }
+      return `On days you do ${item.habitName}, ${item.ratingLabel} averages ${avg} vs baseline ${baseline} (-${delta}).`;
+    };
+
+    return [...positives, ...negatives].map(formatImpact);
+  }, [habitImpactData]);
 
   const expenseCurrency = user?.currency || "USD";
   const expenseSymbol = (() => {
@@ -1619,6 +1788,114 @@ export default function AnalyticsPage() {
                     </CardContent>
                     <div className="px-6 pb-6 text-xs text-slate-400">
                       {dayEmotionInsight}
+                    </div>
+                  </Card>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.65 }}
+                  className="mt-6"
+                >
+                  <Card className="border-emerald-500/20 bg-gradient-to-br from-emerald-500/8 via-slate-900/70 to-slate-950/95 backdrop-blur-xl overflow-hidden min-h-[360px]">
+                    <CardHeader>
+                      <CardTitle className="text-white flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5 text-emerald-400" />
+                        Habit Impact Engine
+                      </CardTitle>
+                      <CardDescription>
+                        Habits correlated with your life ratings.
+                      </CardDescription>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {[
+                          { key: "week", label: "week" },
+                          { key: "month", label: "month" },
+                          { key: "year", label: "year" },
+                        ].map((range) => (
+                          <button
+                            key={range.key}
+                            type="button"
+                            onClick={() => setHabitImpactRange(range.key)}
+                            className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-widest transition-all ${
+                              habitImpactRange === range.key
+                                ? "border-emerald-400/60 bg-emerald-400/10 text-emerald-200"
+                                : "border-white/10 text-slate-400 hover:border-white/30 hover:text-slate-200"
+                            }`}
+                          >
+                            {range.label}
+                          </button>
+                        ))}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="h-[220px] w-full">
+                      {habitImpactLoading ? (
+                        <div className="h-full flex items-center justify-center">
+                          <div className="h-10 w-10 rounded-full border-2 border-emerald-400/40 border-t-emerald-400 animate-spin" />
+                        </div>
+                      ) : habitImpactTop.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={habitImpactTop} layout="vertical">
+                            <CartesianGrid
+                              strokeDasharray="3 3"
+                              stroke="#ffffff10"
+                              horizontal={false}
+                            />
+                            <XAxis
+                              type="number"
+                              stroke="#64748b"
+                              fontSize={10}
+                              tickLine={false}
+                              axisLine={false}
+                            />
+                            <YAxis
+                              type="category"
+                              dataKey="habitName"
+                              stroke="#64748b"
+                              fontSize={10}
+                              width={90}
+                              tickLine={false}
+                              axisLine={false}
+                            />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: "#0f172a",
+                                borderRadius: "12px",
+                                border: "1px solid #ffffff10",
+                                fontSize: "10px",
+                              }}
+                              formatter={(value, name, payload) => {
+                                const row = payload?.payload;
+                                if (!row) return [value, "Impact"];
+                                const delta = Number(value).toFixed(2);
+                                return [
+                                  `${delta} on ${row.ratingLabel}`,
+                                  "Impact",
+                                ];
+                              }}
+                            />
+                            <Bar dataKey="impact" radius={[6, 6, 6, 6]}>
+                              {habitImpactTop.map((entry) => (
+                                <Cell
+                                  key={`${entry.habitId}-${entry.ratingKey}`}
+                                  fill={
+                                    entry.impact >= 0 ? "#34d399" : "#f87171"
+                                  }
+                                />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="h-full flex items-center justify-center text-slate-600 text-sm font-mono italic">
+                          Log habits and life ratings to see impacts
+                        </div>
+                      )}
+                    </CardContent>
+                    <div className="px-6 pb-6 text-xs text-slate-400 space-y-2">
+                      {habitImpactInsights.map((insight) => (
+                        <p key={insight}>{insight}</p>
+                      ))}
                     </div>
                   </Card>
                 </motion.div>
