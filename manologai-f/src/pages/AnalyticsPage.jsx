@@ -18,6 +18,8 @@ import {
   Tooltip,
   BarChart,
   Bar,
+  ScatterChart,
+  Scatter,
   PieChart,
   Pie,
   Cell,
@@ -33,6 +35,7 @@ import {
   BrainCircuit,
   TrendingUp,
   Clock3,
+  Moon,
   Star,
   Activity,
   ArrowUpRight,
@@ -100,6 +103,14 @@ const formatEmotionLabel = (value) => {
   return `${label[0].toUpperCase()}${label.slice(1)}`;
 };
 
+const toDateKey = (dateInput) => {
+  const date = new Date(dateInput);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 export default function AnalyticsPage() {
   const location = useLocation();
   const [pageLoading, setPageLoading] = useState(true);
@@ -109,6 +120,7 @@ export default function AnalyticsPage() {
   const [moodPieData, setMoodPieData] = useState([]);
   const [timeData, setTimeData] = useState([]);
   const [expenseData, setExpenseData] = useState([]);
+  const [sleepEmotionData, setSleepEmotionData] = useState([]);
   const [habits, setHabits] = useState([]);
   const [lifeLoading, setLifeLoading] = useState(false);
   const [moodBarLoading, setMoodBarLoading] = useState(false);
@@ -116,6 +128,7 @@ export default function AnalyticsPage() {
   const [moodPieLoading, setMoodPieLoading] = useState(false);
   const [timeLoading, setTimeLoading] = useState(false);
   const [expenseLoading, setExpenseLoading] = useState(false);
+  const [sleepEmotionLoading, setSleepEmotionLoading] = useState(false);
   const [error, setError] = useState("");
   const [lifeAverageRange, setLifeAverageRange] = useState("month");
   const [moodBarRange, setMoodBarRange] = useState("month");
@@ -123,6 +136,9 @@ export default function AnalyticsPage() {
   const [moodPieRange, setMoodPieRange] = useState("month");
   const [timeRange, setTimeRange] = useState("week");
   const [expenseRange, setExpenseRange] = useState("week");
+  const [sleepEmotionRange, setSleepEmotionRange] = useState("month");
+  const [sleepEmotionView, setSleepEmotionView] = useState("scatter");
+  const [insightMetric, setInsightMetric] = useState("sleep");
   const { user } = useAuth();
   const hasInitialized = useRef(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
@@ -174,6 +190,7 @@ export default function AnalyticsPage() {
           fetchMoodData(moodPieRange, setMoodPieData, setMoodPieLoading, true),
           fetchTimeData(timeRange, true),
           fetchExpenseData(expenseRange, true),
+          fetchSleepEmotionData(sleepEmotionRange, true),
           fetchHabits(true),
         ]);
       } finally {
@@ -214,6 +231,11 @@ export default function AnalyticsPage() {
     if (!hasInitialized.current) return;
     fetchExpenseData(expenseRange);
   }, [expenseRange]);
+
+  useEffect(() => {
+    if (!hasInitialized.current) return;
+    fetchSleepEmotionData(sleepEmotionRange);
+  }, [sleepEmotionRange]);
 
   const buildLifeRadarData = (averages) => [
     { subject: "Health", A: averages?.health ?? 0, fullMark: 10 },
@@ -321,6 +343,62 @@ export default function AnalyticsPage() {
     }
   };
 
+  const fetchSleepEmotionData = async (range, isInitial = false) => {
+    setSleepEmotionLoading(true);
+    if (!isInitial) {
+      setError("");
+    }
+    try {
+      const timeLimit = range === "year" ? 365 : range === "month" ? 30 : 7;
+      const labelOptions =
+        range === "week"
+          ? { weekday: "short" }
+          : { month: "short", day: "numeric" };
+      const [{ data: timeJson }, { data: emotionJson }] = await Promise.all([
+        api.get("/time-tracker", { params: { limit: timeLimit } }),
+        api.get(`/emotions/range/${range}`),
+      ]);
+
+      const emotionMap = new Map(
+        (emotionJson.emotions || []).map((entry) => [
+          toDateKey(entry.date),
+          entry.emotion,
+        ]),
+      );
+
+      const merged = (timeJson.entries || []).reduce((acc, entry) => {
+        const key = toDateKey(entry.date);
+        const emotion = emotionMap.get(key);
+        if (!emotion) return acc;
+        const sleep = Number(entry.sleep || 0);
+        const screen = Number(entry.screen || 0);
+        const workStudy = Number(entry.workStudy || 0);
+        if (!Number.isFinite(sleep)) return acc;
+        acc.push({
+          sleep,
+          screen,
+          workStudy,
+          emotionScore: EMOTION_SCORES[emotion] || 3,
+          emotion,
+          label: new Date(entry.date).toLocaleDateString(undefined, {
+            ...labelOptions,
+          }),
+        });
+        return acc;
+      }, []);
+
+      setSleepEmotionData(merged);
+    } catch (err) {
+      console.error("Analytics fetch failed:", err);
+      setError(
+        "Unable to connect to the intelligence engine. Please check your connection.",
+      );
+      setSleepEmotionData([]);
+    } finally {
+      setSleepEmotionLoading(false);
+    }
+  };
+
   const fetchExpenseData = async (range, isInitial = false) => {
     setExpenseLoading(true);
     if (!isInitial) {
@@ -398,6 +476,29 @@ export default function AnalyticsPage() {
       }))
       .sort((a, b) => b.value - a.value);
   }, [moodPieData]);
+
+  const insightMetricLabel =
+    insightMetric === "screen"
+      ? "Screen"
+      : insightMetric === "workStudy"
+        ? "Work/Study"
+        : "Sleep";
+
+  const insightPlotData = useMemo(
+    () =>
+      sleepEmotionData.map((entry) => ({
+        x: entry[insightMetric] ?? 0,
+        emotionScore: entry.emotionScore,
+        emotion: entry.emotion,
+        label: entry.label,
+      })),
+    [sleepEmotionData, insightMetric],
+  );
+
+  const insightLineData = useMemo(
+    () => [...insightPlotData].sort((a, b) => a.x - b.x),
+    [insightPlotData],
+  );
 
   const expenseCurrency = user?.currency || "USD";
   const expenseSymbol = (() => {
@@ -1017,6 +1118,231 @@ export default function AnalyticsPage() {
                   </CardContent>
                 </Card>
               </motion.div>
+
+              {/* Insight Engine */}
+              <div className="lg:col-span-2">
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-violet-500/15 text-violet-300">
+                    <BrainCircuit className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
+                      Insight Engine
+                    </p>
+                    <p className="text-sm text-slate-300">
+                      Correlations surfaced from your daily logs.
+                    </p>
+                  </div>
+                </div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.55 }}
+                >
+                  <Card className="border-violet-500/20 bg-gradient-to-br from-violet-500/8 via-slate-900/70 to-slate-950/95 backdrop-blur-xl overflow-hidden min-h-[420px]">
+                    <CardHeader>
+                      <CardTitle className="text-white flex items-center gap-2">
+                        <Moon className="h-5 w-5 text-violet-400" />
+                        {insightMetricLabel} vs Emotion
+                      </CardTitle>
+                      <CardDescription>
+                        Correlation between sleep hours and your emotion score.
+                      </CardDescription>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        {[
+                          { key: "week", label: "week" },
+                          { key: "month", label: "month" },
+                          { key: "year", label: "year" },
+                        ].map((range) => (
+                          <button
+                            key={range.key}
+                            type="button"
+                            onClick={() => setSleepEmotionRange(range.key)}
+                            className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-widest transition-all ${
+                              sleepEmotionRange === range.key
+                                ? "border-violet-400/60 bg-violet-400/10 text-violet-200"
+                                : "border-white/10 text-slate-400 hover:border-white/30 hover:text-slate-200"
+                            }`}
+                          >
+                            {range.label}
+                          </button>
+                        ))}
+                        <div className="ml-auto flex items-center gap-2">
+                          {[
+                            { key: "scatter", label: "Scatter" },
+                            { key: "line", label: "Line" },
+                          ].map((view) => (
+                            <button
+                              key={view.key}
+                              type="button"
+                              onClick={() => setSleepEmotionView(view.key)}
+                              className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-widest transition-all ${
+                                sleepEmotionView === view.key
+                                  ? "border-white/40 bg-white/10 text-white"
+                                  : "border-white/10 text-slate-400 hover:border-white/30 hover:text-slate-200"
+                              }`}
+                            >
+                              {view.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {[
+                          { key: "sleep", label: "Sleep" },
+                          { key: "screen", label: "Screen" },
+                          { key: "workStudy", label: "Work/Study" },
+                        ].map((metric) => (
+                          <button
+                            key={metric.key}
+                            type="button"
+                            onClick={() => setInsightMetric(metric.key)}
+                            className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-widest transition-all ${
+                              insightMetric === metric.key
+                                ? "border-white/40 bg-white/10 text-white"
+                                : "border-white/10 text-slate-400 hover:border-white/30 hover:text-slate-200"
+                            }`}
+                          >
+                            {metric.label}
+                          </button>
+                        ))}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="h-[300px] w-full">
+                      {sleepEmotionLoading ? (
+                        <div className="h-full flex items-center justify-center">
+                          <div className="h-10 w-10 rounded-full border-2 border-violet-400/40 border-t-violet-400 animate-spin" />
+                        </div>
+                      ) : insightPlotData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                          {sleepEmotionView === "scatter" ? (
+                            <ScatterChart
+                              margin={{
+                                top: 20,
+                                right: 30,
+                                left: 0,
+                                bottom: 0,
+                              }}
+                            >
+                              <CartesianGrid
+                                strokeDasharray="3 3"
+                                stroke="#ffffff10"
+                                vertical={false}
+                              />
+                              <XAxis
+                                type="number"
+                                dataKey="x"
+                                stroke="#64748b"
+                                fontSize={10}
+                                tickLine={false}
+                                axisLine={false}
+                                unit="h"
+                              />
+                              <YAxis
+                                type="number"
+                                dataKey="emotionScore"
+                                domain={[1, 5]}
+                                ticks={[1, 1.5, 2, 2.5, 3, 3.5, 4, 5]}
+                                stroke="#64748b"
+                                fontSize={10}
+                                tickLine={false}
+                                axisLine={false}
+                                tickFormatter={formatEmotionLabel}
+                              />
+                              <Tooltip
+                                contentStyle={{
+                                  backgroundColor: "#0f172a",
+                                  borderRadius: "12px",
+                                  border: "1px solid #ffffff10",
+                                  fontSize: "10px",
+                                }}
+                                formatter={(value, name, payload) => {
+                                  if (name === "emotionScore") {
+                                    return [
+                                      formatEmotionLabel(value),
+                                      "Emotion",
+                                    ];
+                                  }
+                                  if (name === "x") {
+                                    return [`${value}h`, insightMetricLabel];
+                                  }
+                                  return [value, name];
+                                }}
+                                labelFormatter={(_, payload) =>
+                                  payload?.[0]?.payload?.label || ""
+                                }
+                              />
+                              <Scatter data={insightPlotData} fill="#a78bfa" />
+                            </ScatterChart>
+                          ) : (
+                            <LineChart data={insightLineData}>
+                              <CartesianGrid
+                                strokeDasharray="3 3"
+                                stroke="#ffffff10"
+                                vertical={false}
+                              />
+                              <XAxis
+                                type="number"
+                                dataKey="x"
+                                stroke="#64748b"
+                                fontSize={10}
+                                tickLine={false}
+                                axisLine={false}
+                                unit="h"
+                              />
+                              <YAxis
+                                type="number"
+                                domain={[1, 5]}
+                                ticks={[1, 1.5, 2, 2.5, 3, 3.5, 4, 5]}
+                                stroke="#64748b"
+                                fontSize={10}
+                                tickLine={false}
+                                axisLine={false}
+                                tickFormatter={formatEmotionLabel}
+                              />
+                              <Tooltip
+                                contentStyle={{
+                                  backgroundColor: "#0f172a",
+                                  borderRadius: "12px",
+                                  border: "1px solid #ffffff10",
+                                  fontSize: "10px",
+                                }}
+                                formatter={(value, name, payload) => {
+                                  if (name === "emotionScore") {
+                                    return [
+                                      formatEmotionLabel(value),
+                                      "Emotion",
+                                    ];
+                                  }
+                                  if (name === "x") {
+                                    return [`${value}h`, insightMetricLabel];
+                                  }
+                                  return [value, name];
+                                }}
+                                labelFormatter={(_, payload) =>
+                                  payload?.[0]?.payload?.label || ""
+                                }
+                              />
+                              <Line
+                                type="monotone"
+                                dataKey="emotionScore"
+                                stroke="#a78bfa"
+                                strokeWidth={3}
+                                dot={{ r: 3 }}
+                              />
+                            </LineChart>
+                          )}
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="h-full flex items-center justify-center text-slate-600 text-sm font-mono italic">
+                          Log sleep and emotions to see the correlation
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </div>
 
               {/* Time Tracker Composition Chart */}
               <motion.div
