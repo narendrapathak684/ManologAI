@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Radar,
@@ -101,6 +101,7 @@ const formatEmotionLabel = (value) => {
 };
 
 export default function AnalyticsPage() {
+  const location = useLocation();
   const [pageLoading, setPageLoading] = useState(true);
   const [lifeData, setLifeData] = useState([]);
   const [moodBarData, setMoodBarData] = useState([]);
@@ -132,6 +133,29 @@ export default function AnalyticsPage() {
   useEffect(() => {
     localStorage.setItem("sidebar-collapsed", JSON.stringify(isSidebarOpen));
   }, [isSidebarOpen]);
+
+  useEffect(() => {
+    if (!location.hash || pageLoading) return;
+    const targetId = location.hash.slice(1);
+    if (!targetId) return;
+
+    let attempts = 0;
+    const maxAttempts = 12;
+    const tryScroll = () => {
+      const target = document.getElementById(targetId);
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+      attempts += 1;
+      if (attempts < maxAttempts) {
+        setTimeout(tryScroll, 120);
+      }
+    };
+
+    const handle = requestAnimationFrame(tryScroll);
+    return () => cancelAnimationFrame(handle);
+  }, [location.hash, pageLoading]);
 
   useEffect(() => {
     const init = async () => {
@@ -996,6 +1020,7 @@ export default function AnalyticsPage() {
 
               {/* Time Tracker Composition Chart */}
               <motion.div
+                id="time-allocation"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}

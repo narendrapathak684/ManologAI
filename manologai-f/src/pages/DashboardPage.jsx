@@ -879,157 +879,168 @@ export default function DashboardPage() {
                 </Card>
 
                 <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-                  <Card className="border-pink-500/20 bg-gradient-to-br from-pink-500/10 via-slate-900/70 to-slate-950/95 backdrop-blur-xl">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-white">
-                        <BookOpenText className="h-5 w-5 text-pink-400" />
-                        Journal
-                      </CardTitle>
-                      <CardDescription>
-                        Prompts to help you turn thoughts into useful
-                        reflection.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      {journalEntries.map((entry, index) => (
-                        <div
-                          key={entry}
-                          className={`rounded-2xl border p-4 text-sm leading-6 text-slate-300 ${
-                            journalEntryThemes[
-                              index % journalEntryThemes.length
-                            ]
-                          }`}
-                        >
-                          {entry}
-                        </div>
-                      ))}
-                    </CardContent>
+                  <Card className="border-pink-500/20 bg-gradient-to-br from-pink-500/10 via-slate-900/70 to-slate-950/95 backdrop-blur-xl transition-transform hover:-translate-y-0.5">
+                    <Link to="/journal" className="block h-full">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-white">
+                          <BookOpenText className="h-5 w-5 text-pink-400" />
+                          Journal
+                        </CardTitle>
+                        <CardDescription>
+                          Prompts to help you turn thoughts into useful
+                          reflection.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {journalEntries.map((entry, index) => (
+                          <div
+                            key={entry}
+                            className={`rounded-2xl border p-4 text-sm leading-6 text-slate-300 ${
+                              journalEntryThemes[
+                                index % journalEntryThemes.length
+                              ]
+                            }`}
+                          >
+                            {entry}
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Link>
                   </Card>
 
-                  <Card className="border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 via-slate-900/70 to-slate-950/95 backdrop-blur-xl">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-white">
-                        <Clock3 className="h-5 w-5 text-emerald-400" />
-                        Track
-                      </CardTitle>
-                      <CardDescription>
-                        Your quick quantitative snapshot for today.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      {averagesError && (
-                        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-xs text-rose-200">
-                          {averagesError}
-                        </div>
-                      )}
-                      {trackingItems.map((item, index) => (
-                        <div
-                          key={item.label}
-                          className={`flex items-center justify-between rounded-xl border px-4 py-3 ${
-                            trackingItemThemes[
-                              index % trackingItemThemes.length
-                            ]
-                          }`}
-                        >
-                          <span className="text-sm text-slate-400">
-                            {item.label}
-                          </span>
-                          <span className="text-sm font-medium text-slate-100">
-                            {item.value}
-                          </span>
-                        </div>
-                      ))}
-                    </CardContent>
+                  <Card className="border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 via-slate-900/70 to-slate-950/95 backdrop-blur-xl transition-transform hover:-translate-y-0.5">
+                    <Link
+                      to="/analytics#time-allocation"
+                      className="block h-full"
+                    >
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-white">
+                          <Clock3 className="h-5 w-5 text-emerald-400" />
+                          Track
+                        </CardTitle>
+                        <CardDescription>
+                          Your quick quantitative snapshot for today.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {averagesError && (
+                          <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-xs text-rose-200">
+                            {averagesError}
+                          </div>
+                        )}
+                        {trackingItems.map((item, index) => (
+                          <div
+                            key={item.label}
+                            className={`flex items-center justify-between rounded-xl border px-4 py-3 ${
+                              trackingItemThemes[
+                                index % trackingItemThemes.length
+                              ]
+                            }`}
+                          >
+                            <span className="text-sm text-slate-400">
+                              {item.label}
+                            </span>
+                            <span className="text-sm font-medium text-slate-100">
+                              {item.value}
+                            </span>
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Link>
                   </Card>
                 </div>
               </div>
 
               <div className="grid gap-6">
                 <div className="grid gap-6">
-                  <Card className="border-indigo-500/20 bg-gradient-to-br from-indigo-500/10 via-slate-900/70 to-slate-950/95 backdrop-blur-xl">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-white">
-                        <ChartColumnBig className="h-5 w-5 text-indigo-400" />
-                        Analytics
-                      </CardTitle>
-                      <CardDescription>
-                        A fast read on momentum across your week.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="rounded-2xl border border-indigo-500/30 bg-indigo-500/15 p-5">
-                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-indigo-300">
-                          Weekly trend
-                        </p>
-                        <p className="mt-3 text-3xl font-black text-white">
-                          +18%
-                        </p>
-                        <p className="mt-2 text-sm leading-6 text-slate-300">
-                          Your consistency is up compared with last week, mostly
-                          driven by lower screen time and stronger morning
-                          focus.
-                        </p>
-                      </div>
+                  <Card className="border-indigo-500/20 bg-gradient-to-br from-indigo-500/10 via-slate-900/70 to-slate-950/95 backdrop-blur-xl transition-transform hover:-translate-y-0.5">
+                    <Link to="/analytics" className="block h-full">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-white">
+                          <ChartColumnBig className="h-5 w-5 text-indigo-400" />
+                          Analytics
+                        </CardTitle>
+                        <CardDescription>
+                          A fast read on momentum across your week.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="rounded-2xl border border-indigo-500/30 bg-indigo-500/15 p-5">
+                          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-indigo-300">
+                            Weekly trend
+                          </p>
+                          <p className="mt-3 text-3xl font-black text-white">
+                            +18%
+                          </p>
+                          <p className="mt-2 text-sm leading-6 text-slate-300">
+                            Your consistency is up compared with last week,
+                            mostly driven by lower screen time and stronger
+                            morning focus.
+                          </p>
+                        </div>
 
-                      <div className="grid grid-cols-3 gap-3">
-                        <div
-                          className={`rounded-xl border p-4 text-center ${analyticsStatThemes[0]}`}
-                        >
-                          <p className="text-xs uppercase tracking-widest text-slate-500">
-                            Mood
-                          </p>
-                          <p className="mt-2 text-lg font-bold text-white">
-                            8.4
-                          </p>
+                        <div className="grid grid-cols-3 gap-3">
+                          <div
+                            className={`rounded-xl border p-4 text-center ${analyticsStatThemes[0]}`}
+                          >
+                            <p className="text-xs uppercase tracking-widest text-slate-500">
+                              Mood
+                            </p>
+                            <p className="mt-2 text-lg font-bold text-white">
+                              8.4
+                            </p>
+                          </div>
+                          <div
+                            className={`rounded-xl border p-4 text-center ${analyticsStatThemes[1]}`}
+                          >
+                            <p className="text-xs uppercase tracking-widest text-slate-500">
+                              Sleep
+                            </p>
+                            <p className="mt-2 text-lg font-bold text-white">
+                              7.2h
+                            </p>
+                          </div>
+                          <div
+                            className={`rounded-xl border p-4 text-center ${analyticsStatThemes[2]}`}
+                          >
+                            <p className="text-xs uppercase tracking-widest text-slate-500">
+                              Focus
+                            </p>
+                            <p className="mt-2 text-lg font-bold text-white">
+                              81%
+                            </p>
+                          </div>
                         </div>
-                        <div
-                          className={`rounded-xl border p-4 text-center ${analyticsStatThemes[1]}`}
-                        >
-                          <p className="text-xs uppercase tracking-widest text-slate-500">
-                            Sleep
-                          </p>
-                          <p className="mt-2 text-lg font-bold text-white">
-                            7.2h
-                          </p>
-                        </div>
-                        <div
-                          className={`rounded-xl border p-4 text-center ${analyticsStatThemes[2]}`}
-                        >
-                          <p className="text-xs uppercase tracking-widest text-slate-500">
-                            Focus
-                          </p>
-                          <p className="mt-2 text-lg font-bold text-white">
-                            81%
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
+                      </CardContent>
+                    </Link>
                   </Card>
 
-                  <Card className="border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-slate-900/70 to-slate-950/95 backdrop-blur-xl">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-white">
-                        <Target className="h-5 w-5 text-amber-400" />
-                        Organise
-                      </CardTitle>
-                      <CardDescription>
-                        Small planning moves that keep tomorrow lighter.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      {organiseItems.map((item, index) => (
-                        <div
-                          key={item}
-                          className={`rounded-2xl border p-4 text-sm leading-6 text-slate-300 ${
-                            organiseItemThemes[
-                              index % organiseItemThemes.length
-                            ]
-                          }`}
-                        >
-                          {item}
-                        </div>
-                      ))}
-                    </CardContent>
+                  <Card className="border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-slate-900/70 to-slate-950/95 backdrop-blur-xl transition-transform hover:-translate-y-0.5">
+                    <Link to="/organise" className="block h-full">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-white">
+                          <Target className="h-5 w-5 text-amber-400" />
+                          Organise
+                        </CardTitle>
+                        <CardDescription>
+                          Small planning moves that keep tomorrow lighter.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {organiseItems.map((item, index) => (
+                          <div
+                            key={item}
+                            className={`rounded-2xl border p-4 text-sm leading-6 text-slate-300 ${
+                              organiseItemThemes[
+                                index % organiseItemThemes.length
+                              ]
+                            }`}
+                          >
+                            {item}
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Link>
                   </Card>
                 </div>
               </div>
