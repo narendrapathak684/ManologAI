@@ -73,6 +73,20 @@ const EMOTION_SCORES = {
   angry: 1,
 };
 
+const EMOTION_LABELS = Object.entries(EMOTION_SCORES).reduce(
+  (acc, [emotion, score]) => {
+    acc[score] = emotion;
+    return acc;
+  },
+  {},
+);
+
+const formatEmotionLabel = (value) => {
+  const label = EMOTION_LABELS[value];
+  if (!label) return value;
+  return `${label[0].toUpperCase()}${label.slice(1)}`;
+};
+
 export default function AnalyticsPage() {
   const [pageLoading, setPageLoading] = useState(true);
   const [lifeData, setLifeData] = useState([]);
@@ -573,27 +587,7 @@ export default function AnalyticsPage() {
                   <CardContent className="h-[300px] w-full pr-6">
                     {moodData.length > 0 ? (
                       <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={moodData}>
-                          <defs>
-                            <linearGradient
-                              id="colorMood"
-                              x1="0"
-                              y1="0"
-                              x2="0"
-                              y2="1"
-                            >
-                              <stop
-                                offset="5%"
-                                stopColor="#ec4899"
-                                stopOpacity={0.3}
-                              />
-                              <stop
-                                offset="95%"
-                                stopColor="#ec4899"
-                                stopOpacity={0}
-                              />
-                            </linearGradient>
-                          </defs>
+                        <BarChart data={moodData}>
                           <CartesianGrid
                             strokeDasharray="3 3"
                             stroke="#ffffff10"
@@ -608,12 +602,12 @@ export default function AnalyticsPage() {
                           />
                           <YAxis
                             domain={[1, 5]}
-                            ticks={[1, 2, 3, 4, 5]}
+                            ticks={[1, 1.5, 2, 2.5, 3, 3.5, 4, 5]}
                             stroke="#64748b"
                             fontSize={10}
                             tickLine={false}
                             axisLine={false}
-                            hide
+                            tickFormatter={formatEmotionLabel}
                           />
                           <Tooltip
                             contentStyle={{
@@ -623,16 +617,17 @@ export default function AnalyticsPage() {
                               fontSize: "10px",
                             }}
                             itemStyle={{ color: "#f472b6" }}
+                            formatter={(value) => [
+                              formatEmotionLabel(value),
+                              "Emotion",
+                            ]}
                           />
-                          <Area
-                            type="monotone"
+                          <Bar
                             dataKey="score"
-                            stroke="#ec4899"
-                            strokeWidth={3}
-                            fillOpacity={1}
-                            fill="url(#colorMood)"
+                            fill="#ec4899"
+                            radius={[6, 6, 0, 0]}
                           />
-                        </AreaChart>
+                        </BarChart>
                       </ResponsiveContainer>
                     ) : (
                       <div className="h-full flex items-center justify-center text-slate-600 text-sm font-mono italic">
