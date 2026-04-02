@@ -24,6 +24,17 @@ const userSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
+  country: {
+    type: String,
+    trim: true,
+  },
+  currency: {
+    type: String,
+    trim: true,
+    uppercase: true,
+    minlength: 3,
+    maxlength: 3,
+  },
   habits: [
     {
       type: mongoose.Schema.Types.ObjectId,

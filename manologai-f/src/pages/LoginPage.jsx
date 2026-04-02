@@ -71,9 +71,11 @@ export default function LoginPage() {
       >
         <Card className="border-white/10 bg-slate-900/50 shadow-2xl backdrop-blur-xl">
           <CardHeader className="space-y-3 border-b border-white/5 pb-6 text-center">
-            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 shadow-lg shadow-pink-500/20">
-              <span className="text-2xl font-bold text-white">M</span>
-            </div>
+            <img
+              src="/logo.png"
+              alt="ManologAI Logo"
+              className="mx-auto mb-2 h-12 w-12 object-contain drop-shadow-[0_0_15px_rgba(236,72,153,0.5)]"
+            />
             <CardTitle className="bg-gradient-to-r from-pink-400 to-rose-400 bg-clip-text text-2xl font-bold text-transparent">
               Welcome back
             </CardTitle>
@@ -149,7 +151,9 @@ export default function LoginPage() {
                 className="h-11 w-full bg-pink-600 text-white shadow-[0_0_20px_-5px_rgba(236,72,153,0.5)] transition-all hover:bg-pink-500"
               >
                 {loading ? "Logging in..." : "Log In"}
-                {!loading ? <ArrowRight className="ml-2 h-4 w-4 opacity-80" /> : null}
+                {!loading ? (
+                  <ArrowRight className="ml-2 h-4 w-4 opacity-80" />
+                ) : null}
               </Button>
             </form>
           </CardContent>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -35,6 +35,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { api, getApiErrorMessage } from "../lib/api";
+import MobileTabBar from "../components/MobileTabBar";
 
 const navItems = [
   { label: "Today", icon: LayoutDashboard, to: "/dashboard" },
@@ -42,10 +43,25 @@ const navItems = [
   { label: "Track", icon: CheckCircle2, to: "/track" },
   { label: "Analytics", icon: ChartColumnBig, to: "/analytics" },
   { label: "Organise", icon: FolderKanban, to: "/organise", active: true },
+  { label: "Profile", icon: User, to: "/profile" },
 ];
 
-const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
-const HOURS = Array.from({ length: 19 }, (_, i) => i + 5); // 05:00 to 23:00
+const DAYS = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+];
+const HOURS = Array.from({ length: 24 }, (_, i) => i); // 00:00 to 23:00
+const HOURS_12 = Array.from({ length: 12 }, (_, i) =>
+  String(i + 1).padStart(2, "0"),
+);
+const MINUTES_60 = Array.from({ length: 60 }, (_, i) =>
+  String(i).padStart(2, "0"),
+);
 const BLOCK_COLOR_THEMES = [
   {
     border: "border-pink-500/30",
@@ -94,6 +110,9 @@ const DEFAULT_TIME_INPUT = {
   time: "09:00",
   period: "AM",
 };
+const MAX_ACTIVITY_DESCRIPTION_LENGTH = 80;
+const MAX_PAD_TITLE_LENGTH = 60;
+const MAX_PAD_ITEM_LENGTH = 120;
 const createDefaultBlockForm = () => ({
   days: ["monday"],
   activity: "",
@@ -108,17 +127,20 @@ const PAD_ICONS = {
   "to-do": ClipboardList,
   "to-buy": ShoppingCart,
   ideas: Lightbulb,
-  custom: FolderKanban
+  custom: FolderKanban,
 };
 
 const PAD_THEMES = {
   goals: {
-    activeButton: "bg-rose-500/20 border-rose-400/50 text-white shadow-[0_16px_40px_-24px_rgba(251,113,133,0.85)]",
-    idleButton: "bg-rose-500/8 border-rose-400/15 text-rose-100 hover:bg-rose-500/14 hover:border-rose-400/30",
+    activeButton:
+      "bg-rose-500/20 border-rose-400/50 text-white shadow-[0_16px_40px_-24px_rgba(251,113,133,0.85)]",
+    idleButton:
+      "bg-rose-500/8 border-rose-400/15 text-rose-100 hover:bg-rose-500/14 hover:border-rose-400/30",
     activeIcon: "bg-rose-400 text-white shadow-lg shadow-rose-500/20",
     idleIcon: "bg-rose-500/12 text-rose-300 border border-rose-400/20",
     chevron: "text-rose-300",
-    detailCard: "border-rose-400/20 bg-gradient-to-br from-rose-500/12 via-slate-900/70 to-slate-950/95",
+    detailCard:
+      "border-rose-400/20 bg-gradient-to-br from-rose-500/12 via-slate-900/70 to-slate-950/95",
     detailIcon: "text-rose-300 bg-rose-500/12 border-rose-400/20",
     actionButton: "bg-rose-500 hover:bg-rose-400",
     itemCard: "border-rose-400/12 bg-rose-500/7 hover:bg-rose-500/12",
@@ -129,12 +151,15 @@ const PAD_THEMES = {
     itemDelete: "text-rose-200/55 hover:text-rose-100",
   },
   books: {
-    activeButton: "bg-amber-500/20 border-amber-400/50 text-white shadow-[0_16px_40px_-24px_rgba(251,191,36,0.85)]",
-    idleButton: "bg-amber-500/8 border-amber-400/15 text-amber-100 hover:bg-amber-500/14 hover:border-amber-400/30",
+    activeButton:
+      "bg-amber-500/20 border-amber-400/50 text-white shadow-[0_16px_40px_-24px_rgba(251,191,36,0.85)]",
+    idleButton:
+      "bg-amber-500/8 border-amber-400/15 text-amber-100 hover:bg-amber-500/14 hover:border-amber-400/30",
     activeIcon: "bg-amber-400 text-slate-950 shadow-lg shadow-amber-500/20",
     idleIcon: "bg-amber-500/12 text-amber-300 border border-amber-400/20",
     chevron: "text-amber-300",
-    detailCard: "border-amber-400/20 bg-gradient-to-br from-amber-500/12 via-slate-900/70 to-slate-950/95",
+    detailCard:
+      "border-amber-400/20 bg-gradient-to-br from-amber-500/12 via-slate-900/70 to-slate-950/95",
     detailIcon: "text-amber-300 bg-amber-500/12 border-amber-400/20",
     actionButton: "bg-amber-500 hover:bg-amber-400 text-slate-950",
     itemCard: "border-amber-400/12 bg-amber-500/7 hover:bg-amber-500/12",
@@ -145,12 +170,15 @@ const PAD_THEMES = {
     itemDelete: "text-amber-200/55 hover:text-amber-100",
   },
   "to-learn": {
-    activeButton: "bg-sky-500/20 border-sky-400/50 text-white shadow-[0_16px_40px_-24px_rgba(56,189,248,0.85)]",
-    idleButton: "bg-sky-500/8 border-sky-400/15 text-sky-100 hover:bg-sky-500/14 hover:border-sky-400/30",
+    activeButton:
+      "bg-sky-500/20 border-sky-400/50 text-white shadow-[0_16px_40px_-24px_rgba(56,189,248,0.85)]",
+    idleButton:
+      "bg-sky-500/8 border-sky-400/15 text-sky-100 hover:bg-sky-500/14 hover:border-sky-400/30",
     activeIcon: "bg-sky-400 text-slate-950 shadow-lg shadow-sky-500/20",
     idleIcon: "bg-sky-500/12 text-sky-300 border border-sky-400/20",
     chevron: "text-sky-300",
-    detailCard: "border-sky-400/20 bg-gradient-to-br from-sky-500/12 via-slate-900/70 to-slate-950/95",
+    detailCard:
+      "border-sky-400/20 bg-gradient-to-br from-sky-500/12 via-slate-900/70 to-slate-950/95",
     detailIcon: "text-sky-300 bg-sky-500/12 border-sky-400/20",
     actionButton: "bg-sky-500 hover:bg-sky-400 text-slate-950",
     itemCard: "border-sky-400/12 bg-sky-500/7 hover:bg-sky-500/12",
@@ -161,44 +189,55 @@ const PAD_THEMES = {
     itemDelete: "text-sky-200/55 hover:text-sky-100",
   },
   "to-do": {
-    activeButton: "bg-emerald-500/20 border-emerald-400/50 text-white shadow-[0_16px_40px_-24px_rgba(52,211,153,0.85)]",
-    idleButton: "bg-emerald-500/8 border-emerald-400/15 text-emerald-100 hover:bg-emerald-500/14 hover:border-emerald-400/30",
+    activeButton:
+      "bg-emerald-500/20 border-emerald-400/50 text-white shadow-[0_16px_40px_-24px_rgba(52,211,153,0.85)]",
+    idleButton:
+      "bg-emerald-500/8 border-emerald-400/15 text-emerald-100 hover:bg-emerald-500/14 hover:border-emerald-400/30",
     activeIcon: "bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20",
     idleIcon: "bg-emerald-500/12 text-emerald-300 border border-emerald-400/20",
     chevron: "text-emerald-300",
-    detailCard: "border-emerald-400/20 bg-gradient-to-br from-emerald-500/12 via-slate-900/70 to-slate-950/95",
+    detailCard:
+      "border-emerald-400/20 bg-gradient-to-br from-emerald-500/12 via-slate-900/70 to-slate-950/95",
     detailIcon: "text-emerald-300 bg-emerald-500/12 border-emerald-400/20",
     actionButton: "bg-emerald-500 hover:bg-emerald-400 text-slate-950",
     itemCard: "border-emerald-400/12 bg-emerald-500/7 hover:bg-emerald-500/12",
-    itemDoneCard: "border-emerald-400/10 bg-emerald-500/5 hover:bg-emerald-500/9",
+    itemDoneCard:
+      "border-emerald-400/10 bg-emerald-500/5 hover:bg-emerald-500/9",
     itemToggle: "text-emerald-300 hover:text-emerald-200",
     itemTitle: "text-emerald-50",
     itemDoneTitle: "text-emerald-100/55 decoration-emerald-300/30",
     itemDelete: "text-emerald-200/55 hover:text-emerald-100",
   },
   "to-buy": {
-    activeButton: "bg-fuchsia-500/20 border-fuchsia-400/50 text-white shadow-[0_16px_40px_-24px_rgba(232,121,249,0.85)]",
-    idleButton: "bg-fuchsia-500/8 border-fuchsia-400/15 text-fuchsia-100 hover:bg-fuchsia-500/14 hover:border-fuchsia-400/30",
+    activeButton:
+      "bg-fuchsia-500/20 border-fuchsia-400/50 text-white shadow-[0_16px_40px_-24px_rgba(232,121,249,0.85)]",
+    idleButton:
+      "bg-fuchsia-500/8 border-fuchsia-400/15 text-fuchsia-100 hover:bg-fuchsia-500/14 hover:border-fuchsia-400/30",
     activeIcon: "bg-fuchsia-400 text-white shadow-lg shadow-fuchsia-500/20",
     idleIcon: "bg-fuchsia-500/12 text-fuchsia-300 border border-fuchsia-400/20",
     chevron: "text-fuchsia-300",
-    detailCard: "border-fuchsia-400/20 bg-gradient-to-br from-fuchsia-500/12 via-slate-900/70 to-slate-950/95",
+    detailCard:
+      "border-fuchsia-400/20 bg-gradient-to-br from-fuchsia-500/12 via-slate-900/70 to-slate-950/95",
     detailIcon: "text-fuchsia-300 bg-fuchsia-500/12 border-fuchsia-400/20",
     actionButton: "bg-fuchsia-500 hover:bg-fuchsia-400",
     itemCard: "border-fuchsia-400/12 bg-fuchsia-500/7 hover:bg-fuchsia-500/12",
-    itemDoneCard: "border-fuchsia-400/10 bg-fuchsia-500/5 hover:bg-fuchsia-500/9",
+    itemDoneCard:
+      "border-fuchsia-400/10 bg-fuchsia-500/5 hover:bg-fuchsia-500/9",
     itemToggle: "text-fuchsia-300 hover:text-fuchsia-200",
     itemTitle: "text-fuchsia-50",
     itemDoneTitle: "text-fuchsia-100/55 decoration-fuchsia-300/30",
     itemDelete: "text-fuchsia-200/55 hover:text-fuchsia-100",
   },
   ideas: {
-    activeButton: "bg-violet-500/20 border-violet-400/50 text-white shadow-[0_16px_40px_-24px_rgba(167,139,250,0.85)]",
-    idleButton: "bg-violet-500/8 border-violet-400/15 text-violet-100 hover:bg-violet-500/14 hover:border-violet-400/30",
+    activeButton:
+      "bg-violet-500/20 border-violet-400/50 text-white shadow-[0_16px_40px_-24px_rgba(167,139,250,0.85)]",
+    idleButton:
+      "bg-violet-500/8 border-violet-400/15 text-violet-100 hover:bg-violet-500/14 hover:border-violet-400/30",
     activeIcon: "bg-violet-400 text-white shadow-lg shadow-violet-500/20",
     idleIcon: "bg-violet-500/12 text-violet-300 border border-violet-400/20",
     chevron: "text-violet-300",
-    detailCard: "border-violet-400/20 bg-gradient-to-br from-violet-500/12 via-slate-900/70 to-slate-950/95",
+    detailCard:
+      "border-violet-400/20 bg-gradient-to-br from-violet-500/12 via-slate-900/70 to-slate-950/95",
     detailIcon: "text-violet-300 bg-violet-500/12 border-violet-400/20",
     actionButton: "bg-violet-500 hover:bg-violet-400",
     itemCard: "border-violet-400/12 bg-violet-500/7 hover:bg-violet-500/12",
@@ -212,12 +251,15 @@ const PAD_THEMES = {
 
 const CUSTOM_PAD_THEMES = [
   {
-    activeButton: "bg-cyan-500/20 border-cyan-400/50 text-white shadow-[0_16px_40px_-24px_rgba(34,211,238,0.85)]",
-    idleButton: "bg-cyan-500/8 border-cyan-400/15 text-cyan-100 hover:bg-cyan-500/14 hover:border-cyan-400/30",
+    activeButton:
+      "bg-cyan-500/20 border-cyan-400/50 text-white shadow-[0_16px_40px_-24px_rgba(34,211,238,0.85)]",
+    idleButton:
+      "bg-cyan-500/8 border-cyan-400/15 text-cyan-100 hover:bg-cyan-500/14 hover:border-cyan-400/30",
     activeIcon: "bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-500/20",
     idleIcon: "bg-cyan-500/12 text-cyan-300 border border-cyan-400/20",
     chevron: "text-cyan-300",
-    detailCard: "border-cyan-400/20 bg-gradient-to-br from-cyan-500/12 via-slate-900/70 to-slate-950/95",
+    detailCard:
+      "border-cyan-400/20 bg-gradient-to-br from-cyan-500/12 via-slate-900/70 to-slate-950/95",
     detailIcon: "text-cyan-300 bg-cyan-500/12 border-cyan-400/20",
     actionButton: "bg-cyan-500 hover:bg-cyan-400 text-slate-950",
     itemCard: "border-cyan-400/12 bg-cyan-500/7 hover:bg-cyan-500/12",
@@ -228,12 +270,15 @@ const CUSTOM_PAD_THEMES = [
     itemDelete: "text-cyan-200/55 hover:text-cyan-100",
   },
   {
-    activeButton: "bg-orange-500/20 border-orange-400/50 text-white shadow-[0_16px_40px_-24px_rgba(251,146,60,0.85)]",
-    idleButton: "bg-orange-500/8 border-orange-400/15 text-orange-100 hover:bg-orange-500/14 hover:border-orange-400/30",
+    activeButton:
+      "bg-orange-500/20 border-orange-400/50 text-white shadow-[0_16px_40px_-24px_rgba(251,146,60,0.85)]",
+    idleButton:
+      "bg-orange-500/8 border-orange-400/15 text-orange-100 hover:bg-orange-500/14 hover:border-orange-400/30",
     activeIcon: "bg-orange-400 text-slate-950 shadow-lg shadow-orange-500/20",
     idleIcon: "bg-orange-500/12 text-orange-300 border border-orange-400/20",
     chevron: "text-orange-300",
-    detailCard: "border-orange-400/20 bg-gradient-to-br from-orange-500/12 via-slate-900/70 to-slate-950/95",
+    detailCard:
+      "border-orange-400/20 bg-gradient-to-br from-orange-500/12 via-slate-900/70 to-slate-950/95",
     detailIcon: "text-orange-300 bg-orange-500/12 border-orange-400/20",
     actionButton: "bg-orange-500 hover:bg-orange-400 text-slate-950",
     itemCard: "border-orange-400/12 bg-orange-500/7 hover:bg-orange-500/12",
@@ -244,12 +289,15 @@ const CUSTOM_PAD_THEMES = [
     itemDelete: "text-orange-200/55 hover:text-orange-100",
   },
   {
-    activeButton: "bg-lime-500/20 border-lime-400/50 text-white shadow-[0_16px_40px_-24px_rgba(163,230,53,0.85)]",
-    idleButton: "bg-lime-500/8 border-lime-400/15 text-lime-100 hover:bg-lime-500/14 hover:border-lime-400/30",
+    activeButton:
+      "bg-lime-500/20 border-lime-400/50 text-white shadow-[0_16px_40px_-24px_rgba(163,230,53,0.85)]",
+    idleButton:
+      "bg-lime-500/8 border-lime-400/15 text-lime-100 hover:bg-lime-500/14 hover:border-lime-400/30",
     activeIcon: "bg-lime-400 text-slate-950 shadow-lg shadow-lime-500/20",
     idleIcon: "bg-lime-500/12 text-lime-300 border border-lime-400/20",
     chevron: "text-lime-300",
-    detailCard: "border-lime-400/20 bg-gradient-to-br from-lime-500/12 via-slate-900/70 to-slate-950/95",
+    detailCard:
+      "border-lime-400/20 bg-gradient-to-br from-lime-500/12 via-slate-900/70 to-slate-950/95",
     detailIcon: "text-lime-300 bg-lime-500/12 border-lime-400/20",
     actionButton: "bg-lime-500 hover:bg-lime-400 text-slate-950",
     itemCard: "border-lime-400/12 bg-lime-500/7 hover:bg-lime-500/12",
@@ -282,10 +330,13 @@ export default function OrganisePage() {
   const [newItemTitle, setNewItemTitle] = useState("");
   const [padTitleDraft, setPadTitleDraft] = useState("");
   const [isDayMenuOpen, setIsDayMenuOpen] = useState(false);
+  const [isStartTimeMenuOpen, setIsStartTimeMenuOpen] = useState(false);
+  const [isEndTimeMenuOpen, setIsEndTimeMenuOpen] = useState(false);
   const [addingBlock, setAddingBlock] = useState(false);
   const [editingBlockId, setEditingBlockId] = useState(null);
   const [editingBlockGroupId, setEditingBlockGroupId] = useState(null);
   const [savingBlock, setSavingBlock] = useState(false);
+  const [clearingTimetable, setClearingTimetable] = useState(false);
   const [addingPad, setAddingPad] = useState(false);
   const [renamingPad, setRenamingPad] = useState(false);
   const [deletingPad, setDeletingPad] = useState(false);
@@ -307,6 +358,8 @@ export default function OrganisePage() {
     selectedPad && selectedPadIndex >= 0
       ? getPadTheme(selectedPad, selectedPadIndex)
       : null;
+  const [startHour = "09", startMinute = "00"] = newBlock.start.time.split(":");
+  const [endHour = "10", endMinute = "00"] = newBlock.end.time.split(":");
 
   useEffect(() => {
     localStorage.setItem("sidebar-collapsed", JSON.stringify(isSidebarOpen));
@@ -329,10 +382,11 @@ export default function OrganisePage() {
       ]);
       setTimetable(ttJson.schedule);
       setPads(padsJson.pads);
-
     } catch (err) {
       console.error("Fetch failed:", err);
-      setError(getApiErrorMessage(err, "Failed to connect to the organisation hub."));
+      setError(
+        getApiErrorMessage(err, "Failed to connect to the organisation hub."),
+      );
     } finally {
       setLoading(false);
     }
@@ -344,9 +398,7 @@ export default function OrganisePage() {
     if (Number.isNaN(numericHour)) return "00:00";
 
     const normalizedHour =
-      period === "AM"
-        ? numericHour % 12
-        : (numericHour % 12) + 12;
+      period === "AM" ? numericHour % 12 : (numericHour % 12) + 12;
 
     return `${String(normalizedHour).padStart(2, "0")}:${minutePart}`;
   };
@@ -373,6 +425,12 @@ export default function OrganisePage() {
   const formatDisplayTime = (timeStr) => {
     const { time, period } = from24HourTime(timeStr);
     return `${time} ${period}`;
+  };
+
+  const formatHourLabel = (hour) => {
+    const period = hour >= 12 ? "PM" : "AM";
+    const hour12 = hour % 12 || 12;
+    return `${hour12} ${period}`;
   };
 
   const updateBlockTime = (field, key, value) => {
@@ -409,14 +467,28 @@ export default function OrganisePage() {
 
   const handleAddBlock = async (e) => {
     e.preventDefault();
+    const trimmedActivity = newBlock.activity.trim();
     if (newBlock.days.length === 0) {
       setError("Select at least one day.");
+      return;
+    }
+    if (!trimmedActivity) {
+      setError("Add an activity description.");
+      return;
+    }
+    if (trimmedActivity.length > MAX_ACTIVITY_DESCRIPTION_LENGTH) {
+      setError(
+        `Activity description must be ${MAX_ACTIVITY_DESCRIPTION_LENGTH} characters or fewer.`,
+      );
       return;
     }
     setAddingBlock(true);
     setError("");
     try {
-      const { data } = await api.post("/timetable/blocks", buildBlockPayload(newBlock));
+      const { data } = await api.post(
+        "/timetable/blocks",
+        buildBlockPayload({ ...newBlock, activity: trimmedActivity }),
+      );
       const createdBlocks = data?.blocks || (data?.block ? [data.block] : []);
 
       if (createdBlocks.length > 0) {
@@ -425,7 +497,9 @@ export default function OrganisePage() {
 
           createdBlocks.forEach((block) => {
             const dayBlocks = [...(next[block.day] || []), block];
-            dayBlocks.sort((a, b) => getTimeRow(a.startTime) - getTimeRow(b.startTime));
+            dayBlocks.sort(
+              (a, b) => getTimeRow(a.startTime) - getTimeRow(b.startTime),
+            );
             next[block.day] = dayBlocks;
           });
 
@@ -434,7 +508,7 @@ export default function OrganisePage() {
       }
       setNewBlock(createDefaultBlockForm());
       setIsDayMenuOpen(false);
-    } catch (err) { 
+    } catch (err) {
       console.error(err);
       setError(getApiErrorMessage(err, "Failed to add timetable block"));
     } finally {
@@ -445,7 +519,11 @@ export default function OrganisePage() {
   const startEditingBlock = (block) => {
     const matchingBlocks = Object.values(timetable)
       .flat()
-      .filter((entry) => (block.groupId ? entry.groupId === block.groupId : entry._id === block._id));
+      .filter((entry) =>
+        block.groupId
+          ? entry.groupId === block.groupId
+          : entry._id === block._id,
+      );
 
     setEditingBlockId(block._id);
     setEditingBlockGroupId(block.groupId || null);
@@ -469,10 +547,25 @@ export default function OrganisePage() {
     e.preventDefault();
     if (!editingBlockId) return;
 
+    const trimmedActivity = newBlock.activity.trim();
+    if (!trimmedActivity) {
+      setError("Add an activity description.");
+      return;
+    }
+    if (trimmedActivity.length > MAX_ACTIVITY_DESCRIPTION_LENGTH) {
+      setError(
+        `Activity description must be ${MAX_ACTIVITY_DESCRIPTION_LENGTH} characters or fewer.`,
+      );
+      return;
+    }
+
     setSavingBlock(true);
     setError("");
     try {
-      const { data } = await api.patch(`/timetable/blocks/${editingBlockId}`, buildBlockPayload(newBlock));
+      const { data } = await api.patch(
+        `/timetable/blocks/${editingBlockId}`,
+        buildBlockPayload({ ...newBlock, activity: trimmedActivity }),
+      );
       const updatedBlocks = data?.blocks || (data?.block ? [data.block] : []);
       if (updatedBlocks.length > 0) {
         setTimetable((current) => {
@@ -487,12 +580,14 @@ export default function OrganisePage() {
               });
 
               return [day, filteredBlocks];
-            })
+            }),
           );
 
           updatedBlocks.forEach((block) => {
             const dayBlocks = [...(next[block.day] || []), block];
-            dayBlocks.sort((a, b) => getTimeRow(a.startTime) - getTimeRow(b.startTime));
+            dayBlocks.sort(
+              (a, b) => getTimeRow(a.startTime) - getTimeRow(b.startTime),
+            );
             next[block.day] = dayBlocks;
           });
 
@@ -516,13 +611,40 @@ export default function OrganisePage() {
           Object.entries(current).map(([day, blocks]) => [
             day,
             blocks.filter((block) => block._id !== blockId),
-          ])
-        )
+          ]),
+        ),
       );
       if (editingBlockId === blockId) {
         cancelEditingBlock();
       }
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleClearTimetable = async () => {
+    const hasBlocks = Object.values(timetable).some(
+      (blocks) => blocks.length > 0,
+    );
+    if (!hasBlocks || clearingTimetable) return;
+
+    const confirmed = window.confirm(
+      "Clear all timetable blocks? This cannot be undone.",
+    );
+    if (!confirmed) return;
+
+    setClearingTimetable(true);
+    setError("");
+    try {
+      await api.delete("/timetable/blocks");
+      setTimetable({});
+      cancelEditingBlock();
+    } catch (err) {
+      console.error(err);
+      setError(getApiErrorMessage(err, "Failed to clear timetable."));
+    } finally {
+      setClearingTimetable(false);
+    }
   };
 
   // Pad Handlers
@@ -539,21 +661,21 @@ export default function OrganisePage() {
               ? {
                   ...pad,
                   items: pad.items.map((item) =>
-                    item._id === itemId ? { ...item, ...data.item } : item
+                    item._id === itemId ? { ...item, ...data.item } : item,
                   ),
                 }
-              : pad
-          )
+              : pad,
+          ),
         );
         setSelectedPad((current) =>
           current && current._id === padId
             ? {
                 ...current,
                 items: current.items.map((item) =>
-                  item._id === itemId ? { ...item, ...data.item } : item
+                  item._id === itemId ? { ...item, ...data.item } : item,
                 ),
               }
-            : current
+            : current,
         );
       }
     } catch (err) {
@@ -566,13 +688,22 @@ export default function OrganisePage() {
 
   const handleAddItem = async (e) => {
     e.preventDefault();
-    if (!selectedPad?._id || !newItemTitle.trim()) return;
+    if (!selectedPad?._id) return;
+
+    const trimmedTitle = newItemTitle.trim();
+    if (!trimmedTitle) return;
+    if (trimmedTitle.length > MAX_PAD_ITEM_LENGTH) {
+      setError(
+        `Item title must be ${MAX_PAD_ITEM_LENGTH} characters or fewer.`,
+      );
+      return;
+    }
 
     setAddingItem(true);
     setError("");
     try {
       const { data } = await api.post(`/pads/${selectedPad._id}/items`, {
-        title: newItemTitle,
+        title: trimmedTitle,
       });
 
       if (data?.item) {
@@ -580,11 +711,13 @@ export default function OrganisePage() {
           current.map((pad) =>
             pad._id === selectedPad._id
               ? { ...pad, items: [...pad.items, data.item] }
-              : pad
-          )
+              : pad,
+          ),
         );
         setSelectedPad((current) =>
-          current ? { ...current, items: [...current.items, data.item] } : current
+          current
+            ? { ...current, items: [...current.items, data.item] }
+            : current,
         );
       }
 
@@ -609,8 +742,8 @@ export default function OrganisePage() {
                 ...pad,
                 items: pad.items.filter((item) => item._id !== itemId),
               }
-            : pad
-        )
+            : pad,
+        ),
       );
       setSelectedPad((current) =>
         current && current._id === padId
@@ -618,7 +751,7 @@ export default function OrganisePage() {
               ...current,
               items: current.items.filter((item) => item._id !== itemId),
             }
-          : current
+          : current,
       );
       if (editingItemId === itemId) {
         cancelEditingItem();
@@ -643,13 +776,20 @@ export default function OrganisePage() {
   };
 
   const handleRenameItem = async (padId, itemId) => {
-    if (!editingItemTitle.trim()) return;
+    const trimmedTitle = editingItemTitle.trim();
+    if (!trimmedTitle) return;
+    if (trimmedTitle.length > MAX_PAD_ITEM_LENGTH) {
+      setError(
+        `Item title must be ${MAX_PAD_ITEM_LENGTH} characters or fewer.`,
+      );
+      return;
+    }
 
     setSavingItemId(itemId);
     setError("");
     try {
       const { data } = await api.patch(`/pads/${padId}/items/${itemId}`, {
-        title: editingItemTitle,
+        title: trimmedTitle,
       });
 
       if (data?.item) {
@@ -659,21 +799,21 @@ export default function OrganisePage() {
               ? {
                   ...pad,
                   items: pad.items.map((item) =>
-                    item._id === itemId ? { ...item, ...data.item } : item
+                    item._id === itemId ? { ...item, ...data.item } : item,
                   ),
                 }
-              : pad
-          )
+              : pad,
+          ),
         );
         setSelectedPad((current) =>
           current && current._id === padId
             ? {
                 ...current,
                 items: current.items.map((item) =>
-                  item._id === itemId ? { ...item, ...data.item } : item
+                  item._id === itemId ? { ...item, ...data.item } : item,
                 ),
               }
-            : current
+            : current,
         );
       }
 
@@ -688,12 +828,19 @@ export default function OrganisePage() {
 
   const handleAddPad = async (e) => {
     e.preventDefault();
-    if (!newPadTitle.trim()) return;
+    const trimmedTitle = newPadTitle.trim();
+    if (!trimmedTitle) return;
+    if (trimmedTitle.length > MAX_PAD_TITLE_LENGTH) {
+      setError(
+        `Pad title must be ${MAX_PAD_TITLE_LENGTH} characters or fewer.`,
+      );
+      return;
+    }
 
     setAddingPad(true);
     setError("");
     try {
-      const { data } = await api.post("/pads", { title: newPadTitle });
+      const { data } = await api.post("/pads", { title: trimmedTitle });
       if (data?.pad) {
         setPads((current) => [...current, data.pad]);
         setSelectedPad(data.pad);
@@ -709,21 +856,30 @@ export default function OrganisePage() {
 
   const handleRenamePad = async (e) => {
     e.preventDefault();
-    if (!selectedPad?._id || !padTitleDraft.trim()) return;
+    if (!selectedPad?._id) return;
+
+    const trimmedTitle = padTitleDraft.trim();
+    if (!trimmedTitle) return;
+    if (trimmedTitle.length > MAX_PAD_TITLE_LENGTH) {
+      setError(
+        `Pad title must be ${MAX_PAD_TITLE_LENGTH} characters or fewer.`,
+      );
+      return;
+    }
 
     setRenamingPad(true);
     setError("");
     try {
       const { data } = await api.patch(`/pads/${selectedPad._id}`, {
-        title: padTitleDraft,
+        title: trimmedTitle,
       });
 
       if (data?.pad) {
         setPads((current) =>
-          current.map((pad) => (pad._id === data.pad._id ? data.pad : pad))
+          current.map((pad) => (pad._id === data.pad._id ? data.pad : pad)),
         );
         setSelectedPad((current) =>
-          current?._id === data.pad._id ? { ...current, ...data.pad } : current
+          current?._id === data.pad._id ? { ...current, ...data.pad } : current,
         );
         setPadTitleDraft(data.pad.title);
       }
@@ -738,11 +894,18 @@ export default function OrganisePage() {
   const handleDeletePad = async () => {
     if (!selectedPad?._id) return;
 
+    const confirmed = window.confirm(
+      `Delete "${selectedPad.title || "this pad"}"? This cannot be undone.`,
+    );
+    if (!confirmed) return;
+
     setDeletingPad(true);
     setError("");
     try {
       await api.delete(`/pads/${selectedPad._id}`);
-      setPads((current) => current.filter((pad) => pad._id !== selectedPad._id));
+      setPads((current) =>
+        current.filter((pad) => pad._id !== selectedPad._id),
+      );
       setSelectedPad(null);
       setPadTitleDraft("");
       setNewItemTitle("");
@@ -756,30 +919,240 @@ export default function OrganisePage() {
 
   const getTimeRow = (timeStr) => {
     const [h, m] = timeStr.split(":").map(Number);
-    return Math.max(1, (h - 5) * 2 + (m >= 30 ? 2 : 1));
-  };
-
-  const getBlockColorTheme = (block) => {
-    const signature = block.groupId || `${block.activity}|${block.startTime}|${block.endTime}|${block.day}`;
-    let hash = 0;
-
-    for (let index = 0; index < signature.length; index += 1) {
-      hash = (hash * 31 + signature.charCodeAt(index)) >>> 0;
-    }
-
-    return BLOCK_COLOR_THEMES[hash % BLOCK_COLOR_THEMES.length];
+    return Math.max(1, h * 2 + (m >= 30 ? 2 : 1));
   };
 
   const getDayBlocks = (day) => timetable[day] || [];
 
-  if (loading) return (
-    <div className="flex h-screen items-center justify-center bg-slate-950 text-white font-mono text-sm tracking-[0.3em] uppercase animate-pulse">
-      Initialising Organisation Hub...
-    </div>
+  const hasTimetableBlocks = Object.values(timetable).some(
+    (blocks) => blocks.length > 0,
   );
 
+  const getBlockSignature = (block) =>
+    block.groupId || `${block.activity}|${block.startTime}|${block.endTime}`;
+
+  const buildSignatureGraph = () => {
+    const adjacency = new Map();
+
+    const register = (signature) => {
+      if (!adjacency.has(signature)) {
+        adjacency.set(signature, new Set());
+      }
+    };
+
+    DAYS.forEach((day) => {
+      const daySignatures = Array.from(
+        new Set(getDayBlocks(day).map(getBlockSignature)),
+      );
+
+      daySignatures.forEach(register);
+
+      for (let i = 0; i < daySignatures.length; i += 1) {
+        for (let j = i + 1; j < daySignatures.length; j += 1) {
+          const left = daySignatures[i];
+          const right = daySignatures[j];
+          adjacency.get(left).add(right);
+          adjacency.get(right).add(left);
+        }
+      }
+    });
+
+    return adjacency;
+  };
+
+  const getSignatureThemeMap = () => {
+    const adjacency = buildSignatureGraph();
+    const signatures = Array.from(adjacency.keys()).sort();
+    const assignedIndexes = new Map();
+
+    signatures.forEach((signature) => {
+      const usedIndexes = new Set();
+      adjacency.get(signature)?.forEach((neighbor) => {
+        if (assignedIndexes.has(neighbor)) {
+          usedIndexes.add(assignedIndexes.get(neighbor));
+        }
+      });
+
+      let candidateIndex = 0;
+      while (
+        candidateIndex < BLOCK_COLOR_THEMES.length &&
+        usedIndexes.has(candidateIndex)
+      ) {
+        candidateIndex += 1;
+      }
+
+      const finalIndex =
+        candidateIndex < BLOCK_COLOR_THEMES.length
+          ? candidateIndex
+          : signature.length % BLOCK_COLOR_THEMES.length;
+
+      assignedIndexes.set(signature, finalIndex);
+    });
+
+    const themeMap = new Map();
+
+    assignedIndexes.forEach((index, signature) => {
+      themeMap.set(signature, BLOCK_COLOR_THEMES[index]);
+    });
+
+    return themeMap;
+  };
+
+  const signatureThemes = getSignatureThemeMap();
+
+  const renderPadDetailCard = (pad, theme) => {
+    if (!pad) return null;
+
+    return (
+      <Card
+        className={`${theme?.detailCard || "border-white/10 bg-slate-900/50"} backdrop-blur-xl`}
+      >
+        <CardHeader className="flex flex-row items-center justify-between gap-4">
+          <div>
+            <CardTitle className="text-2xl text-white">{pad.title}</CardTitle>
+            <CardDescription>{pad.items.length} items logged</CardDescription>
+          </div>
+          <div className="flex items-center gap-3">
+            <div
+              className={`flex h-10 w-10 items-center justify-center rounded-xl border ${theme?.detailIcon || "bg-white/5 border-white/10 text-white"}`}
+            >
+              {(() => {
+                const Icon = PAD_ICONS[pad.padType] || FolderKanban;
+                return <Icon className="w-5 h-5" />;
+              })()}
+            </div>
+            <Button
+              type="button"
+              onClick={handleDeletePad}
+              disabled={deletingPad}
+              className="h-10 border border-rose-500/20 bg-rose-600/15 px-4 text-rose-300 hover:bg-rose-600/25"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              {deletingPad ? "Deleting..." : "Delete Pad"}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <form onSubmit={handleAddItem} className="flex gap-2">
+            <Input
+              placeholder="Add a new entry..."
+              className="h-12 border-white/10 bg-black/20 text-white"
+              value={newItemTitle}
+              onChange={(e) => setNewItemTitle(e.target.value)}
+              disabled={addingItem}
+              maxLength={MAX_PAD_ITEM_LENGTH}
+            />
+            <Button
+              type="submit"
+              disabled={addingItem || !newItemTitle.trim()}
+              className={`${theme?.actionButton || "bg-pink-600 hover:bg-pink-500 text-white"} h-12 px-6`}
+            >
+              <Plus className="h-5 w-5" />
+              <span className="ml-2">{addingItem ? "Adding..." : "Add"}</span>
+            </Button>
+          </form>
+
+          <div className="space-y-2">
+            {pad.items
+              .slice()
+              .reverse()
+              .map((item) => (
+                <div
+                  key={item._id}
+                  className={`group flex items-center gap-4 rounded-xl border p-4 transition-all ${
+                    item.done
+                      ? theme?.itemDoneCard ||
+                        "border-white/5 bg-white/[0.02] hover:bg-white/[0.04]"
+                      : theme?.itemCard ||
+                        "border-white/5 bg-white/[0.03] hover:bg-white/[0.06]"
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => handleToggleItem(pad._id, item._id)}
+                    disabled={togglingItemId === item._id}
+                    className={`shrink-0 transition-colors ${
+                      item.done
+                        ? theme?.itemToggle || "text-emerald-400"
+                        : theme?.itemToggle ||
+                          "text-slate-500 hover:text-slate-300"
+                    }`}
+                  >
+                    {item.done ? (
+                      <CheckCircle className="h-5 w-5" />
+                    ) : (
+                      <Circle className="h-5 w-5" />
+                    )}
+                  </button>
+                  {editingItemId === item._id ? (
+                    <div className="flex flex-1 items-center gap-2">
+                      <Input
+                        value={editingItemTitle}
+                        onChange={(e) => setEditingItemTitle(e.target.value)}
+                        disabled={savingItemId === item._id}
+                        className="h-10 border-white/10 bg-black/20 text-white"
+                        maxLength={MAX_PAD_ITEM_LENGTH}
+                      />
+                      <Button
+                        type="button"
+                        onClick={() => handleRenameItem(pad._id, item._id)}
+                        disabled={
+                          savingItemId === item._id || !editingItemTitle.trim()
+                        }
+                        className="h-10 bg-white/10 px-4 text-white hover:bg-white/15"
+                      >
+                        {savingItemId === item._id ? "Saving..." : "Save"}
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={cancelEditingItem}
+                        disabled={savingItemId === item._id}
+                        className="h-10 border border-white/10 bg-transparent px-4 text-slate-300 hover:bg-white/5"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => startEditingItem(item)}
+                      className={`flex-1 text-left text-sm ${
+                        item.done
+                          ? theme?.itemDoneTitle ||
+                            "text-slate-500 line-through decoration-emerald-500/30"
+                          : theme?.itemTitle || "text-slate-200"
+                      } ${item.done ? "line-through" : ""}`}
+                    >
+                      {item.title}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteItem(pad._id, item._id)}
+                    disabled={deletingItemId === item._id}
+                    className={`p-2 opacity-0 transition-all disabled:opacity-100 group-hover:opacity-100 ${
+                      theme?.itemDelete || "text-slate-600 hover:text-rose-400"
+                    }`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  if (loading)
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-950 text-white font-mono text-sm tracking-[0.3em] uppercase animate-pulse">
+        Initialising Organisation Hub...
+      </div>
+    );
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex overflow-hidden">
+    <div className="h-screen bg-slate-950 text-slate-100 flex overflow-hidden">
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-pink-600/5 blur-[120px] rounded-full" />
         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-emerald-600/5 blur-[120px] rounded-full" />
@@ -787,37 +1160,46 @@ export default function OrganisePage() {
 
       <motion.aside
         initial={false}
-        animate={{ 
+        animate={{
           width: isSidebarOpen ? 288 : 88,
         }}
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-        className="hidden shrink-0 border-r border-white/10 bg-slate-900/40 p-6 backdrop-blur-3xl lg:flex lg:flex-col relative group z-10"
+        className="sticky top-0 hidden h-screen shrink-0 overflow-hidden border-r border-white/10 bg-slate-900/40 p-6 backdrop-blur-3xl lg:flex lg:flex-col group z-10"
       >
-        <div className={`flex items-center gap-3 mb-10 overflow-hidden ${isSidebarOpen ? "justify-between" : "justify-center"}`}>
+        <div
+          className={`flex items-center gap-3 mb-10 overflow-hidden ${isSidebarOpen ? "justify-between" : "justify-center"}`}
+        >
           {isSidebarOpen && (
             <div className="flex items-center gap-3 shrink-0">
-               <Link to="/profile" className="flex h-11 w-11 items-center justify-center rounded-xl border border-transparent bg-white/5 text-slate-400 hover:border-pink-500/30 hover:bg-pink-500/10 hover:text-white transition-all">
-                  <User className="h-5 w-5" />
-               </Link>
-               <motion.div
-                 initial={{ opacity: 0, x: -10 }}
-                 animate={{ opacity: 1, x: 0 }}
-                 exit={{ opacity: 0, x: -10 }}
-                 className="whitespace-nowrap"
-               >
-                 <p className="text-lg font-bold text-white tracking-tight truncate max-w-[140px]">
-                   {user?.firstName || "ManologAI"}
-                 </p>
-                 <p className="text-xs text-slate-500 font-mono">Organise</p>
-               </motion.div>
+              <Link
+                to="/profile"
+                className="flex h-11 w-11 items-center justify-center rounded-xl border border-transparent bg-white/5 text-slate-400 hover:border-pink-500/30 hover:bg-pink-500/10 hover:text-white transition-all"
+              >
+                <User className="h-5 w-5" />
+              </Link>
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                className="whitespace-nowrap"
+              >
+                <p className="text-lg font-bold text-white tracking-tight truncate max-w-[140px]">
+                  {user?.firstName || "ManologAI"}
+                </p>
+                <p className="text-xs text-slate-500 font-mono">Organise</p>
+              </motion.div>
             </div>
           )}
-          
+
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             className={`p-2 rounded-lg text-slate-500 hover:text-white hover:bg-white/5 transition-all ${isSidebarOpen ? "-mr-1" : ""}`}
           >
-            {isSidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            {isSidebarOpen ? (
+              <X className="h-4 w-4" />
+            ) : (
+              <Menu className="h-4 w-4" />
+            )}
           </button>
         </div>
 
@@ -834,7 +1216,9 @@ export default function OrganisePage() {
               }`}
             >
               <Link to={to} className="flex items-center">
-                <Icon className={`mr-3 h-4 w-4 shrink-0 ${active ? "text-pink-300" : ""}`} />
+                <Icon
+                  className={`mr-3 h-4 w-4 shrink-0 ${active ? "text-pink-300" : ""}`}
+                />
                 {isSidebarOpen && (
                   <motion.span
                     initial={{ opacity: 0 }}
@@ -850,11 +1234,15 @@ export default function OrganisePage() {
         </nav>
       </motion.aside>
 
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto relative z-10">
+      <main className="relative z-10 flex-1 overflow-y-auto p-4 pb-28 sm:p-6 sm:pb-32 lg:p-8 lg:pb-8">
         <div className="mx-auto max-w-7xl">
           <header className="mb-8">
-            <h1 className="text-4xl font-extrabold tracking-tight text-white mb-2">Structure your life.</h1>
-            <p className="text-slate-400">Your weekly layout and structured notes in one unified hub.</p>
+            <h1 className="text-4xl font-extrabold tracking-tight text-white mb-2">
+              Structure your life.
+            </h1>
+            <p className="text-slate-400">
+              Your weekly layout and structured notes in one unified hub.
+            </p>
           </header>
 
           {error && (
@@ -869,9 +1257,9 @@ export default function OrganisePage() {
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={`px-6 py-2 rounded-xl text-sm font-bold uppercase tracking-widest transition-all ${
-                  activeTab === tab 
-                  ? "bg-pink-600 text-white shadow-lg shadow-pink-900/30" 
-                  : "text-slate-500 hover:text-slate-200 hover:bg-white/5"
+                  activeTab === tab
+                    ? "bg-pink-600 text-white shadow-lg shadow-pink-900/30"
+                    : "text-slate-500 hover:text-slate-200 hover:bg-white/5"
                 }`}
               >
                 {tab}
@@ -890,38 +1278,58 @@ export default function OrganisePage() {
               >
                 {/* Add Block Quick Entry */}
                 <Card className="relative z-30 overflow-visible border-white/5 bg-white/[0.02] backdrop-blur-xl">
-                  <form onSubmit={editingBlockId ? handleUpdateBlock : handleAddBlock} className="p-4 grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1.6fr)_140px_minmax(0,1.3fr)_auto] items-end">
-                    <div className="space-y-2">
-                       <label className="text-[10px] font-mono text-slate-500 uppercase tracking-widest px-1">Activity Description</label>
-                       <Input 
-                        placeholder="Deep work, Gym, Study..." 
-                        className="bg-black/20 border-white/10 text-white" 
+                  <form
+                    onSubmit={
+                      editingBlockId ? handleUpdateBlock : handleAddBlock
+                    }
+                    className="p-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-[minmax(0,1.6fr)_140px_minmax(0,1.4fr)_auto] items-end"
+                  >
+                    <div className="space-y-2 md:col-span-1 lg:col-span-1 md:p-3 md:rounded-lg md:bg-white/5 md:border md:border-white/10">
+                      <label className="text-[10px] font-mono text-slate-500 uppercase tracking-widest px-1">
+                        Activity Description
+                      </label>
+                      <Input
+                        placeholder="Deep work, Gym, Study..."
+                        className="bg-black/20 border-white/10 text-white truncate"
                         value={newBlock.activity}
-                        onChange={e => setNewBlock({...newBlock, activity: e.target.value})}
+                        onChange={(e) =>
+                          setNewBlock({ ...newBlock, activity: e.target.value })
+                        }
+                        maxLength={MAX_ACTIVITY_DESCRIPTION_LENGTH}
                       />
                     </div>
-                    <div className="space-y-2 relative">
-                       <label className="text-[10px] font-mono text-slate-500 uppercase tracking-widest px-1">Day</label>
-                       <button
+                    <div className="space-y-2 relative md:col-span-1 lg:col-span-1">
+                      <label className="text-[10px] font-mono text-slate-500 uppercase tracking-widest px-1">
+                        Day
+                      </label>
+                      <button
                         type="button"
                         onClick={() => setIsDayMenuOpen((current) => !current)}
-                        className="flex h-11 w-full max-w-[160px] items-center justify-between rounded-xl border border-white/10 bg-slate-900/70 px-3 text-left text-sm text-white transition-all hover:border-pink-500/40 hover:bg-slate-900"
-                       >
-                         <div className="min-w-0">
-                           <div className="truncate font-semibold">{getSelectedDaysLabel()}</div>
-                           <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500">
-                            {editingBlockId ? "Edit days" : "Pick days"}
-                           </div>
-                         </div>
-                         <ChevronRight className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${isDayMenuOpen ? "rotate-90 text-pink-300" : ""}`} />
-                       </button>
-                       {isDayMenuOpen && (
+                        className="flex h-10 sm:h-11 w-full sm:max-w-[120px] md:max-w-[160px] items-center justify-between rounded-lg sm:rounded-xl border border-white/10 bg-slate-900/70 px-2 sm:px-3 text-left text-xs sm:text-sm text-white transition-all hover:border-pink-500/40 hover:bg-slate-900"
+                      >
+                        <div className="min-w-0">
+                          <div className="truncate font-semibold">
+                            {getSelectedDaysLabel()}
+                          </div>
+                          <div className="text-[8px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-slate-500">
+                            {editingBlockId ? "Edit" : "Pick"}
+                          </div>
+                        </div>
+                        <ChevronRight
+                          className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${isDayMenuOpen ? "rotate-90 text-pink-300" : ""}`}
+                        />
+                      </button>
+                      {isDayMenuOpen && (
                         <div className="absolute left-0 top-full z-50 mt-2 w-64 rounded-2xl border border-white/10 bg-slate-950/95 p-3 shadow-2xl backdrop-blur-xl">
                           <div className="mb-3 flex items-center justify-between px-1">
                             <div>
-                              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-300">Select Days</div>
+                              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-300">
+                                Select Days
+                              </div>
                               <div className="text-[10px] text-slate-500">
-                                {editingBlockId ? "Update this time block across one or more days." : "Add this block to one or more days."}
+                                {editingBlockId
+                                  ? "Update this time block across one or more days."
+                                  : "Add this block to one or more days."}
                               </div>
                             </div>
                             <span className="rounded-full border border-pink-500/20 bg-pink-500/10 px-2 py-1 text-[10px] font-mono uppercase tracking-[0.2em] text-pink-200">
@@ -929,82 +1337,220 @@ export default function OrganisePage() {
                             </span>
                           </div>
                           <div className="grid grid-cols-2 gap-2">
-                          {DAYS.map((day) => {
-                            const checked = newBlock.days.includes(day);
-                            return (
-                              <button
-                                key={day}
-                                type="button"
-                                onClick={() => toggleBlockDay(day)}
-                                className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm transition-all ${
-                                  checked
-                                    ? "border-pink-500/30 bg-pink-500/10 text-pink-100"
-                                    : "border-white/10 bg-white/[0.03] text-slate-300 hover:border-white/20 hover:bg-white/[0.05]"
-                                }`}
-                              >
-                                {checked ? (
-                                  <CheckCircle className="h-4 w-4 shrink-0 text-pink-300" />
-                                ) : (
-                                  <Circle className="h-4 w-4 shrink-0 text-slate-600" />
-                                )}
-                                <span className="truncate">{formatDayLabel(day)}</span>
-                              </button>
-                            );
-                          })}
+                            {DAYS.map((day) => {
+                              const checked = newBlock.days.includes(day);
+                              return (
+                                <button
+                                  key={day}
+                                  type="button"
+                                  onClick={() => toggleBlockDay(day)}
+                                  className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm transition-all ${
+                                    checked
+                                      ? "border-pink-500/30 bg-pink-500/10 text-pink-100"
+                                      : "border-white/10 bg-white/[0.03] text-slate-300 hover:border-white/20 hover:bg-white/[0.05]"
+                                  }`}
+                                >
+                                  {checked ? (
+                                    <CheckCircle className="h-4 w-4 shrink-0 text-pink-300" />
+                                  ) : (
+                                    <Circle className="h-4 w-4 shrink-0 text-slate-600" />
+                                  )}
+                                  <span className="truncate">
+                                    {formatDayLabel(day)}
+                                  </span>
+                                </button>
+                              );
+                            })}
                           </div>
                         </div>
-                       )}
+                      )}
                     </div>
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:col-span-2 lg:col-span-1">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Start</label>
-                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_88px]">
-                          <Input
-                            type="time"
-                            step="900"
-                            className="min-w-0 w-full bg-black/20 border-white/10 text-white"
-                            value={newBlock.start.time}
-                            onChange={(e) => updateBlockTime("start", "time", e.target.value)}
-                          />
-                          <select
-                            className="h-10 w-full rounded-md border border-white/10 bg-black/20 px-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-pink-500/50"
-                            value={newBlock.start.period}
-                            onChange={(e) => updateBlockTime("start", "period", e.target.value)}
+                        <label className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">
+                          Start
+                        </label>
+                        <div className="relative flex flex-col rounded-md border border-white/10 bg-black/20">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setIsStartTimeMenuOpen((current) => !current)
+                            }
+                            className="px-3 py-2 text-sm text-white bg-slate-950/80 focus:outline-none focus:ring-1 focus:ring-pink-500/50 rounded-none h-10 text-left"
                           >
-                            <option value="AM">AM</option>
-                            <option value="PM">PM</option>
-                          </select>
+                            Select time
+                          </button>
+                          {isStartTimeMenuOpen && (
+                            <div className="absolute left-0 top-full z-50 mt-2 w-64 rounded-2xl border border-white/10 bg-slate-950/95 p-3 shadow-2xl backdrop-blur-xl">
+                              <div className="mb-3 flex items-center justify-between px-1">
+                                <div>
+                                  <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-300">
+                                    Start Time
+                                  </div>
+                                  <div className="text-[10px] text-slate-500">
+                                    Choose hour and minute.
+                                  </div>
+                                </div>
+                                <span className="rounded-full border border-pink-500/20 bg-pink-500/10 px-2 py-1 text-[10px] font-mono uppercase tracking-[0.2em] text-pink-200">
+                                  {newBlock.start.time}
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                <select
+                                  className="rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-pink-500/50"
+                                  value={startHour}
+                                  onChange={(e) =>
+                                    updateBlockTime(
+                                      "start",
+                                      "time",
+                                      `${e.target.value}:${startMinute}`,
+                                    )
+                                  }
+                                >
+                                  {HOURS_12.map((hour) => (
+                                    <option key={hour} value={hour}>
+                                      {hour}
+                                    </option>
+                                  ))}
+                                </select>
+                                <select
+                                  className="rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-pink-500/50"
+                                  value={startMinute}
+                                  onChange={(e) =>
+                                    updateBlockTime(
+                                      "start",
+                                      "time",
+                                      `${startHour}:${e.target.value}`,
+                                    )
+                                  }
+                                >
+                                  {MINUTES_60.map((minute) => (
+                                    <option key={minute} value={minute}>
+                                      {minute}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div className="mt-3">
+                                <select
+                                  className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-pink-500/50"
+                                  value={newBlock.start.period}
+                                  onChange={(e) =>
+                                    updateBlockTime(
+                                      "start",
+                                      "period",
+                                      e.target.value,
+                                    )
+                                  }
+                                >
+                                  <option value="AM">AM</option>
+                                  <option value="PM">PM</option>
+                                </select>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">End</label>
-                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_88px]">
-                          <Input
-                            type="time"
-                            step="900"
-                            className="min-w-0 w-full bg-black/20 border-white/10 text-white"
-                            value={newBlock.end.time}
-                            onChange={(e) => updateBlockTime("end", "time", e.target.value)}
-                          />
-                          <select
-                            className="h-10 w-full rounded-md border border-white/10 bg-black/20 px-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-pink-500/50"
-                            value={newBlock.end.period}
-                            onChange={(e) => updateBlockTime("end", "period", e.target.value)}
+                        <label className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">
+                          End
+                        </label>
+                        <div className="relative flex flex-col rounded-md border border-white/10 bg-black/20">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setIsEndTimeMenuOpen((current) => !current)
+                            }
+                            className="px-3 py-2 text-sm text-white bg-slate-950/80 focus:outline-none focus:ring-1 focus:ring-pink-500/50 rounded-none h-10 text-left"
                           >
-                            <option value="AM">AM</option>
-                            <option value="PM">PM</option>
-                          </select>
+                            Select time
+                          </button>
+                          {isEndTimeMenuOpen && (
+                            <div className="absolute left-0 top-full z-50 mt-2 w-64 rounded-2xl border border-white/10 bg-slate-950/95 p-3 shadow-2xl backdrop-blur-xl">
+                              <div className="mb-3 flex items-center justify-between px-1">
+                                <div>
+                                  <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-300">
+                                    End Time
+                                  </div>
+                                  <div className="text-[10px] text-slate-500">
+                                    Choose hour and minute.
+                                  </div>
+                                </div>
+                                <span className="rounded-full border border-pink-500/20 bg-pink-500/10 px-2 py-1 text-[10px] font-mono uppercase tracking-[0.2em] text-pink-200">
+                                  {newBlock.end.time}
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                <select
+                                  className="rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-pink-500/50"
+                                  value={endHour}
+                                  onChange={(e) =>
+                                    updateBlockTime(
+                                      "end",
+                                      "time",
+                                      `${e.target.value}:${endMinute}`,
+                                    )
+                                  }
+                                >
+                                  {HOURS_12.map((hour) => (
+                                    <option key={hour} value={hour}>
+                                      {hour}
+                                    </option>
+                                  ))}
+                                </select>
+                                <select
+                                  className="rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-pink-500/50"
+                                  value={endMinute}
+                                  onChange={(e) =>
+                                    updateBlockTime(
+                                      "end",
+                                      "time",
+                                      `${endHour}:${e.target.value}`,
+                                    )
+                                  }
+                                >
+                                  {MINUTES_60.map((minute) => (
+                                    <option key={minute} value={minute}>
+                                      {minute}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div className="mt-3">
+                                <select
+                                  className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-pink-500/50"
+                                  value={newBlock.end.period}
+                                  onChange={(e) =>
+                                    updateBlockTime(
+                                      "end",
+                                      "period",
+                                      e.target.value,
+                                    )
+                                  }
+                                >
+                                  <option value="AM">AM</option>
+                                  <option value="PM">PM</option>
+                                </select>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 md:col-span-2 lg:col-span-1">
                       <Button
                         type="submit"
                         disabled={addingBlock || savingBlock}
                         className="bg-pink-600 hover:bg-pink-500 text-white font-bold h-10"
                       >
                         <Plus className="w-4 h-4 mr-2" />
-                        {editingBlockId ? (savingBlock ? "Saving..." : "Save") : (addingBlock ? "Adding..." : "Add")}
+                        {editingBlockId
+                          ? savingBlock
+                            ? "Saving..."
+                            : "Save"
+                          : addingBlock
+                            ? "Adding..."
+                            : "Add"}
                       </Button>
                       {editingBlockId && (
                         <Button
@@ -1016,83 +1562,87 @@ export default function OrganisePage() {
                           Cancel
                         </Button>
                       )}
+                      <Button
+                        type="button"
+                        onClick={handleClearTimetable}
+                        disabled={clearingTimetable || !hasTimetableBlocks}
+                        className="h-10 border border-rose-500/30 bg-rose-500/10 text-rose-200 hover:bg-rose-500/20"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        {clearingTimetable ? "Clearing..." : "Clear all"}
+                      </Button>
                     </div>
                   </form>
                 </Card>
 
-                {/* Tabular Grid */}
-                <div className="relative z-0 overflow-x-auto rounded-[32px] border border-white/10 bg-slate-900/40 backdrop-blur-3xl shadow-2xl pb-4">
-                  <div className="min-w-[1000px] grid grid-cols-[80px_repeat(7,1fr)]">
-                    {/* Header */}
-                    <div className="h-14 border-b border-r border-white/10 flex items-center justify-center text-[10px] font-mono text-slate-500 uppercase">Time</div>
-                    {DAYS.map(day => (
-                      <div key={day} className="h-14 border-b border-white/10 flex items-center justify-center text-xs font-bold uppercase tracking-widest text-slate-200 bg-white/5 border-r border-white/10">
-                        {day}
-                      </div>
-                    ))}
+                {/* Timetable Slots (Only Created Blocks) */}
+                <div className="relative z-0 rounded-[32px] border border-white/10 bg-slate-900/40 p-4 backdrop-blur-3xl shadow-2xl">
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7">
+                    {DAYS.map((day) => {
+                      const dayBlocks = getDayBlocks(day);
 
-                    {/* Time Slots + Data Grid */}
-                    <div className="contents relative">
-                      {/* Time Column */}
-                      <div className="col-start-1 col-end-2">
-                        {HOURS.map(hour => (
-                          <div key={hour} className="h-12 border-b border-r border-white/10 flex items-center justify-center text-[10px] font-mono text-slate-600">
-                            {hour.toString().padStart(2, '0')}:00
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Day Columns */}
-                      {DAYS.map((day, dIdx) => (
+                      return (
                         <div
                           key={day}
-                          className="relative h-full"
-                          style={{ gridColumn: `${dIdx + 2} / ${dIdx + 3}` }}
+                          className="rounded-2xl border border-white/10 bg-white/[0.02]"
                         >
-                           {/* Background Grid Lines */}
-                           {HOURS.map(hour => (
-                             <div key={hour} className="h-12 border-b border-r border-white/5 last-of-type:border-r-0" />
-                           ))}
+                          <div className="flex items-center justify-center border-b border-white/10 bg-white/5 px-3 py-2 text-[10px] font-mono uppercase tracking-[0.2em] text-slate-300">
+                            {day}
+                          </div>
+                          <div className="space-y-3 p-3">
+                            {dayBlocks.length === 0 ? (
+                              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-600">
+                                No slots
+                              </p>
+                            ) : (
+                              dayBlocks.map((block) => {
+                                const signature = getBlockSignature(block);
+                                const colorTheme =
+                                  signatureThemes.get(signature) ||
+                                  BLOCK_COLOR_THEMES[0];
+                                const isEditing = editingBlockId === block._id;
 
-                           {/* Render blocks inside column */}
-                           {getDayBlocks(day).map(block => {
-                             const rowStart = getTimeRow(block.startTime);
-                             const rowEnd = getTimeRow(block.endTime);
-                             const durationCells = rowEnd - rowStart;
-                             const colorTheme = getBlockColorTheme(block);
-                             
-                              return (
-                               <motion.div
-                                 key={block._id}
-                                 initial={{ opacity: 0, scale: 0.95 }}
-                                 animate={{ opacity: 1, scale: 1 }}
-                                 onClick={() => startEditingBlock(block)}
-                                 className={`absolute left-1 right-1 rounded-xl p-2 z-10 group overflow-hidden border backdrop-blur-md transition-all cursor-pointer ${colorTheme.border} ${colorTheme.background} ${colorTheme.hover}`}
-                                 style={{
-                                   top: `${(rowStart - 1) * 24}px`, // 48px per hour, so 24px per half-hour
-                                   height: `${durationCells * 24}px`
-                                 }}
-                               >
-                                  <div className="flex flex-col h-full">
-                                    <span className={`text-[10px] font-bold mb-1 leading-tight ${colorTheme.title}`}>{block.activity}</span>
-                                    <span className={`text-[8px] font-mono uppercase ${colorTheme.time}`}>{formatDisplayTime(block.startTime)}-{formatDisplayTime(block.endTime)}</span>
-                                    <button 
+                                return (
+                                  <motion.div
+                                    key={block._id}
+                                    initial={{ opacity: 0, y: 6 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    onClick={() => startEditingBlock(block)}
+                                    className={`relative rounded-xl border p-3 transition-all cursor-pointer group ${colorTheme.border} ${colorTheme.background} ${colorTheme.hover}`}
+                                  >
+                                    <span
+                                      className={`text-[11px] font-bold ${colorTheme.title}`}
+                                    >
+                                      {block.activity}
+                                    </span>
+                                    <span
+                                      className={`mt-1 block text-[9px] font-mono uppercase ${colorTheme.time}`}
+                                    >
+                                      {formatDisplayTime(block.startTime)} -
+                                      {formatDisplayTime(block.endTime)}
+                                    </span>
+                                    <button
                                       type="button"
                                       onClick={(event) => {
                                         event.stopPropagation();
                                         handleDeleteBlock(block._id);
                                       }}
-                                      className="absolute right-1 top-1 p-1 bg-black/40 rounded-md text-slate-400 opacity-0 group-hover:opacity-100 hover:text-rose-400 transition-opacity"
+                                      className={`absolute right-2 top-2 p-1 rounded-md bg-black/40 text-slate-400 transition-opacity hover:text-rose-400 focus-visible:text-rose-300 focus-visible:opacity-100 ${
+                                        isEditing
+                                          ? "opacity-100"
+                                          : "opacity-0 group-hover:opacity-100"
+                                      }`}
                                     >
                                       <Trash2 className="w-3 h-3" />
                                     </button>
-                                  </div>
-                               </motion.div>
-                             )
-                           })}
+                                  </motion.div>
+                                );
+                              })
+                            )}
+                          </div>
                         </div>
-                      ))}
-                    </div>
+                      );
+                    })}
                   </div>
                 </div>
               </motion.div>
@@ -1108,9 +1658,11 @@ export default function OrganisePage() {
                 <div className="space-y-4">
                   <Card className="border-white/10 bg-slate-900/50 backdrop-blur-xl">
                     <CardHeader>
-                      <CardTitle className="text-white text-lg">Custom Pad</CardTitle>
+                      <CardTitle className="text-white text-lg">
+                        Custom Pad
+                      </CardTitle>
                       <CardDescription>
-                        Create a new custom pad through the backend `POST /pads` route.
+                        Capture ideas, tasks, and lists in a dedicated space.
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -1121,6 +1673,7 @@ export default function OrganisePage() {
                           onChange={(e) => setNewPadTitle(e.target.value)}
                           disabled={addingPad}
                           className="bg-black/20 border-white/10 text-white h-11"
+                          maxLength={MAX_PAD_TITLE_LENGTH}
                         />
                         <Button
                           type="submit"
@@ -1139,29 +1692,39 @@ export default function OrganisePage() {
                     const isActive = selectedPad?._id === pad._id;
                     const theme = getPadTheme(pad, index);
                     return (
-                      <button
-                        key={pad._id}
-                        onClick={() => setSelectedPad(pad)}
-                        className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all text-left ${
-                          isActive 
-                          ? theme.activeButton
-                          : theme.idleButton
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-lg ${isActive ? theme.activeIcon : theme.idleIcon}`}>
-                            <Icon className="w-4 h-4" />
+                      <Fragment key={pad._id}>
+                        <button
+                          onClick={() => setSelectedPad(isActive ? null : pad)}
+                          className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all text-left ${
+                            isActive ? theme.activeButton : theme.idleButton
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`p-2 rounded-lg ${isActive ? theme.activeIcon : theme.idleIcon}`}
+                            >
+                              <Icon className="w-4 h-4" />
+                            </div>
+                            <span className="font-medium text-sm">
+                              {pad.title}
+                            </span>
                           </div>
-                          <span className="font-medium text-sm">{pad.title}</span>
-                        </div>
-                        <ChevronRight className={`w-4 h-4 transition-transform ${isActive ? `rotate-90 ${theme.chevron}` : "text-slate-600"}`} />
-                      </button>
-                    )
+                          <ChevronRight
+                            className={`w-4 h-4 transition-transform ${isActive ? `rotate-90 ${theme.chevron}` : "text-slate-600"}`}
+                          />
+                        </button>
+                        {isActive && (
+                          <div className="lg:hidden">
+                            {renderPadDetailCard(pad, theme)}
+                          </div>
+                        )}
+                      </Fragment>
+                    );
                   })}
                 </div>
 
                 {/* Pad Items View */}
-                <div className="min-h-[600px]">
+                <div className="hidden min-h-[600px] lg:block">
                   <AnimatePresence mode="wait">
                     {selectedPad ? (
                       <motion.div
@@ -1170,128 +1733,15 @@ export default function OrganisePage() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                       >
-                        <Card className={`${selectedPadTheme?.detailCard || "border-white/10 bg-slate-900/50"} backdrop-blur-xl`}>
-                          <CardHeader className="flex flex-row items-center justify-between">
-                            <div>
-                               <CardTitle className="text-2xl text-white">{selectedPad.title}</CardTitle>
-                               <CardDescription>{selectedPad.items.length} items logged</CardDescription>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <div className={`h-10 w-10 flex items-center justify-center rounded-xl border ${selectedPadTheme?.detailIcon || "bg-white/5 border-white/10 text-white"}`}>
-                                 {(() => {
-                                   const Icon = PAD_ICONS[selectedPad.padType] || FolderKanban;
-                                   return <Icon className="w-5 h-5" />
-                                 })()}
-                              </div>
-                              <Button
-                                type="button"
-                                onClick={handleDeletePad}
-                                disabled={deletingPad}
-                                className="bg-rose-600/15 hover:bg-rose-600/25 text-rose-300 border border-rose-500/20 h-10 px-4"
-                              >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                {deletingPad ? "Deleting..." : "Delete Pad"}
-                              </Button>
-                            </div>
-                          </CardHeader>
-                          <CardContent className="space-y-6">
-                            <form onSubmit={handleAddItem} className="flex gap-2">
-                              <Input 
-                                placeholder="Add a new entry..." 
-                                className="bg-black/20 border-white/10 text-white h-12"
-                                value={newItemTitle}
-                                onChange={e => setNewItemTitle(e.target.value)}
-                                disabled={addingItem}
-                              />
-                              <Button
-                                type="submit"
-                                disabled={addingItem || !newItemTitle.trim()}
-                                className={`${selectedPadTheme?.actionButton || "bg-pink-600 hover:bg-pink-500 text-white"} h-12 px-6`}
-                              >
-                                <Plus className="w-5 h-5" />
-                                <span className="ml-2">{addingItem ? "Adding..." : "Add"}</span>
-                              </Button>
-                            </form>
-
-                            <div className="space-y-2">
-                              {selectedPad.items.slice().reverse().map(item => (
-                                <div
-                                  key={item._id}
-                                  className={`flex items-center gap-4 p-4 rounded-xl border group transition-all ${
-                                    item.done
-                                      ? selectedPadTheme?.itemDoneCard || "border-white/5 bg-white/[0.02] hover:bg-white/[0.04]"
-                                      : selectedPadTheme?.itemCard || "border-white/5 bg-white/[0.03] hover:bg-white/[0.06]"
-                                  }`}
-                                >
-                                  <button 
-                                    onClick={() => handleToggleItem(selectedPad._id, item._id)}
-                                    disabled={togglingItemId === item._id}
-                                    className={`shrink-0 transition-colors ${
-                                      item.done
-                                        ? selectedPadTheme?.itemToggle || "text-emerald-400"
-                                        : selectedPadTheme?.itemToggle || "text-slate-500 hover:text-slate-300"
-                                    }`}
-                                  >
-                                    {item.done ? <CheckCircle className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
-                                  </button>
-                                  {editingItemId === item._id ? (
-                                    <div className="flex flex-1 items-center gap-2">
-                                      <Input
-                                        value={editingItemTitle}
-                                        onChange={(e) => setEditingItemTitle(e.target.value)}
-                                        disabled={savingItemId === item._id}
-                                        className="bg-black/20 border-white/10 text-white h-10"
-                                      />
-                                      <Button
-                                        type="button"
-                                        onClick={() => handleRenameItem(selectedPad._id, item._id)}
-                                        disabled={savingItemId === item._id || !editingItemTitle.trim()}
-                                        className="bg-white/10 hover:bg-white/15 text-white h-10 px-4"
-                                      >
-                                        {savingItemId === item._id ? "Saving..." : "Save"}
-                                      </Button>
-                                      <Button
-                                        type="button"
-                                        onClick={cancelEditingItem}
-                                        disabled={savingItemId === item._id}
-                                        className="bg-transparent border border-white/10 text-slate-300 hover:bg-white/5 h-10 px-4"
-                                      >
-                                        Cancel
-                                      </Button>
-                                    </div>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() => startEditingItem(item)}
-                                      className={`flex-1 text-left text-sm ${
-                                        item.done
-                                          ? selectedPadTheme?.itemDoneTitle || "text-slate-500 line-through decoration-emerald-500/30"
-                                          : selectedPadTheme?.itemTitle || "text-slate-200"
-                                      } ${item.done ? "line-through" : ""}`}
-                                    >
-                                      {item.title}
-                                    </button>
-                                  )}
-                                  <button 
-                                    onClick={() => handleDeleteItem(selectedPad._id, item._id)}
-                                    disabled={deletingItemId === item._id}
-                                    className={`p-2 opacity-0 group-hover:opacity-100 transition-all disabled:opacity-100 ${
-                                      selectedPadTheme?.itemDelete || "text-slate-600 hover:text-rose-400"
-                                    }`}
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          </CardContent>
-                        </Card>
+                        {renderPadDetailCard(selectedPad, selectedPadTheme)}
                       </motion.div>
                     ) : (
                       <div className="h-full flex items-center justify-center border-2 border-dashed border-white/5 rounded-[40px]">
                         <div className="text-center space-y-2">
                           <FolderKanban className="w-12 h-12 text-slate-800 mx-auto" />
-                          <p className="text-slate-500 font-mono text-[10px] uppercase tracking-[0.4em]">Select a pad from the left</p>
+                          <p className="text-slate-500 font-mono text-[10px] uppercase tracking-[0.4em]">
+                            Select a pad from the left
+                          </p>
                         </div>
                       </div>
                     )}
@@ -1302,6 +1752,8 @@ export default function OrganisePage() {
           </AnimatePresence>
         </div>
       </main>
+
+      <MobileTabBar items={navItems} />
     </div>
   );
 }

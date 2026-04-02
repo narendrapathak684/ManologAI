@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
 const User = require("../models/user");
+const { getCurrencyForCountry } = require("../config/currency");
 
 const router = express.Router();
 
@@ -18,7 +19,18 @@ const cookieOptions = {
 
 router.post("/signup", async (req, res) => {
   try {
-    const { email, password, firstName, lastName } = req.body || {};
+    const { email, password, firstName, lastName, country } = req.body || {};
+
+    if (!country || typeof country !== "string" || !country.trim()) {
+      return res.status(400).json({ error: "Country is required" });
+    }
+
+    const normalizedCountry = country.trim();
+    if (normalizedCountry.length > 80) {
+      return res
+        .status(400)
+        .json({ error: "Country must be 80 characters or fewer" });
+    }
 
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required" });
@@ -45,13 +57,13 @@ router.post("/signup", async (req, res) => {
       passwordHash,
       firstName,
       lastName,
+      country: normalizedCountry,
+      currency: getCurrencyForCountry(normalizedCountry),
     });
 
-    const token = jwt.sign(
-      { userId: user._id.toString() },
-      JWT_SECRET,
-      { expiresIn: "1d" }
-    );
+    const token = jwt.sign({ userId: user._id.toString() }, JWT_SECRET, {
+      expiresIn: "1d",
+    });
 
     res.cookie("token", token, cookieOptions);
 
@@ -62,6 +74,8 @@ router.post("/signup", async (req, res) => {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
+        country: user.country,
+        currency: user.currency,
       },
     });
   } catch (error) {
@@ -93,13 +107,19 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
-    const token = jwt.sign(
-      { userId: user._id.toString() },
-      JWT_SECRET,
-      { expiresIn: "1d" }
-    );
+    const token = jwt.sign({ userId: user._id.toString() }, JWT_SECRET, {
+      expiresIn: "1d",
+    });
 
     res.cookie("token", token, cookieOptions);
+
+    const resolvedCurrency =
+      user.currency || getCurrencyForCountry(user.country);
+
+    if (!user.currency && resolvedCurrency) {
+      user.currency = resolvedCurrency;
+      await user.save();
+    }
 
     return res.status(200).json({
       message: "Login successful",
@@ -108,6 +128,8 @@ router.post("/login", async (req, res) => {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
+        country: user.country,
+        currency: user.currency,
       },
     });
   } catch (error) {
@@ -122,4 +144,3 @@ router.post("/logout", (req, res) => {
 });
 
 module.exports = router;
-

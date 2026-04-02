@@ -25,6 +25,10 @@ function todayMidnight() {
   return d;
 }
 
+function isFutureDate(date) {
+  return date.getTime() > todayMidnight().getTime();
+}
+
 function isLocked(entry) {
   return entry.lockedUntil && new Date() > new Date(entry.lockedUntil);
 }
@@ -77,6 +81,9 @@ router.patch("/:date", auth, async (req, res) => {
 
     const date = toLocalMidnight(req.params.date);
     if (!date) return res.status(400).json({ error: "Invalid date format. Use YYYY-MM-DD" });
+    if (isFutureDate(date)) {
+      return res.status(400).json({ error: "Future emotion entries are not allowed" });
+    }
 
     const entry = await Emotion.findOne({ user: userId, date }).select("date emotion lockedUntil");
     if (!entry) return res.status(404).json({ error: "No entry found for this date" });

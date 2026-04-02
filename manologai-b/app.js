@@ -17,7 +17,46 @@ const app = express();
 const PORT = process.env.PORT || 4545;
 
 // Built-in middleware
-app.use(cors({ origin: 'http://localhost:5173', credentials: true })); // Adjust frontend URL as needed
+const allowedOrigins = new Set([
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+]);
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow non-browser clients or same-origin requests with no Origin header.
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      try {
+        const { hostname, port, protocol } = new URL(origin);
+        const isLocalhost =
+          hostname === "localhost" || hostname === "127.0.0.1";
+        const isPrivateLan =
+          hostname.startsWith("192.168.") ||
+          hostname.startsWith("10.") ||
+          /^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname);
+        const isDevPort = port === "5173";
+        const isHttp = protocol === "http:";
+
+        if ((isLocalhost || isPrivateLan) && isDevPort && isHttp) {
+          return callback(null, true);
+        }
+      } catch (err) {
+        // Fall through to default deny.
+      }
+
+      if (allowedOrigins.has(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+  }),
+); // Allow dev clients on localhost or private LAN
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());

@@ -5,8 +5,17 @@ const Habit = require("../models/habit");
 
 const router = express.Router();
 
-const VALID_DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+const VALID_DAYS = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+];
 const VALID_FREQUENCIES = ["daily", "weekly", "custom"];
+const MAX_HABIT_NAME_LENGTH = 60;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -34,6 +43,38 @@ function isSameDay(a, b) {
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate()
   );
+}
+
+function toDateKey(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function isScheduledOnDay(habit, date) {
+  if (habit.frequency === "daily") return true;
+
+  const weekday = date
+    .toLocaleDateString("en-US", { weekday: "long" })
+    .toLowerCase();
+
+  if (habit.frequency === "custom") {
+    return (
+      Array.isArray(habit.customDays) && habit.customDays.includes(weekday)
+    );
+  }
+
+  if (habit.frequency === "weekly") {
+    const createdAt = habit.createdAt ? new Date(habit.createdAt) : null;
+    if (!createdAt || Number.isNaN(createdAt.getTime())) return false;
+    const createdWeekday = createdAt
+      .toLocaleDateString("en-US", { weekday: "long" })
+      .toLowerCase();
+    return weekday === createdWeekday;
+  }
+
+  return false;
 }
 
 // Recalculate currentStreak and longestStreak from history array.
@@ -74,11 +115,63 @@ function recalculateStreaks(history) {
 
 // ─── Habit Management ─────────────────────────────────────────────────────────
 
+// GET /habits/score
+// Average completion score over the last N days (default 7).
+router.get("/score", auth, async (req, res) => {
+  try {
+    const daysParam = Number(req.query.days) || 7;
+    const days =
+      Number.isFinite(daysParam) && daysParam > 0 ? Math.floor(daysParam) : 7;
+
+    const habits = await Habit.find({ user: req.user._id }).sort({
+      createdAt: 1,
+    });
+    if (habits.length === 0) {
+      return res.status(200).json({ days, completed: 0, total: 0, percent: 0 });
+    }
+
+    const today = todayMidnight();
+    const start = new Date(today);
+    start.setDate(start.getDate() - (days - 1));
+
+    let total = 0;
+    let completed = 0;
+
+    for (const habit of habits) {
+      const completedSet = new Set(
+        habit.history
+          .filter((h) => h.completed)
+          .map((h) => toDateKey(new Date(h.date))),
+      );
+
+      const cursor = new Date(start);
+      while (cursor <= today) {
+        if (isScheduledOnDay(habit, cursor)) {
+          total += 1;
+          if (completedSet.has(toDateKey(cursor))) {
+            completed += 1;
+          }
+        }
+        cursor.setDate(cursor.getDate() + 1);
+      }
+    }
+
+    const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    return res.status(200).json({ days, completed, total, percent });
+  } catch (err) {
+    console.error("GET /habits/score error:", err);
+    return res.status(500).json({ error: "Failed to calculate habit score" });
+  }
+});
+
 // GET /habits
 // Get all habits for the logged-in user.
 router.get("/", auth, async (req, res) => {
   try {
-    const habits = await Habit.find({ user: req.user._id }).sort({ createdAt: 1 });
+    const habits = await Habit.find({ user: req.user._id }).sort({
+      createdAt: 1,
+    });
     return res.status(200).json({ habits });
   } catch (err) {
     console.error("GET /habits error:", err);
@@ -95,21 +188,32 @@ router.post("/", auth, async (req, res) => {
     if (!name || typeof name !== "string" || !name.trim()) {
       return res.status(400).json({ error: "Habit name is required" });
     }
+    if (name.trim().length > MAX_HABIT_NAME_LENGTH) {
+      return res.status(400).json({
+        error: `Habit name must be ${MAX_HABIT_NAME_LENGTH} characters or fewer`,
+      });
+    }
 
     const freq = frequency || "daily";
     if (!VALID_FREQUENCIES.includes(freq)) {
-      return res.status(400).json({ error: `frequency must be one of: ${VALID_FREQUENCIES.join(", ")}` });
+      return res.status(400).json({
+        error: `frequency must be one of: ${VALID_FREQUENCIES.join(", ")}`,
+      });
     }
 
     let days = [];
     if (freq === "custom") {
       if (!Array.isArray(customDays) || customDays.length === 0) {
-        return res.status(400).json({ error: "customDays is required for custom frequency" });
+        return res
+          .status(400)
+          .json({ error: "customDays is required for custom frequency" });
       }
       days = customDays.map((d) => d.toLowerCase());
       const invalid = days.find((d) => !VALID_DAYS.includes(d));
       if (invalid) {
-        return res.status(400).json({ error: `Invalid day: "${invalid}". Must be one of: ${VALID_DAYS.join(", ")}` });
+        return res.status(400).json({
+          error: `Invalid day: "${invalid}". Must be one of: ${VALID_DAYS.join(", ")}`,
+        });
       }
     }
 
@@ -136,26 +240,38 @@ router.patch("/:habitId", auth, async (req, res) => {
   try {
     const { name, frequency, customDays } = req.body || {};
 
-    const habit = await Habit.findOne({ _id: req.params.habitId, user: req.user._id });
+    const habit = await Habit.findOne({
+      _id: req.params.habitId,
+      user: req.user._id,
+    });
     if (!habit) return res.status(404).json({ error: "Habit not found" });
 
     if (name !== undefined) {
       if (typeof name !== "string" || !name.trim()) {
         return res.status(400).json({ error: "Habit name cannot be empty" });
       }
+      if (name.trim().length > MAX_HABIT_NAME_LENGTH) {
+        return res.status(400).json({
+          error: `Habit name must be ${MAX_HABIT_NAME_LENGTH} characters or fewer`,
+        });
+      }
       habit.name = name.trim();
     }
 
     if (frequency !== undefined) {
       if (!VALID_FREQUENCIES.includes(frequency)) {
-        return res.status(400).json({ error: `frequency must be one of: ${VALID_FREQUENCIES.join(", ")}` });
+        return res.status(400).json({
+          error: `frequency must be one of: ${VALID_FREQUENCIES.join(", ")}`,
+        });
       }
       habit.frequency = frequency;
     }
 
     if (customDays !== undefined) {
       if (!Array.isArray(customDays) || customDays.length === 0) {
-        return res.status(400).json({ error: "customDays must be a non-empty array" });
+        return res
+          .status(400)
+          .json({ error: "customDays must be a non-empty array" });
       }
       const days = customDays.map((d) => d.toLowerCase());
       const invalid = days.find((d) => !VALID_DAYS.includes(d));
@@ -177,7 +293,10 @@ router.patch("/:habitId", auth, async (req, res) => {
 // Delete a habit and its entire history.
 router.delete("/:habitId", auth, async (req, res) => {
   try {
-    const habit = await Habit.findOne({ _id: req.params.habitId, user: req.user._id });
+    const habit = await Habit.findOne({
+      _id: req.params.habitId,
+      user: req.user._id,
+    });
     if (!habit) return res.status(404).json({ error: "Habit not found" });
 
     await Habit.deleteOne({ _id: habit._id });
@@ -194,17 +313,22 @@ router.delete("/:habitId", auth, async (req, res) => {
 // Mark habit as done for today. Recalculates streaks.
 router.post("/:habitId/check", auth, async (req, res) => {
   try {
-    const habit = await Habit.findOne({ _id: req.params.habitId, user: req.user._id });
+    const habit = await Habit.findOne({
+      _id: req.params.habitId,
+      user: req.user._id,
+    });
     if (!habit) return res.status(404).json({ error: "Habit not found" });
 
     const today = todayMidnight();
 
     // Prevent duplicate check-in for the same day
     const alreadyDone = habit.history.find(
-      (h) => h.completed && isSameDay(new Date(h.date), today)
+      (h) => h.completed && isSameDay(new Date(h.date), today),
     );
     if (alreadyDone) {
-      return res.status(409).json({ error: "Habit already marked as done for today" });
+      return res
+        .status(409)
+        .json({ error: "Habit already marked as done for today" });
     }
 
     habit.history.push({ date: today, completed: true });
@@ -229,17 +353,25 @@ router.post("/:habitId/check", auth, async (req, res) => {
 // Undo habit completion for a specific date. Recalculates streaks.
 router.delete("/:habitId/check/:date", auth, async (req, res) => {
   try {
-    const habit = await Habit.findOne({ _id: req.params.habitId, user: req.user._id });
+    const habit = await Habit.findOne({
+      _id: req.params.habitId,
+      user: req.user._id,
+    });
     if (!habit) return res.status(404).json({ error: "Habit not found" });
 
     const date = toLocalMidnight(req.params.date);
-    if (!date) return res.status(400).json({ error: "Invalid date format. Use YYYY-MM-DD" });
+    if (!date)
+      return res
+        .status(400)
+        .json({ error: "Invalid date format. Use YYYY-MM-DD" });
 
     const entryIndex = habit.history.findIndex(
-      (h) => h.completed && isSameDay(new Date(h.date), date)
+      (h) => h.completed && isSameDay(new Date(h.date), date),
     );
     if (entryIndex === -1) {
-      return res.status(404).json({ error: "No completion found for this date" });
+      return res
+        .status(404)
+        .json({ error: "No completion found for this date" });
     }
 
     habit.history.splice(entryIndex, 1);
@@ -267,7 +399,10 @@ router.delete("/:habitId/check/:date", auth, async (req, res) => {
 // Optional query: ?from=YYYY-MM-DD&to=YYYY-MM-DD
 router.get("/:habitId/history", auth, async (req, res) => {
   try {
-    const habit = await Habit.findOne({ _id: req.params.habitId, user: req.user._id });
+    const habit = await Habit.findOne({
+      _id: req.params.habitId,
+      user: req.user._id,
+    });
     if (!habit) return res.status(404).json({ error: "Habit not found" });
 
     let history = habit.history;
@@ -276,7 +411,8 @@ router.get("/:habitId/history", auth, async (req, res) => {
 
     if (from) {
       const fromDate = toLocalMidnight(from);
-      if (!fromDate) return res.status(400).json({ error: "Invalid 'from' date" });
+      if (!fromDate)
+        return res.status(400).json({ error: "Invalid 'from' date" });
       history = history.filter((h) => new Date(h.date) >= fromDate);
     }
 
@@ -295,9 +431,14 @@ router.get("/:habitId/history", auth, async (req, res) => {
       name: habit.name,
       currentStreak: habit.currentStreak,
       longestStreak: habit.longestStreak,
-      completionRate: habit.history.length > 0
-        ? Math.round((habit.history.filter((h) => h.completed).length / habit.history.length) * 100)
-        : 0,
+      completionRate:
+        habit.history.length > 0
+          ? Math.round(
+              (habit.history.filter((h) => h.completed).length /
+                habit.history.length) *
+                100,
+            )
+          : 0,
       history,
     });
   } catch (err) {

@@ -1,10 +1,28 @@
 @import "tailwindcss";
 
 @layer base {
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
 
   body {
-    font-family: 'Inter', sans-serif;
+    font-family: "Inter", sans-serif;
     @apply bg-slate-950 text-slate-100 antialiased overflow-x-hidden;
+  }
+
+  .time-picker {
+    color-scheme: dark;
+  }
+
+  .time-picker::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(2);
+    opacity: 1;
+  }
+
+  /* Prevent iOS from auto-zooming inputs with small font sizes. */
+  @media (max-width: 1024px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px;
+    }
   }
 }

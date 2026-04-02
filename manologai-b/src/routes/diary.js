@@ -20,6 +20,12 @@ function parseDateOnlyToLocalMidnight(dateInput) {
   return dt;
 }
 
+function getTodayLocalMidnight() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
+}
+
 // POST /api/diary - create/update entry for a given date (defaults to today)
 router.post("/api/diary", auth, async (req, res) => {
   try {
@@ -29,7 +35,12 @@ router.post("/api/diary", auth, async (req, res) => {
     const { text, rating, metrics, date: rawDate } = req.body || {};
     const entryDate =
       parseDateOnlyToLocalMidnight(rawDate) ||
-      parseDateOnlyToLocalMidnight(new Date());
+      getTodayLocalMidnight();
+    const today = getTodayLocalMidnight();
+
+    if (entryDate.getTime() > today.getTime()) {
+      return res.status(400).json({ error: "Future diary entries are not allowed" });
+    }
 
     if (rating !== undefined && rating !== null) {
       if (typeof rating !== "number" || rating < 0 || rating > 10) {

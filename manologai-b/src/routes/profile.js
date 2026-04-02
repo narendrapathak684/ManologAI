@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 
 const auth = require("../middleware/auth");
 const User = require("../models/user");
+const { getCurrencyForCountry } = require("../config/currency");
 
 const router = express.Router();
 
@@ -23,6 +24,45 @@ router.get("/me", auth, async (req, res) => {
   } catch (error) {
     console.error("Fetch profile error:", error);
     return res.status(500).json({ error: "Failed to fetch profile" });
+  }
+});
+
+// Edit currently logged-in user profile info
+router.patch("/me", auth, async (req, res) => {
+  try {
+    const userId = req.user?._id;
+    if (!userId) {
+      return res.status(401).json({ error: "Please login first" });
+    }
+
+    const updates = req.body;
+
+    // Security: explicitly prevent updating email and password via this route
+    delete updates.email;
+    delete updates.passwordHash;
+    delete updates.password;
+    delete updates.currency;
+
+    if (updates.country) {
+      updates.currency = getCurrencyForCountry(updates.country);
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $set: updates },
+      { new: true, runValidators: true },
+    ).select("-passwordHash");
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    return res
+      .status(200)
+      .json({ message: "Profile updated successfully", user });
+  } catch (error) {
+    console.error("Update profile error:", error);
+    return res.status(500).json({ error: "Failed to update profile" });
   }
 });
 
@@ -72,4 +112,3 @@ router.post("/reset-password", auth, async (req, res) => {
 });
 
 module.exports = router;
-
