@@ -103,12 +103,45 @@ const formatEmotionLabel = (value) => {
   return `${label[0].toUpperCase()}${label.slice(1)}`;
 };
 
+const getNearestEmotionLabel = (score) => {
+  if (!Number.isFinite(score)) return "Neutral";
+  const keys = Object.keys(EMOTION_LABELS)
+    .map((value) => Number(value))
+    .sort((a, b) => a - b);
+  let nearest = keys[0];
+  let minDiff = Math.abs(score - keys[0]);
+  for (const key of keys) {
+    const diff = Math.abs(score - key);
+    if (diff < minDiff) {
+      minDiff = diff;
+      nearest = key;
+    }
+  }
+  return formatEmotionLabel(nearest);
+};
+
+const formatEmotionName = (emotion) => {
+  if (!emotion) return "Unknown";
+  return `${emotion[0].toUpperCase()}${emotion.slice(1)}`;
+};
+
 const toDateKey = (dateInput) => {
   const date = new Date(dateInput);
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+};
+
+const WEEKDAY_ORDER = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const WEEKDAY_FULL = {
+  Mon: "Monday",
+  Tue: "Tuesday",
+  Wed: "Wednesday",
+  Thu: "Thursday",
+  Fri: "Friday",
+  Sat: "Saturday",
+  Sun: "Sunday",
 };
 
 export default function AnalyticsPage() {
@@ -121,6 +154,7 @@ export default function AnalyticsPage() {
   const [timeData, setTimeData] = useState([]);
   const [expenseData, setExpenseData] = useState([]);
   const [sleepEmotionData, setSleepEmotionData] = useState([]);
+  const [dayEmotionData, setDayEmotionData] = useState([]);
   const [habits, setHabits] = useState([]);
   const [lifeLoading, setLifeLoading] = useState(false);
   const [moodBarLoading, setMoodBarLoading] = useState(false);
@@ -129,6 +163,7 @@ export default function AnalyticsPage() {
   const [timeLoading, setTimeLoading] = useState(false);
   const [expenseLoading, setExpenseLoading] = useState(false);
   const [sleepEmotionLoading, setSleepEmotionLoading] = useState(false);
+  const [dayEmotionLoading, setDayEmotionLoading] = useState(false);
   const [error, setError] = useState("");
   const [lifeAverageRange, setLifeAverageRange] = useState("month");
   const [moodBarRange, setMoodBarRange] = useState("month");
@@ -139,6 +174,7 @@ export default function AnalyticsPage() {
   const [sleepEmotionRange, setSleepEmotionRange] = useState("month");
   const [sleepEmotionView, setSleepEmotionView] = useState("scatter");
   const [insightMetric, setInsightMetric] = useState("sleep");
+  const [dayEmotionRange, setDayEmotionRange] = useState("month");
   const { user } = useAuth();
   const hasInitialized = useRef(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
@@ -191,6 +227,7 @@ export default function AnalyticsPage() {
           fetchTimeData(timeRange, true),
           fetchExpenseData(expenseRange, true),
           fetchSleepEmotionData(sleepEmotionRange, true),
+          fetchDayEmotionData(dayEmotionRange, true),
           fetchHabits(true),
         ]);
       } finally {
@@ -236,6 +273,11 @@ export default function AnalyticsPage() {
     if (!hasInitialized.current) return;
     fetchSleepEmotionData(sleepEmotionRange);
   }, [sleepEmotionRange]);
+
+  useEffect(() => {
+    if (!hasInitialized.current) return;
+    fetchDayEmotionData(dayEmotionRange);
+  }, [dayEmotionRange]);
 
   const buildLifeRadarData = (averages) => [
     { subject: "Health", A: averages?.health ?? 0, fullMark: 10 },
@@ -399,6 +441,77 @@ export default function AnalyticsPage() {
     }
   };
 
+  const fetchDayEmotionData = async (range, isInitial = false) => {
+    setDayEmotionLoading(true);
+    if (!isInitial) {
+      setError("");
+    }
+    try {
+      const { data: emotionJson } = await api.get(`/emotions/range/${range}`);
+      const buckets = new Map(
+        WEEKDAY_ORDER.map((day) => [day, { counts: {}, total: 0 }]),
+      );
+
+      (emotionJson.emotions || []).forEach((entry) => {
+        const dayKey = new Date(entry.date).toLocaleDateString("en-US", {
+          weekday: "short",
+        });
+        if (!buckets.has(dayKey)) return;
+        const bucket = buckets.get(dayKey);
+        bucket.counts[entry.emotion] = (bucket.counts[entry.emotion] || 0) + 1;
+        bucket.total += 1;
+      });
+
+      const aggregated = WEEKDAY_ORDER.map((day) => {
+        const bucket = buckets.get(day);
+        if (!bucket || bucket.total === 0) {
+          return {
+            day,
+            emotion: "none",
+            emotionLabel: "No data",
+            score: 0,
+            count: 0,
+            total: 0,
+          };
+        }
+
+        const counts = bucket.counts;
+        const maxCount = Math.max(...Object.values(counts));
+        const topEmotions = Object.keys(counts).filter(
+          (emotion) => counts[emotion] === maxCount,
+        );
+        const isMixed = topEmotions.length > 1;
+        const emotion = isMixed ? "mixed" : topEmotions[0];
+        const score = isMixed
+          ? topEmotions.reduce(
+              (sum, emo) => sum + (EMOTION_SCORES[emo] || 3),
+              0,
+            ) / topEmotions.length
+          : EMOTION_SCORES[emotion] || 3;
+        const emotionLabel = isMixed ? "Mixed" : formatEmotionName(emotion);
+
+        return {
+          day,
+          emotion,
+          emotionLabel,
+          score,
+          count: maxCount,
+          total: bucket.total,
+        };
+      });
+
+      setDayEmotionData(aggregated);
+    } catch (err) {
+      console.error("Analytics fetch failed:", err);
+      setError(
+        "Unable to connect to the intelligence engine. Please check your connection.",
+      );
+      setDayEmotionData([]);
+    } finally {
+      setDayEmotionLoading(false);
+    }
+  };
+
   const fetchExpenseData = async (range, isInitial = false) => {
     setExpenseLoading(true);
     if (!isInitial) {
@@ -499,6 +612,59 @@ export default function AnalyticsPage() {
     () => [...insightPlotData].sort((a, b) => a.x - b.x),
     [insightPlotData],
   );
+
+  const insightSummary = useMemo(() => {
+    const valid = insightPlotData
+      .filter(
+        (entry) =>
+          Number.isFinite(entry.x) && Number.isFinite(entry.emotionScore),
+      )
+      .sort((a, b) => a.x - b.x);
+
+    if (valid.length < 4) {
+      return `Log more ${insightMetricLabel.toLowerCase()} data to unlock insights.`;
+    }
+
+    const bandSize = Math.max(2, Math.floor(valid.length * 0.3));
+    const lowBand = valid.slice(0, bandSize);
+    const highBand = valid.slice(valid.length - bandSize);
+
+    const avg = (items) =>
+      items.reduce((sum, item) => sum + item.emotionScore, 0) / items.length;
+    const lowAvg = avg(lowBand);
+    const highAvg = avg(highBand);
+    const diff = highAvg - lowAvg;
+
+    if (Math.abs(diff) < 0.25) {
+      return `No clear emotional shift between low and high ${insightMetricLabel.toLowerCase()} days.`;
+    }
+
+    const higherLabel = getNearestEmotionLabel(highAvg).toLowerCase();
+    const lowerLabel = getNearestEmotionLabel(lowAvg).toLowerCase();
+    if (diff > 0) {
+      return `Higher ${insightMetricLabel.toLowerCase()} days align with more ${higherLabel} emotions.`;
+    }
+    return `Lower ${insightMetricLabel.toLowerCase()} days align with more ${lowerLabel} emotions.`;
+  }, [insightPlotData, insightMetricLabel]);
+
+  const dayEmotionInsight = useMemo(() => {
+    if (dayEmotionData.length === 0) {
+      return "Log emotions to see weekly patterns.";
+    }
+
+    const bestDay = dayEmotionData.reduce((prev, current) =>
+      current.count > prev.count ? current : prev,
+    );
+    if (!bestDay || bestDay.count === 0) {
+      return "Log more emotions to reveal your weekly patterns.";
+    }
+
+    const dayLabel = WEEKDAY_FULL[bestDay.day] || bestDay.day;
+    if (bestDay.emotion === "mixed") {
+      return `Your emotions are most mixed on ${dayLabel}.`;
+    }
+    return `You tend to feel more ${bestDay.emotionLabel.toLowerCase()} on ${dayLabel}.`;
+  }, [dayEmotionData]);
 
   const expenseCurrency = user?.currency || "USD";
   const expenseSymbol = (() => {
@@ -1147,7 +1313,8 @@ export default function AnalyticsPage() {
                         {insightMetricLabel} vs Emotion
                       </CardTitle>
                       <CardDescription>
-                        Correlation between sleep hours and your emotion score.
+                        Correlation between {insightMetricLabel.toLowerCase()}{" "}
+                        hours and your emotion score.
                       </CardDescription>
                       <div className="mt-3 flex flex-wrap items-center gap-2">
                         {[
@@ -1340,6 +1507,119 @@ export default function AnalyticsPage() {
                         </div>
                       )}
                     </CardContent>
+                    <div className="px-6 pb-6 text-xs text-slate-400">
+                      {insightSummary}
+                    </div>
+                  </Card>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
+                  className="mt-6"
+                >
+                  <Card className="border-slate-500/20 bg-gradient-to-br from-slate-500/8 via-slate-900/70 to-slate-950/95 backdrop-blur-xl overflow-hidden min-h-[360px]">
+                    <CardHeader>
+                      <CardTitle className="text-white flex items-center gap-2">
+                        <CalendarDays className="h-5 w-5 text-slate-300" />
+                        Day vs Emotion
+                      </CardTitle>
+                      <CardDescription>
+                        Dominant emotion patterns by day of the week.
+                      </CardDescription>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {[
+                          { key: "week", label: "week" },
+                          { key: "month", label: "month" },
+                          { key: "year", label: "year" },
+                        ].map((range) => (
+                          <button
+                            key={range.key}
+                            type="button"
+                            onClick={() => setDayEmotionRange(range.key)}
+                            className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-widest transition-all ${
+                              dayEmotionRange === range.key
+                                ? "border-slate-300/60 bg-slate-300/10 text-slate-100"
+                                : "border-white/10 text-slate-400 hover:border-white/30 hover:text-slate-200"
+                            }`}
+                          >
+                            {range.label}
+                          </button>
+                        ))}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="h-[240px] w-full">
+                      {dayEmotionLoading ? (
+                        <div className="h-full flex items-center justify-center">
+                          <div className="h-10 w-10 rounded-full border-2 border-slate-400/40 border-t-slate-300 animate-spin" />
+                        </div>
+                      ) : dayEmotionData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={dayEmotionData}>
+                            <CartesianGrid
+                              strokeDasharray="3 3"
+                              stroke="#ffffff10"
+                              vertical={false}
+                            />
+                            <XAxis
+                              dataKey="day"
+                              stroke="#64748b"
+                              fontSize={10}
+                              tickLine={false}
+                              axisLine={false}
+                            />
+                            <YAxis
+                              domain={[0, 5]}
+                              ticks={[1, 2, 3, 4, 5]}
+                              stroke="#64748b"
+                              fontSize={10}
+                              tickLine={false}
+                              axisLine={false}
+                              tickFormatter={formatEmotionLabel}
+                            />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: "#0f172a",
+                                borderRadius: "12px",
+                                border: "1px solid #ffffff10",
+                                fontSize: "10px",
+                              }}
+                              formatter={(value, name, payload) => {
+                                const row = payload?.payload;
+                                if (!row || row.total === 0) {
+                                  return ["No data", "Emotion"];
+                                }
+                                return [
+                                  `${row.emotionLabel} (${row.count})`,
+                                  "Dominant",
+                                ];
+                              }}
+                            />
+                            <Bar dataKey="score" radius={[6, 6, 0, 0]}>
+                              {dayEmotionData.map((entry) => (
+                                <Cell
+                                  key={entry.day}
+                                  fill={
+                                    entry.emotion === "mixed"
+                                      ? "#94a3b8"
+                                      : EMOTION_COLORS[entry.emotion] ||
+                                        "#94a3b8"
+                                  }
+                                />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="h-full flex items-center justify-center text-slate-600 text-sm font-mono italic">
+                          Log emotions to see day patterns
+                        </div>
+                      )}
+                    </CardContent>
+                    <div className="px-6 pb-6 text-xs text-slate-400">
+                      {dayEmotionInsight}
+                    </div>
                   </Card>
                 </motion.div>
               </div>
