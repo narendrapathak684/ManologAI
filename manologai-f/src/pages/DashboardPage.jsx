@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
@@ -55,6 +55,11 @@ const organiseItems = [
   "Sort idea pad into goals and experiments",
   "Plan tomorrow's top 3 priorities",
 ];
+
+const HEATMAP_DAYS = 35;
+const HEATMAP_BASE = { r: 236, g: 72, b: 153 };
+const heatmapWeekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const HEATMAP_HABIT_WEIGHT = 0.5;
 
 const journalEntryThemes = [
   "border-pink-500/20 bg-pink-500/5",
@@ -125,6 +130,10 @@ export default function DashboardPage() {
   const [averagesError, setAveragesError] = useState("");
   const [habitScore, setHabitScore] = useState(null);
   const [habitScoreError, setHabitScoreError] = useState("");
+  const [heatmapDays, setHeatmapDays] = useState([]);
+  const [heatmapError, setHeatmapError] = useState("");
+  const [heatmapMax, setHeatmapMax] = useState(0);
+  const [heatmapLoading, setHeatmapLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
     const saved = localStorage.getItem("sidebar-collapsed");
     return saved !== null ? JSON.parse(saved) : true;
@@ -177,13 +186,177 @@ export default function DashboardPage() {
       }
     }
 
+    function toDateKey(dateInput) {
+      const date = new Date(dateInput);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function buildHeatmapRange(days) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const items = [];
+      for (let i = days - 1; i >= 0; i -= 1) {
+        const date = new Date(today);
+        date.setDate(today.getDate() - i);
+        items.push({
+          date,
+          key: toDateKey(date),
+          count: 0,
+        });
+      }
+      return items;
+    }
+
+    function entryHasDiaryInput(entry) {
+      if (!entry) return false;
+      if (entry.text && String(entry.text).trim().length > 0) return true;
+      if (entry.rating !== undefined && entry.rating !== null) return true;
+      if (entry.metrics && Object.keys(entry.metrics).length > 0) return true;
+      return false;
+    }
+
+    function countLifeRatings(entry) {
+      if (!entry?.ratings) return 0;
+      return Object.values(entry.ratings).reduce(
+        (total, value) =>
+          value !== null && value !== undefined ? total + 1 : total,
+        0,
+      );
+    }
+
+    async function fetchHeatmap() {
+      setHeatmapLoading(true);
+      try {
+        const range = buildHeatmapRange(HEATMAP_DAYS);
+        const from = range[0].key;
+        const to = range[range.length - 1].key;
+        const dayMap = new Map(range.map((item) => [item.key, { ...item }]));
+
+        const [diaryRes, timeRes, lifeRes, emotionRes, habitsRes] =
+          await Promise.all([
+            api.get(`/diary/api/diary?limit=${HEATMAP_DAYS}`),
+            api.get(
+              `/time-tracker?from=${from}&to=${to}&limit=${HEATMAP_DAYS}`,
+            ),
+            api.get("/life-ratings/month"),
+            api.get("/emotions/range/month"),
+            api.get("/habits"),
+          ]);
+
+        const diaryEntries = diaryRes?.data?.entries || [];
+        const timeEntries = timeRes?.data?.entries || [];
+        const lifeEntries = lifeRes?.data?.entries || [];
+        const emotionEntries = emotionRes?.data?.emotions || [];
+        const habits = habitsRes?.data?.habits || [];
+
+        for (const entry of diaryEntries) {
+          const key = toDateKey(entry.date);
+          if (dayMap.has(key) && entryHasDiaryInput(entry)) {
+            dayMap.get(key).count += 1;
+          }
+        }
+
+        for (const entry of timeEntries) {
+          const key = toDateKey(entry.date);
+          if (dayMap.has(key)) {
+            dayMap.get(key).count += 1;
+          }
+        }
+
+        for (const entry of lifeEntries) {
+          const key = toDateKey(entry.date);
+          if (dayMap.has(key)) {
+            dayMap.get(key).count += countLifeRatings(entry);
+          }
+        }
+
+        for (const entry of emotionEntries) {
+          const key = toDateKey(entry.date);
+          if (dayMap.has(key)) {
+            dayMap.get(key).count += 1;
+          }
+        }
+
+        for (const habit of habits) {
+          if (!Array.isArray(habit.history)) continue;
+          for (const historyEntry of habit.history) {
+            if (!historyEntry?.completed) continue;
+            const key = toDateKey(historyEntry.date);
+            if (dayMap.has(key)) {
+              dayMap.get(key).count += HEATMAP_HABIT_WEIGHT;
+            }
+          }
+        }
+
+        const days = Array.from(dayMap.values());
+        const maxCount = days.reduce(
+          (max, item) => Math.max(max, item.count),
+          0,
+        );
+        if (isMounted) {
+          setHeatmapDays(days);
+          setHeatmapMax(maxCount);
+          setHeatmapError("");
+        }
+      } catch (error) {
+        if (isMounted) {
+          setHeatmapDays([]);
+          setHeatmapMax(0);
+          setHeatmapError(
+            getApiErrorMessage(error, "Unable to load consistency heatmap"),
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setHeatmapLoading(false);
+        }
+      }
+    }
+
     fetchAverages();
     fetchHabitScore();
+    fetchHeatmap();
 
     return () => {
       isMounted = false;
     };
   }, []);
+
+  const heatmapCells = useMemo(() => {
+    if (heatmapDays.length === 0) return [];
+    const firstDay = heatmapDays[0].date.getDay();
+    const startOffset = (firstDay + 6) % 7;
+    const padded = Array.from({ length: startOffset }, () => null);
+    return [...padded, ...heatmapDays];
+  }, [heatmapDays]);
+
+  const heatmapLegend = useMemo(() => {
+    if (heatmapMax <= 0) return [0, 1, 2, 3];
+    return [
+      0,
+      Math.ceil(heatmapMax * 0.25),
+      Math.ceil(heatmapMax * 0.5),
+      Math.ceil(heatmapMax * 0.75),
+    ];
+  }, [heatmapMax]);
+
+  function getHeatmapStyle(count) {
+    if (!count || heatmapMax === 0) {
+      return {
+        backgroundColor: "rgba(15, 23, 42, 0.6)",
+        borderColor: "rgba(148, 163, 184, 0.12)",
+      };
+    }
+    const intensity = Math.min(1, count / heatmapMax);
+    const alpha = 0.2 + intensity * 0.7;
+    return {
+      backgroundColor: `rgba(${HEATMAP_BASE.r}, ${HEATMAP_BASE.g}, ${HEATMAP_BASE.b}, ${alpha})`,
+      borderColor: `rgba(${HEATMAP_BASE.r}, ${HEATMAP_BASE.g}, ${HEATMAP_BASE.b}, ${Math.min(0.95, alpha + 0.1)})`,
+    };
+  }
 
   const habitScoreValue =
     habitScore && habitScore.total > 0
@@ -528,6 +701,91 @@ export default function DashboardPage() {
               </div>
 
               <div className="grid gap-6">
+                <Card className="border-pink-500/20 bg-gradient-to-br from-pink-500/10 via-slate-900/70 to-slate-950/95 backdrop-blur-xl">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-white">
+                      <CalendarDays className="h-5 w-5 text-pink-300" />
+                      Consistency heatmap
+                    </CardTitle>
+                    <CardDescription>
+                      Darker cells mean more inputs logged that day.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {heatmapError && (
+                      <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-xs text-rose-200">
+                        {heatmapError}
+                      </div>
+                    )}
+                    {heatmapLoading && (
+                      <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-slate-400">
+                        Loading your last 5 weeks…
+                      </div>
+                    )}
+                    {!heatmapLoading && heatmapDays.length > 0 && (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-7 gap-2 text-[10px] uppercase tracking-[0.2em] text-slate-500">
+                          {heatmapWeekdays.map((label) => (
+                            <span key={label} className="text-center">
+                              {label}
+                            </span>
+                          ))}
+                        </div>
+                        <div className="grid grid-cols-7 gap-2">
+                          {heatmapCells.map((day, index) => {
+                            if (!day) {
+                              return (
+                                <div
+                                  key={`empty-${index}`}
+                                  className="h-9 rounded-lg border border-transparent"
+                                />
+                              );
+                            }
+                            const label = day.date.toLocaleDateString(
+                              undefined,
+                              {
+                                month: "short",
+                                day: "numeric",
+                              },
+                            );
+                            const countLabel = Number.isInteger(day.count)
+                              ? `${day.count}`
+                              : day.count.toFixed(1);
+                            return (
+                              <div
+                                key={day.key}
+                                className="h-9 rounded-lg border transition-all hover:scale-[1.02]"
+                                style={getHeatmapStyle(day.count)}
+                                title={`${label}: ${countLabel} inputs`}
+                              />
+                            );
+                          })}
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-slate-400">
+                          <span>Less</span>
+                          <div className="flex items-center gap-2">
+                            {heatmapLegend.map((value) => (
+                              <div
+                                key={`legend-${value}`}
+                                className="h-3 w-3 rounded border"
+                                style={getHeatmapStyle(value)}
+                              />
+                            ))}
+                          </div>
+                          <span>More</span>
+                        </div>
+                      </div>
+                    )}
+                    {!heatmapLoading &&
+                      heatmapDays.length === 0 &&
+                      !heatmapError && (
+                        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-slate-400">
+                          Start logging to see your consistency heatmap.
+                        </div>
+                      )}
+                  </CardContent>
+                </Card>
+
                 <Card className="border-indigo-500/20 bg-gradient-to-br from-indigo-500/10 via-slate-900/70 to-slate-950/95 backdrop-blur-xl">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-white">
