@@ -37,6 +37,10 @@ function todayMidnight() {
   return d;
 }
 
+function isFutureDate(date) {
+  return date.getTime() > todayMidnight().getTime();
+}
+
 function isSameDay(a, b) {
   return (
     a.getFullYear() === b.getFullYear() &&
@@ -345,6 +349,54 @@ router.post("/:habitId/check", auth, async (req, res) => {
     });
   } catch (err) {
     console.error("POST /habits/:habitId/check error:", err);
+    return res.status(500).json({ error: "Failed to mark habit" });
+  }
+});
+
+// POST /habits/:habitId/check/:date
+// Mark habit as done for a specific date. Recalculates streaks.
+router.post("/:habitId/check/:date", auth, async (req, res) => {
+  try {
+    const habit = await Habit.findOne({
+      _id: req.params.habitId,
+      user: req.user._id,
+    });
+    if (!habit) return res.status(404).json({ error: "Habit not found" });
+
+    const date = toLocalMidnight(req.params.date);
+    if (!date)
+      return res
+        .status(400)
+        .json({ error: "Invalid date format. Use YYYY-MM-DD" });
+    if (isFutureDate(date)) {
+      return res
+        .status(400)
+        .json({ error: "Future habit completions are not allowed" });
+    }
+
+    const alreadyDone = habit.history.find(
+      (h) => h.completed && isSameDay(new Date(h.date), date),
+    );
+    if (alreadyDone) {
+      return res
+        .status(409)
+        .json({ error: "Habit already marked as done for this date" });
+    }
+
+    habit.history.push({ date, completed: true });
+
+    const { currentStreak, longestStreak } = recalculateStreaks(habit.history);
+    habit.currentStreak = currentStreak;
+    habit.longestStreak = longestStreak;
+
+    await habit.save();
+    return res.status(200).json({
+      message: "Habit marked as done",
+      currentStreak: habit.currentStreak,
+      longestStreak: habit.longestStreak,
+    });
+  } catch (err) {
+    console.error("POST /habits/:habitId/check/:date error:", err);
     return res.status(500).json({ error: "Failed to mark habit" });
   }
 });

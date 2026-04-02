@@ -363,7 +363,7 @@ export default function SignupPage() {
                   required
                   value={formData.country}
                   onChange={handleChange}
-                  className="h-11 w-full rounded-md border border-white/10 bg-black/20 px-3 text-sm text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500"
+                  className="h-11 w-full rounded-md border border-white/10 bg-slate-950/70 px-3 text-sm text-slate-100 shadow-[0_0_0_1px_rgba(15,23,42,0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500"
                 >
                   <option value="" disabled>
                     Select your country

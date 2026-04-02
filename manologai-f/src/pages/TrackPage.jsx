@@ -187,6 +187,23 @@ const getLocalDateKey = () => {
   return `${year}-${month}-${day}`;
 };
 
+const getRelativeDateKey = (offsetDays) => {
+  const date = new Date();
+  date.setDate(date.getDate() - offsetDays);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const formatShortDate = (dateKey) => {
+  const date = new Date(`${dateKey}T00:00:00`);
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
+};
+
 export default function TrackPage() {
   const [habits, setHabits] = useState([]);
   const [metrics, setMetrics] = useState({
@@ -213,6 +230,24 @@ export default function TrackPage() {
   const { showSaveAlert, clearSaveAlert } = useSaveAlert();
 
   const today = getLocalDateKey();
+  const [selectedDateKey, setSelectedDateKey] = useState(today);
+  const yesterdayKey = getRelativeDateKey(1);
+  const twoDaysAgoKey = getRelativeDateKey(2);
+  const dateOptions = [
+    { key: today, label: "Today", short: formatShortDate(today) },
+    {
+      key: yesterdayKey,
+      label: "Yesterday",
+      short: formatShortDate(yesterdayKey),
+    },
+    {
+      key: twoDaysAgoKey,
+      label: "2 Days Ago",
+      short: formatShortDate(twoDaysAgoKey),
+    },
+  ];
+  const selectedDateLabel =
+    selectedDateKey === today ? "Today" : formatShortDate(selectedDateKey);
   const { user } = useAuth();
   const expenseCurrency = user?.currency || "USD";
   const expenseSymbol = (() => {
@@ -238,25 +273,34 @@ export default function TrackPage() {
   }, [isSidebarOpen]);
 
   useEffect(() => {
-    fetchData();
+    refreshHabits();
   }, []);
+
+  useEffect(() => {
+    fetchDailyData(selectedDateKey);
+  }, [selectedDateKey]);
 
   const refreshHabits = async () => {
     const { data: habitsData } = await api.get("/habits");
     setHabits(habitsData?.habits || []);
   };
 
-  const fetchData = async () => {
+  const fetchDailyData = async (dateKey) => {
     setLoading(true);
     try {
       setError("");
+      setLifeRatingsLoaded(false);
+      setEmotionLoaded(false);
+      setLifeRatingsLocked(false);
+      setEmotionLocked(false);
 
-      // Fetch habits
-      await refreshHabits();
+      const isToday = dateKey === today;
 
-      // Fetch today's metrics
+      // Fetch metrics for selected day
       try {
-        const { data: metricsData } = await api.get("/time-tracker/today");
+        const { data: metricsData } = isToday
+          ? await api.get("/time-tracker/today")
+          : await api.get(`/time-tracker/${dateKey}`);
         setMetrics({
           sleep: metricsData.entry.sleep || "",
           screen: metricsData.entry.screen || "",
@@ -264,14 +308,18 @@ export default function TrackPage() {
           expense: metricsData.entry.expense || "",
         });
       } catch (err) {
-        if (err?.response?.status !== 404) {
+        if (err?.response?.status === 404) {
+          setMetrics({ sleep: "", screen: "", workStudy: "", expense: "" });
+        } else {
           throw err;
         }
       }
 
-      // Fetch today's life ratings
+      // Fetch life ratings for selected day
       try {
-        const { data: lifeRatingsData } = await api.get("/life-ratings/day");
+        const { data: lifeRatingsData } = await api.get("/life-ratings/day", {
+          params: isToday ? {} : { date: dateKey },
+        });
         if (lifeRatingsData.entry) {
           setLifeRatings(mapEntryToLifeRatings(lifeRatingsData.entry));
           setLifeRatingsLocked(Boolean(lifeRatingsData.locked));
@@ -287,9 +335,11 @@ export default function TrackPage() {
         }
       }
 
-      // Fetch today's emotion
+      // Fetch emotion for selected day
       try {
-        const { data: emotionData } = await api.get("/emotions/today");
+        const { data: emotionData } = isToday
+          ? await api.get("/emotions/today")
+          : await api.get(`/emotions/${dateKey}`);
         setSelectedEmotion(emotionData?.emotion || "neutral");
         setEmotionLocked(Boolean(emotionData?.locked));
         setEmotionLoaded(true);
@@ -316,28 +366,22 @@ export default function TrackPage() {
   };
 
   const handleToggleHabit = async (habitId, isCompleted) => {
-    if (isCompleted) {
-      showSaveAlert({
-        title: "Daily Habits",
-        message: "This habit is already marked for today.",
-      });
-      return;
-    }
-
     setHabitActionId(habitId);
     setError("");
     clearSaveAlert();
     try {
-      const url = `/habits/${habitId}/check`;
-      const method = "POST";
-      await api.request({ url, method });
+      if (isCompleted) {
+        await api.delete(`/habits/${habitId}/check/${selectedDateKey}`);
+      } else {
+        await api.post(`/habits/${habitId}/check/${selectedDateKey}`);
+      }
 
       await refreshHabits();
       showSaveAlert({
         title: "Daily Habits",
         message: isCompleted
-          ? "Habit completion was removed for today."
-          : "Habit marked complete for today.",
+          ? `Habit completion was removed for ${selectedDateLabel}.`
+          : `Habit marked complete for ${selectedDateLabel}.`,
       });
     } catch (err) {
       console.error("Failed to toggle habit:", err);
@@ -424,10 +468,14 @@ export default function TrackPage() {
 
     setSavingMetrics(true);
     try {
-      await api.post("/time-tracker", metrics);
+      if (selectedDateKey === today) {
+        await api.post("/time-tracker", metrics);
+      } else {
+        await api.post(`/time-tracker/${selectedDateKey}`, metrics);
+      }
       showSaveAlert({
         title: "Daily Metrics",
-        message: "Today's metrics were saved successfully.",
+        message: `Metrics for ${selectedDateLabel} were saved successfully.`,
       });
     } catch (err) {
       console.error("Failed to save metrics:", err);
@@ -444,7 +492,11 @@ export default function TrackPage() {
     clearSaveAlert();
     setError("");
     try {
-      const { data } = await api.post("/life-ratings", lifeRatings);
+      const endpoint =
+        selectedDateKey === today
+          ? "/life-ratings"
+          : `/life-ratings/${selectedDateKey}`;
+      const { data } = await api.post(endpoint, lifeRatings);
       if (data.entry) {
         setLifeRatings(mapEntryToLifeRatings(data.entry));
       }
@@ -453,7 +505,7 @@ export default function TrackPage() {
 
       showSaveAlert({
         title: "Life Ratings",
-        message: "Your life balance scores were saved successfully.",
+        message: `Life ratings for ${selectedDateLabel} were saved successfully.`,
       });
     } catch (err) {
       console.error("Failed to save life ratings:", err);
@@ -470,7 +522,11 @@ export default function TrackPage() {
     clearSaveAlert();
     setError("");
     try {
-      const { data } = await api.post("/emotions", {
+      const endpoint =
+        selectedDateKey === today
+          ? "/emotions"
+          : `/emotions/${selectedDateKey}`;
+      const { data } = await api.post(endpoint, {
         emotion: selectedEmotion,
       });
       setSelectedEmotion(data?.emotion || selectedEmotion);
@@ -479,7 +535,7 @@ export default function TrackPage() {
 
       showSaveAlert({
         title: "Daily Emotion",
-        message: "Today's emotion was saved successfully.",
+        message: `Emotion for ${selectedDateLabel} was saved successfully.`,
       });
     } catch (err) {
       console.error("Failed to save emotion:", err);
@@ -489,11 +545,11 @@ export default function TrackPage() {
     }
   };
 
-  const isHabitDoneToday = (habit) => {
+  const isHabitDoneOnDate = (habit, dateKey) => {
     if (!habit || !habit.history || !Array.isArray(habit.history)) return false;
     return habit.history.some((h) => {
       const hDate = typeof h.date === "string" ? h.date : String(h.date || "");
-      return hDate && hDate.startsWith(today) && h.completed;
+      return hDate && hDate.startsWith(dateKey) && h.completed;
     });
   };
 
@@ -627,6 +683,31 @@ export default function TrackPage() {
                       identify patterns in your behavior over time.
                     </p>
                   </div>
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    {dateOptions.map((option) => {
+                      const isActive = option.key === selectedDateKey;
+                      return (
+                        <button
+                          key={option.key}
+                          type="button"
+                          onClick={() => setSelectedDateKey(option.key)}
+                          className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-all ${
+                            isActive
+                              ? "border-pink-400/60 bg-pink-500/20 text-pink-100"
+                              : "border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:text-white"
+                          }`}
+                        >
+                          {option.label}
+                          <span className="ml-1 text-[10px] text-slate-400">
+                            {option.short}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Tracking for {selectedDateLabel}.
+                  </p>
                 </div>
               </div>
             </motion.section>
@@ -688,7 +769,10 @@ export default function TrackPage() {
                     <div className="space-y-4">
                       <div className="max-h-[260px] space-y-3 overflow-y-auto pr-1">
                         {habits.map((habit) => {
-                          const done = isHabitDoneToday(habit);
+                          const done = isHabitDoneOnDate(
+                            habit,
+                            selectedDateKey,
+                          );
                           return (
                             <div
                               key={habit._id}
@@ -724,7 +808,7 @@ export default function TrackPage() {
                                   {habitActionId === habit._id
                                     ? "Saving..."
                                     : done
-                                      ? "Completed"
+                                      ? "Undo"
                                       : "Mark Done"}
                                 </Button>
                                 <button
@@ -828,7 +912,9 @@ export default function TrackPage() {
                     className="mt-auto w-full bg-pink-600 text-white hover:bg-pink-500"
                   >
                     <Save className="h-4 w-4 mr-2" />
-                    {savingMetrics ? "Saving..." : "Save Today's Metrics"}
+                    {savingMetrics
+                      ? "Saving..."
+                      : `Save ${selectedDateLabel} Metrics`}
                   </Button>
                 </CardContent>
               </Card>
@@ -841,12 +927,13 @@ export default function TrackPage() {
                       Daily Emotion
                     </CardTitle>
                     <CardDescription>
-                      Select how you feel today and save it to your log.
+                      Select how you feel for the selected day and save it to
+                      your log.
                     </CardDescription>
                     {emotionLoaded && (
                       <p className="text-xs text-slate-500">
                         {emotionLocked
-                          ? "Today's emotion entry is locked by the backend after 24 hours."
+                          ? `The emotion entry for ${selectedDateLabel} is locked by the backend after 24 hours.`
                           : ""}
                       </p>
                     )}
@@ -893,7 +980,7 @@ export default function TrackPage() {
                       ? "Saving..."
                       : emotionLocked
                         ? "Emotion Locked"
-                        : "Save Today's Emotion"}
+                        : `Save ${selectedDateLabel} Emotion`}
                   </Button>
                 </CardContent>
               </Card>
@@ -914,8 +1001,8 @@ export default function TrackPage() {
                   {lifeRatingsLoaded && (
                     <p className="mt-2 text-xs text-slate-500">
                       {lifeRatingsLocked
-                        ? "Today's life rating entry is locked by the backend after 24 hours."
-                        : "These 8 sliders are synced with today's backend life rating entry."}
+                        ? `The life rating entry for ${selectedDateLabel} is locked by the backend after 24 hours.`
+                        : `These 8 sliders are synced with the ${selectedDateLabel} backend life rating entry.`}
                     </p>
                   )}
                 </div>
@@ -973,7 +1060,7 @@ export default function TrackPage() {
                     ? "Saving..."
                     : lifeRatingsLocked
                       ? "Life Ratings Locked"
-                      : "Save Life Ratings"}
+                      : `Save ${selectedDateLabel} Ratings`}
                 </Button>
               </CardContent>
             </Card>

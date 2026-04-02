@@ -98,6 +98,59 @@ router.post("/", auth, async (req, res) => {
   }
 });
 
+router.post("/:date", auth, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { emotion } = req.body || {};
+
+    if (!emotion || !VALID_EMOTIONS.includes(emotion.toLowerCase())) {
+      return res.status(400).json({
+        error: `emotion must be one of: ${VALID_EMOTIONS.join(", ")}`,
+      });
+    }
+
+    const date = toLocalMidnight(req.params.date);
+    if (!date)
+      return res
+        .status(400)
+        .json({ error: "Invalid date format. Use YYYY-MM-DD" });
+    if (isFutureDate(date)) {
+      return res
+        .status(400)
+        .json({ error: "Future emotion entries are not allowed" });
+    }
+
+    const existing = await Emotion.findOne({ user: userId, date }).select(
+      "lockedUntil",
+    );
+    if (existing && isLocked(existing)) {
+      return res.status(403).json({
+        error: "Emotion entry is locked and can no longer be changed",
+      });
+    }
+
+    const entry = await Emotion.findOneAndUpdate(
+      { user: userId, date },
+      { $set: { emotion: emotion.toLowerCase() } },
+      {
+        new: true,
+        upsert: true,
+        setDefaultsOnInsert: true,
+        select: "date emotion lockedUntil",
+      },
+    );
+
+    return res.status(200).json({
+      date: entry.date,
+      emotion: entry.emotion,
+      locked: isLocked(entry),
+    });
+  } catch (err) {
+    console.error("POST /emotions/:date error:", err);
+    return res.status(500).json({ error: "Failed to save emotion" });
+  }
+});
+
 router.patch("/:date", auth, async (req, res) => {
   try {
     const userId = req.user._id;

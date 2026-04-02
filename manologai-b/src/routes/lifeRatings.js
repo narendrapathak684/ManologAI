@@ -146,6 +146,57 @@ router.post("/", auth, async (req, res) => {
   }
 });
 
+// POST /life-ratings/:date
+// Submit or update a specific date's life ratings. Locked after 24h from first submission.
+router.post("/:date", auth, async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const date = toLocalMidnight(req.params.date);
+    if (!date)
+      return res
+        .status(400)
+        .json({ error: "Invalid date format. Use YYYY-MM-DD" });
+    if (isFutureDate(date)) {
+      return res
+        .status(400)
+        .json({ error: "Future life rating entries are not allowed" });
+    }
+
+    const { error, ratings } = sanitizeRatings(req.body || {});
+    if (error) return res.status(400).json({ error });
+
+    if (Object.keys(ratings).length === 0) {
+      return res.status(400).json({
+        error: `At least one rating field is required: ${RATING_FIELDS.join(", ")}`,
+      });
+    }
+
+    const existing = await LifeRating.findOne({ user: userId, date });
+    if (existing && isLocked(existing)) {
+      return res.status(403).json({
+        error: "Life rating is locked and can no longer be edited",
+      });
+    }
+
+    const setPayload = {};
+    for (const [key, val] of Object.entries(ratings)) {
+      setPayload[`ratings.${key}`] = val;
+    }
+
+    const entry = await LifeRating.findOneAndUpdate(
+      { user: userId, date },
+      { $set: setPayload },
+      { new: true, upsert: true },
+    );
+
+    return res.status(200).json({ entry, locked: isLocked(entry) });
+  } catch (err) {
+    console.error("POST /life-ratings/:date error:", err);
+    return res.status(500).json({ error: "Failed to save life rating" });
+  }
+});
+
 // PATCH /life-ratings/:date
 // Edit a specific date's ratings — blocked if locked (older than 24h).
 router.patch("/:date", auth, async (req, res) => {
