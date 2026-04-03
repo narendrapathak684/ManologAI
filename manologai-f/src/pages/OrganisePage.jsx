@@ -1,5 +1,5 @@
-import { Fragment, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Fragment, useEffect, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpenText,
@@ -340,6 +340,7 @@ const getDateRangeError = (startDate, endDate) => {
 };
 
 export default function OrganisePage() {
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("timetable");
   const [timetable, setTimetable] = useState({});
   const [pads, setPads] = useState([]);
@@ -372,6 +373,7 @@ export default function OrganisePage() {
   const [savingItemId, setSavingItemId] = useState(null);
   const [togglingItemId, setTogglingItemId] = useState(null);
   const [deletingItemId, setDeletingItemId] = useState(null);
+  const itemRefs = useRef({});
   const { user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
     const saved = localStorage.getItem("sidebar-collapsed");
@@ -403,6 +405,30 @@ export default function OrganisePage() {
   useEffect(() => {
     setPadTitleDraft(selectedPad?.title || "");
   }, [selectedPad]);
+
+  useEffect(() => {
+    const padId = searchParams.get("padId");
+    if (!padId || pads.length === 0) return;
+    const matchingPad = pads.find((pad) => pad._id === padId);
+    if (matchingPad) {
+      setActiveTab("pads");
+      setSelectedPad(matchingPad);
+    }
+  }, [pads, searchParams]);
+
+  useEffect(() => {
+    const itemId = searchParams.get("itemId");
+    if (!itemId || !selectedPad) return;
+    const hasItem = selectedPad.items?.some((item) => item._id === itemId);
+    if (!hasItem) return;
+
+    requestAnimationFrame(() => {
+      const node = itemRefs.current[itemId];
+      if (node) {
+        node.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    });
+  }, [selectedPad, searchParams]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -1136,6 +1162,10 @@ export default function OrganisePage() {
               .map((item) => (
                 <div
                   key={item._id}
+                  id={`pad-item-${item._id}`}
+                  ref={(node) => {
+                    if (node) itemRefs.current[item._id] = node;
+                  }}
                   className={`group flex items-center gap-4 rounded-xl border p-4 transition-all ${
                     item.done
                       ? theme?.itemDoneCard ||
@@ -1240,14 +1270,7 @@ export default function OrganisePage() {
                       } ${item.done ? "line-through" : ""}`}
                     >
                       <div className="flex flex-col gap-1 sm:grid sm:grid-cols-[1fr_120px_120px] sm:items-center sm:gap-3">
-                        <span className="flex flex-wrap items-center gap-2">
-                          <span>{item.title}</span>
-                          <span className="text-xs text-slate-500">
-                            {item.startDate || item.endDate
-                              ? `${item.startDate ? toDateInputValue(item.startDate) : "--"} - ${item.endDate ? toDateInputValue(item.endDate) : "--"}`
-                              : ""}
-                          </span>
-                        </span>
+                        <span>{item.title}</span>
                         <span className="text-xs text-slate-500">
                           {item.startDate
                             ? toDateInputValue(item.startDate)

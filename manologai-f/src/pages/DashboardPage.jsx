@@ -11,6 +11,7 @@ import {
   Clock3,
   FolderKanban,
   LayoutDashboard,
+  ListTodo,
   Sparkles,
   Target,
   User,
@@ -69,6 +70,54 @@ function toDateKey(dateInput) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function toStartOfDay(dateInput) {
+  const date = new Date(dateInput);
+  if (Number.isNaN(date.getTime())) return null;
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function isTodayInRange(startDate, endDate) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const start = startDate ? toStartOfDay(startDate) : null;
+  const end = endDate ? toStartOfDay(endDate) : null;
+  if (start && end) return today >= start && today <= end;
+  if (start) return today >= start;
+  if (end) return today <= end;
+  return false;
+}
+
+function formatDateRange(startDate, endDate) {
+  if (!startDate && !endDate) return "";
+  const startLabel = startDate ? toDateKey(startDate) : "--";
+  const endLabel = endDate ? toDateKey(endDate) : "--";
+  return `${startLabel} - ${endLabel}`;
+}
+
+function isStartDateToday(dateInput) {
+  if (!dateInput) return false;
+  return toDateKey(dateInput) === toDateKey(new Date());
+}
+
+function getDueLabel(endDate) {
+  const days = daysUntilDate(endDate);
+  if (days === null) return "";
+  if (days === 0) return "Due today";
+  if (days === 1) return "Due tomorrow";
+  if (days > 1) return `Due in ${days} days`;
+  const overdue = Math.abs(days);
+  return overdue === 1 ? "Overdue by 1 day" : `Overdue by ${overdue} days`;
+}
+
+function daysUntilDate(dateInput) {
+  const target = toStartOfDay(dateInput);
+  if (!target) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.round((target.getTime() - today.getTime()) / 86400000);
 }
 
 function getMonthRange(offset) {
@@ -198,6 +247,10 @@ export default function DashboardPage() {
   const [heatmapSlideDirection, setHeatmapSlideDirection] = useState(1);
   const [heatmapJumpDate, setHeatmapJumpDate] = useState("");
   const [heatmapJumpError, setHeatmapJumpError] = useState("");
+  const [todoItems, setTodoItems] = useState([]);
+  const [todoError, setTodoError] = useState("");
+  const [todoLoading, setTodoLoading] = useState(true);
+  const [todoPadStats, setTodoPadStats] = useState({});
   const heatmapTouchStart = useRef(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
     const saved = localStorage.getItem("sidebar-collapsed");
@@ -253,6 +306,70 @@ export default function DashboardPage() {
 
     fetchAverages();
     fetchHabitScore();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchTodoItems() {
+      setTodoLoading(true);
+      try {
+        const { data } = await api.get("/pads");
+        const pads = data?.pads || [];
+        const stats = pads.reduce((acc, pad) => {
+          const items = pad.items || [];
+          const total = items.length;
+          const done = items.filter((item) => item.done).length;
+          acc[pad._id] = {
+            padTitle: pad.title,
+            done,
+            total,
+            ratio: total > 0 ? done / total : 0,
+          };
+          return acc;
+        }, {});
+
+        const activeItems = pads.flatMap((pad) =>
+          (pad.items || [])
+            .filter((item) => !item.done)
+            .filter((item) =>
+              item.startDate || item.endDate
+                ? isTodayInRange(item.startDate, item.endDate)
+                : true,
+            )
+            .map((item) => ({
+              id: item._id,
+              title: item.title,
+              padId: pad._id,
+              padTitle: pad.title,
+              startDate: item.startDate,
+              endDate: item.endDate,
+              createdAt: item.createdAt,
+            })),
+        );
+
+        if (isMounted) {
+          setTodoItems(activeItems);
+          setTodoPadStats(stats);
+          setTodoError("");
+        }
+      } catch (error) {
+        if (isMounted) {
+          setTodoItems([]);
+          setTodoError(getApiErrorMessage(error, "Unable to load todo items"));
+        }
+      } finally {
+        if (isMounted) {
+          setTodoLoading(false);
+        }
+      }
+    }
+
+    fetchTodoItems();
 
     return () => {
       isMounted = false;
@@ -568,6 +685,76 @@ export default function DashboardPage() {
           : "—",
     },
   ];
+
+  const todoSections = useMemo(() => {
+    if (todoItems.length === 0) return [];
+
+    const startsToday = todoItems.filter((item) =>
+      isStartDateToday(item.startDate),
+    );
+    const remainingItems = todoItems.filter(
+      (item) => !isStartDateToday(item.startDate),
+    );
+    const withEndDate = remainingItems.filter((item) => item.endDate);
+    const withoutEndDate = remainingItems.filter((item) => !item.endDate);
+    const urgent = withEndDate.filter((item) => {
+      const days = daysUntilDate(item.endDate);
+      return days !== null && days <= 2;
+    });
+    const dueSoon = withEndDate.filter((item) => {
+      const days = daysUntilDate(item.endDate);
+      return days !== null && days >= 3 && days <= 7;
+    });
+    const later = withEndDate.filter((item) => {
+      const days = daysUntilDate(item.endDate);
+      return days !== null && days > 7;
+    });
+
+    const sortByEndDate = (left, right) => {
+      const leftDays = daysUntilDate(left.endDate) ?? Number.POSITIVE_INFINITY;
+      const rightDays =
+        daysUntilDate(right.endDate) ?? Number.POSITIVE_INFINITY;
+      if (leftDays !== rightDays) return leftDays - rightDays;
+      const leftCreated = left.createdAt ? new Date(left.createdAt) : null;
+      const rightCreated = right.createdAt ? new Date(right.createdAt) : null;
+      if (leftCreated && rightCreated) return rightCreated - leftCreated;
+      if (leftCreated) return -1;
+      if (rightCreated) return 1;
+      return 0;
+    };
+
+    urgent.sort(sortByEndDate);
+    dueSoon.sort(sortByEndDate);
+    later.sort(sortByEndDate);
+
+    return [
+      {
+        title: "Urgent work",
+        items: urgent,
+        itemClass: "border-rose-500/25 bg-rose-500/10",
+      },
+      {
+        title: "Starting today",
+        items: startsToday,
+        itemClass: "border-emerald-500/25 bg-emerald-500/10",
+      },
+      {
+        title: "Due soon",
+        items: dueSoon,
+        itemClass: "border-amber-500/25 bg-amber-500/10",
+      },
+      {
+        title: "Ongoing",
+        items: withoutEndDate,
+        itemClass: "border-cyan-500/20 bg-cyan-500/5",
+      },
+      {
+        title: "Later",
+        items: later,
+        itemClass: "border-slate-500/20 bg-white/5",
+      },
+    ].filter((section) => section.items.length > 0);
+  }, [todoItems]);
 
   return (
     <div className="h-screen overflow-hidden bg-slate-950 text-slate-100">
@@ -1019,6 +1206,95 @@ export default function DashboardPage() {
               </div>
 
               <div className="grid gap-6">
+                <Card className="border-cyan-500/20 bg-gradient-to-br from-cyan-500/10 via-slate-900/70 to-slate-950/95 backdrop-blur-xl transition-transform hover:-translate-y-0.5">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-white">
+                      <ListTodo className="h-5 w-5 text-cyan-300" />
+                      Active todos today
+                    </CardTitle>
+                    <CardDescription>
+                      Items scheduled for today across your pads.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {todoError && (
+                      <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-xs text-rose-200">
+                        {todoError}
+                      </div>
+                    )}
+                    {todoLoading && !todoError && (
+                      <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-slate-400">
+                        Loading todo items...
+                      </div>
+                    )}
+                    {!todoLoading && !todoError && todoItems.length === 0 && (
+                      <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-slate-400">
+                        No items active today.
+                      </div>
+                    )}
+                    {!todoLoading && !todoError && todoSections.length > 0 && (
+                      <div className="max-h-[280px] space-y-3 overflow-y-auto pr-2">
+                        {todoSections.map((section) => (
+                          <div key={section.title} className="space-y-2">
+                            <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                              <span>{section.title}</span>
+                              <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] text-slate-300">
+                                {section.items.length}
+                              </span>
+                            </div>
+                            {section.items.map((item) => (
+                              <Link
+                                key={item.id}
+                                to={`/organise?padId=${item.padId}&itemId=${item.id}`}
+                                className={`block rounded-2xl border p-4 transition-transform hover:-translate-y-0.5 ${section.itemClass}`}
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div>
+                                    <p className="text-sm font-semibold text-white">
+                                      {item.title}
+                                    </p>
+                                    <p className="text-xs text-slate-400">
+                                      {item.padTitle}
+                                    </p>
+                                    {todoPadStats[item.padId]?.total > 0 && (
+                                      <div className="mt-2 space-y-1">
+                                        <div className="h-1.5 w-full rounded-full bg-white/5">
+                                          <div
+                                            className="h-1.5 rounded-full bg-emerald-400/70"
+                                            style={{
+                                              width: `${Math.round(todoPadStats[item.padId].ratio * 100)}%`,
+                                            }}
+                                          />
+                                        </div>
+                                        <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500">
+                                          {todoPadStats[item.padId].done}/
+                                          {todoPadStats[item.padId].total} done
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex flex-col items-end gap-2 text-xs text-slate-200">
+                                    <span>
+                                      {formatDateRange(
+                                        item.startDate,
+                                        item.endDate,
+                                      )}
+                                    </span>
+                                    {item.endDate && (
+                                      <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-slate-300">
+                                        {getDueLabel(item.endDate)}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </Link>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
                 <div className="grid gap-6">
                   <Card className="border-indigo-500/20 bg-gradient-to-br from-indigo-500/10 via-slate-900/70 to-slate-950/95 backdrop-blur-xl transition-transform hover:-translate-y-0.5">
                     <Link to="/analytics" className="block h-full">
