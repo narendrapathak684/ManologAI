@@ -27,6 +27,7 @@ import { useAuth } from "../context/AuthContext";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -317,6 +318,27 @@ const getPadTheme = (pad, index = 0) => {
   return CUSTOM_PAD_THEMES[index % CUSTOM_PAD_THEMES.length];
 };
 
+const toDateInputValue = (value) => {
+  if (!value) return "";
+  const dt = new Date(value);
+  if (Number.isNaN(dt.getTime())) return "";
+  const year = dt.getFullYear();
+  const month = String(dt.getMonth() + 1).padStart(2, "0");
+  const day = String(dt.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const getDateRangeError = (startDate, endDate) => {
+  if (!startDate || !endDate) return "";
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return "Enter valid dates.";
+  }
+  if (start > end) return "Start date must be before end date.";
+  return "";
+};
+
 export default function OrganisePage() {
   const [activeTab, setActiveTab] = useState("timetable");
   const [timetable, setTimetable] = useState({});
@@ -328,6 +350,8 @@ export default function OrganisePage() {
   const [newBlock, setNewBlock] = useState(createDefaultBlockForm);
   const [newPadTitle, setNewPadTitle] = useState("");
   const [newItemTitle, setNewItemTitle] = useState("");
+  const [newItemStartDate, setNewItemStartDate] = useState("");
+  const [newItemEndDate, setNewItemEndDate] = useState("");
   const [padTitleDraft, setPadTitleDraft] = useState("");
   const [isDayMenuOpen, setIsDayMenuOpen] = useState(false);
   const [isStartTimeMenuOpen, setIsStartTimeMenuOpen] = useState(false);
@@ -343,6 +367,8 @@ export default function OrganisePage() {
   const [addingItem, setAddingItem] = useState(false);
   const [editingItemId, setEditingItemId] = useState(null);
   const [editingItemTitle, setEditingItemTitle] = useState("");
+  const [editingItemStartDate, setEditingItemStartDate] = useState("");
+  const [editingItemEndDate, setEditingItemEndDate] = useState("");
   const [savingItemId, setSavingItemId] = useState(null);
   const [togglingItemId, setTogglingItemId] = useState(null);
   const [deletingItemId, setDeletingItemId] = useState(null);
@@ -360,6 +386,11 @@ export default function OrganisePage() {
       : null;
   const [startHour = "09", startMinute = "00"] = newBlock.start.time.split(":");
   const [endHour = "10", endMinute = "00"] = newBlock.end.time.split(":");
+  const newItemDateError = getDateRangeError(newItemStartDate, newItemEndDate);
+  const editingItemDateError = getDateRangeError(
+    editingItemStartDate,
+    editingItemEndDate,
+  );
 
   useEffect(() => {
     localStorage.setItem("sidebar-collapsed", JSON.stringify(isSidebarOpen));
@@ -704,6 +735,8 @@ export default function OrganisePage() {
     try {
       const { data } = await api.post(`/pads/${selectedPad._id}/items`, {
         title: trimmedTitle,
+        startDate: newItemStartDate || null,
+        endDate: newItemEndDate || null,
       });
 
       if (data?.item) {
@@ -722,6 +755,8 @@ export default function OrganisePage() {
       }
 
       setNewItemTitle("");
+      setNewItemStartDate("");
+      setNewItemEndDate("");
     } catch (err) {
       console.error(err);
       setError(getApiErrorMessage(err, "Failed to add item."));
@@ -767,12 +802,16 @@ export default function OrganisePage() {
   const startEditingItem = (item) => {
     setEditingItemId(item._id);
     setEditingItemTitle(item.title);
+    setEditingItemStartDate(toDateInputValue(item.startDate));
+    setEditingItemEndDate(toDateInputValue(item.endDate));
     setError("");
   };
 
   const cancelEditingItem = () => {
     setEditingItemId(null);
     setEditingItemTitle("");
+    setEditingItemStartDate("");
+    setEditingItemEndDate("");
   };
 
   const handleRenameItem = async (padId, itemId) => {
@@ -790,6 +829,8 @@ export default function OrganisePage() {
     try {
       const { data } = await api.patch(`/pads/${padId}/items/${itemId}`, {
         title: trimmedTitle,
+        startDate: editingItemStartDate || null,
+        endDate: editingItemEndDate || null,
       });
 
       if (data?.item) {
@@ -1044,15 +1085,51 @@ export default function OrganisePage() {
             />
             <Button
               type="submit"
-              disabled={addingItem || !newItemTitle.trim()}
+              disabled={
+                addingItem || !newItemTitle.trim() || Boolean(newItemDateError)
+              }
               className={`${theme?.actionButton || "bg-pink-600 hover:bg-pink-500 text-white"} h-12 px-6`}
             >
               <Plus className="h-5 w-5" />
               <span className="ml-2">{addingItem ? "Adding..." : "Add"}</span>
             </Button>
           </form>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                Start date
+              </Label>
+              <Input
+                type="date"
+                value={newItemStartDate}
+                onChange={(e) => setNewItemStartDate(e.target.value)}
+                disabled={addingItem}
+                className="h-11 border-white/10 bg-black/20 text-white"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                End date
+              </Label>
+              <Input
+                type="date"
+                value={newItemEndDate}
+                onChange={(e) => setNewItemEndDate(e.target.value)}
+                disabled={addingItem}
+                className="h-11 border-white/10 bg-black/20 text-white"
+              />
+            </div>
+          </div>
+          {newItemDateError ? (
+            <p className="text-xs text-rose-300">{newItemDateError}</p>
+          ) : null}
 
           <div className="space-y-2">
+            <div className="hidden grid-cols-[1fr_120px_120px] gap-3 px-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500 sm:grid">
+              <span>Item</span>
+              <span>Start</span>
+              <span>End</span>
+            </div>
             {pad.items
               .slice()
               .reverse()
@@ -1085,32 +1162,71 @@ export default function OrganisePage() {
                     )}
                   </button>
                   {editingItemId === item._id ? (
-                    <div className="flex flex-1 items-center gap-2">
-                      <Input
-                        value={editingItemTitle}
-                        onChange={(e) => setEditingItemTitle(e.target.value)}
-                        disabled={savingItemId === item._id}
-                        className="h-10 border-white/10 bg-black/20 text-white"
-                        maxLength={MAX_PAD_ITEM_LENGTH}
-                      />
-                      <Button
-                        type="button"
-                        onClick={() => handleRenameItem(pad._id, item._id)}
-                        disabled={
-                          savingItemId === item._id || !editingItemTitle.trim()
-                        }
-                        className="h-10 bg-white/10 px-4 text-white hover:bg-white/15"
-                      >
-                        {savingItemId === item._id ? "Saving..." : "Save"}
-                      </Button>
-                      <Button
-                        type="button"
-                        onClick={cancelEditingItem}
-                        disabled={savingItemId === item._id}
-                        className="h-10 border border-white/10 bg-transparent px-4 text-slate-300 hover:bg-white/5"
-                      >
-                        Cancel
-                      </Button>
+                    <div className="flex flex-1 flex-col gap-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Input
+                          value={editingItemTitle}
+                          onChange={(e) => setEditingItemTitle(e.target.value)}
+                          disabled={savingItemId === item._id}
+                          className="h-10 border-white/10 bg-black/20 text-white"
+                          maxLength={MAX_PAD_ITEM_LENGTH}
+                        />
+                        <Button
+                          type="button"
+                          onClick={() => handleRenameItem(pad._id, item._id)}
+                          disabled={
+                            savingItemId === item._id ||
+                            !editingItemTitle.trim() ||
+                            Boolean(editingItemDateError)
+                          }
+                          className="h-10 bg-white/10 px-4 text-white hover:bg-white/15"
+                        >
+                          {savingItemId === item._id ? "Saving..." : "Save"}
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={cancelEditingItem}
+                          disabled={savingItemId === item._id}
+                          className="h-10 border border-white/10 bg-transparent px-4 text-slate-300 hover:bg-white/5"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                            Start date
+                          </Label>
+                          <Input
+                            type="date"
+                            value={editingItemStartDate}
+                            onChange={(e) =>
+                              setEditingItemStartDate(e.target.value)
+                            }
+                            disabled={savingItemId === item._id}
+                            className="h-10 border-white/10 bg-black/20 text-white"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                            End date
+                          </Label>
+                          <Input
+                            type="date"
+                            value={editingItemEndDate}
+                            onChange={(e) =>
+                              setEditingItemEndDate(e.target.value)
+                            }
+                            disabled={savingItemId === item._id}
+                            className="h-10 border-white/10 bg-black/20 text-white"
+                          />
+                        </div>
+                      </div>
+                      {editingItemDateError ? (
+                        <p className="text-xs text-rose-300">
+                          {editingItemDateError}
+                        </p>
+                      ) : null}
                     </div>
                   ) : (
                     <button
@@ -1123,7 +1239,24 @@ export default function OrganisePage() {
                           : theme?.itemTitle || "text-slate-200"
                       } ${item.done ? "line-through" : ""}`}
                     >
-                      {item.title}
+                      <div className="flex flex-col gap-1 sm:grid sm:grid-cols-[1fr_120px_120px] sm:items-center sm:gap-3">
+                        <span className="flex flex-wrap items-center gap-2">
+                          <span>{item.title}</span>
+                          <span className="text-xs text-slate-500">
+                            {item.startDate || item.endDate
+                              ? `${item.startDate ? toDateInputValue(item.startDate) : "--"} - ${item.endDate ? toDateInputValue(item.endDate) : "--"}`
+                              : ""}
+                          </span>
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          {item.startDate
+                            ? toDateInputValue(item.startDate)
+                            : "--"}
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          {item.endDate ? toDateInputValue(item.endDate) : "--"}
+                        </span>
+                      </div>
                     </button>
                   )}
                   <button

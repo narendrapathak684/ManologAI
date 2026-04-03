@@ -6,12 +6,12 @@ const Pad = require("../models/pad");
 const router = express.Router();
 
 const DEFAULT_PADS = [
-  { padType: "goals",     title: "Goals" },
-  { padType: "books",     title: "Books to Read" },
-  { padType: "to-learn",  title: "To Learn" },
-  { padType: "to-do",     title: "To Do" },
-  { padType: "to-buy",    title: "To Buy" },
-  { padType: "ideas",     title: "Ideas" },
+  { padType: "goals", title: "Goals" },
+  { padType: "books", title: "Books to Read" },
+  { padType: "to-learn", title: "To Learn" },
+  { padType: "to-do", title: "To Do" },
+  { padType: "to-buy", title: "To Buy" },
+  { padType: "ideas", title: "Ideas" },
 ];
 
 // ─── Helper ──────────────────────────────────────────────────────────────────
@@ -21,7 +21,12 @@ async function seedDefaultPads(userId) {
   for (const def of DEFAULT_PADS) {
     const exists = await Pad.findOne({ user: userId, padType: def.padType });
     if (!exists) {
-      await Pad.create({ user: userId, padType: def.padType, title: def.title, items: [] });
+      await Pad.create({
+        user: userId,
+        padType: def.padType,
+        title: def.title,
+        items: [],
+      });
     }
   }
 }
@@ -133,7 +138,7 @@ router.post("/:padId/items", auth, async (req, res) => {
   try {
     const userId = req.user._id;
     const { padId } = req.params;
-    const { title, note } = req.body || {};
+    const { title, note, startDate, endDate } = req.body || {};
 
     if (!title || typeof title !== "string" || !title.trim()) {
       return res.status(400).json({ error: "Item title is required" });
@@ -142,9 +147,22 @@ router.post("/:padId/items", auth, async (req, res) => {
     const pad = await Pad.findOne({ _id: padId, user: userId });
     if (!pad) return res.status(404).json({ error: "Pad not found" });
 
+    const parsedStartDate = startDate ? new Date(startDate) : null;
+    const parsedEndDate = endDate ? new Date(endDate) : null;
+
+    if (startDate && Number.isNaN(parsedStartDate.getTime())) {
+      return res.status(400).json({ error: "Invalid start date" });
+    }
+
+    if (endDate && Number.isNaN(parsedEndDate.getTime())) {
+      return res.status(400).json({ error: "Invalid end date" });
+    }
+
     const newItem = {
       title: title.trim(),
       note: note?.trim() || "",
+      startDate: parsedStartDate,
+      endDate: parsedEndDate,
       done: false,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -167,7 +185,7 @@ router.patch("/:padId/items/:itemId", auth, async (req, res) => {
   try {
     const userId = req.user._id;
     const { padId, itemId } = req.params;
-    const { title, note } = req.body || {};
+    const { title, note, startDate, endDate } = req.body || {};
 
     if (title !== undefined && (typeof title !== "string" || !title.trim())) {
       return res.status(400).json({ error: "Item title cannot be empty" });
@@ -181,6 +199,22 @@ router.patch("/:padId/items/:itemId", auth, async (req, res) => {
 
     if (title !== undefined) item.title = title.trim();
     if (note !== undefined) item.note = note.trim();
+
+    if (startDate !== undefined) {
+      const parsedStartDate = startDate ? new Date(startDate) : null;
+      if (startDate && Number.isNaN(parsedStartDate.getTime())) {
+        return res.status(400).json({ error: "Invalid start date" });
+      }
+      item.startDate = parsedStartDate;
+    }
+
+    if (endDate !== undefined) {
+      const parsedEndDate = endDate ? new Date(endDate) : null;
+      if (endDate && Number.isNaN(parsedEndDate.getTime())) {
+        return res.status(400).json({ error: "Invalid end date" });
+      }
+      item.endDate = parsedEndDate;
+    }
     item.updatedAt = new Date();
     pad.updatedAt = new Date();
 

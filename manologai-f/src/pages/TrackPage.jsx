@@ -204,12 +204,49 @@ const formatShortDate = (dateKey) => {
   });
 };
 
+const clampNumberInput = (value, min, max) => {
+  if (value === "") return "";
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return "";
+  const clamped = Math.min(max, Math.max(min, numeric));
+  return String(clamped);
+};
+
+const splitHoursAndMinutes = (value) => {
+  if (!Number.isFinite(value)) {
+    return { hours: "", minutes: "" };
+  }
+  const totalMinutes = Math.round(value * 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return {
+    hours: String(hours),
+    minutes: String(minutes),
+  };
+};
+
+const toDecimalHours = (hoursValue, minutesValue) => {
+  const hours = Number(hoursValue);
+  const minutes = Number(minutesValue);
+  const safeHours = Number.isFinite(hours) ? hours : 0;
+  const safeMinutes = Number.isFinite(minutes) ? minutes : 0;
+  return safeHours + safeMinutes / 60;
+};
+
+const resolveTimeValue = (hoursValue, minutesValue) => {
+  if (hoursValue === "" && minutesValue === "") return "";
+  return toDecimalHours(hoursValue, minutesValue);
+};
+
 export default function TrackPage() {
   const [habits, setHabits] = useState([]);
   const [metrics, setMetrics] = useState({
-    sleep: "",
-    screen: "",
-    workStudy: "",
+    sleepHours: "",
+    sleepMinutes: "",
+    screenHours: "",
+    screenMinutes: "",
+    workStudyHours: "",
+    workStudyMinutes: "",
     expense: "",
   });
   const [lifeRatings, setLifeRatings] = useState(defaultLifeRatings);
@@ -248,6 +285,11 @@ export default function TrackPage() {
   ];
   const selectedDateLabel =
     selectedDateKey === today ? "Today" : formatShortDate(selectedDateKey);
+  const dateBadge = (
+    <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-300">
+      {selectedDateLabel}
+    </span>
+  );
   const { user } = useAuth();
   const expenseCurrency = user?.currency || "USD";
   const expenseSymbol = (() => {
@@ -301,15 +343,31 @@ export default function TrackPage() {
         const { data: metricsData } = isToday
           ? await api.get("/time-tracker/today")
           : await api.get(`/time-tracker/${dateKey}`);
+        const sleepParts = splitHoursAndMinutes(metricsData.entry.sleep);
+        const screenParts = splitHoursAndMinutes(metricsData.entry.screen);
+        const workStudyParts = splitHoursAndMinutes(
+          metricsData.entry.workStudy,
+        );
         setMetrics({
-          sleep: metricsData.entry.sleep || "",
-          screen: metricsData.entry.screen || "",
-          workStudy: metricsData.entry.workStudy || "",
+          sleepHours: sleepParts.hours,
+          sleepMinutes: sleepParts.minutes,
+          screenHours: screenParts.hours,
+          screenMinutes: screenParts.minutes,
+          workStudyHours: workStudyParts.hours,
+          workStudyMinutes: workStudyParts.minutes,
           expense: metricsData.entry.expense || "",
         });
       } catch (err) {
         if (err?.response?.status === 404) {
-          setMetrics({ sleep: "", screen: "", workStudy: "", expense: "" });
+          setMetrics({
+            sleepHours: "",
+            sleepMinutes: "",
+            screenHours: "",
+            screenMinutes: "",
+            workStudyHours: "",
+            workStudyMinutes: "",
+            expense: "",
+          });
         } else {
           throw err;
         }
@@ -456,9 +514,18 @@ export default function TrackPage() {
     clearSaveAlert();
     setError("");
 
-    const sleepHours = Number(metrics.sleep) || 0;
-    const screenHours = Number(metrics.screen) || 0;
-    const workStudyHours = Number(metrics.workStudy) || 0;
+    const sleepHours = toDecimalHours(
+      metrics.sleepHours || 0,
+      metrics.sleepMinutes || 0,
+    );
+    const screenHours = toDecimalHours(
+      metrics.screenHours || 0,
+      metrics.screenMinutes || 0,
+    );
+    const workStudyHours = toDecimalHours(
+      metrics.workStudyHours || 0,
+      metrics.workStudyMinutes || 0,
+    );
     const totalHours = sleepHours + screenHours + workStudyHours;
 
     if (totalHours > 24) {
@@ -468,10 +535,19 @@ export default function TrackPage() {
 
     setSavingMetrics(true);
     try {
+      const payload = {
+        sleep: resolveTimeValue(metrics.sleepHours, metrics.sleepMinutes),
+        screen: resolveTimeValue(metrics.screenHours, metrics.screenMinutes),
+        workStudy: resolveTimeValue(
+          metrics.workStudyHours,
+          metrics.workStudyMinutes,
+        ),
+        expense: metrics.expense,
+      };
       if (selectedDateKey === today) {
-        await api.post("/time-tracker", metrics);
+        await api.post("/time-tracker", payload);
       } else {
-        await api.post(`/time-tracker/${selectedDateKey}`, metrics);
+        await api.post(`/time-tracker/${selectedDateKey}`, payload);
       }
       showSaveAlert({
         title: "Daily Metrics",
@@ -722,10 +798,13 @@ export default function TrackPage() {
               {/* Habits Section */}
               <Card className="flex h-full flex-col border-pink-500/25 bg-gradient-to-br from-pink-500/6 via-slate-900/70 to-slate-950/95 backdrop-blur-xl">
                 <CardHeader className="space-y-3">
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Zap className="h-5 w-5 text-pink-400" />
-                    Daily Habits
-                  </CardTitle>
+                  <div className="flex items-center justify-between gap-3">
+                    <CardTitle className="text-white flex items-center gap-2">
+                      <Zap className="h-5 w-5 text-pink-400" />
+                      Daily Habits
+                    </CardTitle>
+                    {dateBadge}
+                  </div>
                   <CardDescription>
                     Small wins every day lead to big results.
                   </CardDescription>
@@ -835,10 +914,13 @@ export default function TrackPage() {
               {/* Metrics Section */}
               <Card className="flex h-full flex-col border-emerald-500/25 bg-gradient-to-br from-emerald-500/6 via-slate-900/70 to-slate-950/95 backdrop-blur-xl">
                 <CardHeader className="space-y-3">
-                  <CardTitle className="flex items-center gap-2 text-white">
-                    <CalendarDays className="h-5 w-5 text-emerald-400" />
-                    Daily Metrics
-                  </CardTitle>
+                  <div className="flex items-center justify-between gap-3">
+                    <CardTitle className="flex items-center gap-2 text-white">
+                      <CalendarDays className="h-5 w-5 text-emerald-400" />
+                      Daily Metrics
+                    </CardTitle>
+                    {dateBadge}
+                  </div>
                   <CardDescription>
                     Quantify your day to understand your baseline.
                   </CardDescription>
@@ -847,45 +929,138 @@ export default function TrackPage() {
                   <div className="flex w-full flex-col gap-4">
                     <div className="space-y-2">
                       <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
-                        <Moon className="h-3 w-3" /> Sleep (Hours)
+                        <Moon className="h-3 w-3" /> Sleep
                       </label>
-                      <Input
-                        type="number"
-                        placeholder="0.0"
-                        value={metrics.sleep}
-                        onChange={(e) =>
-                          setMetrics({ ...metrics, sleep: e.target.value })
-                        }
-                        className="bg-black/20 border-white/10 text-white focus-visible:ring-emerald-500"
-                      />
+                      <div className="grid grid-cols-2 gap-3">
+                        <Input
+                          type="number"
+                          placeholder="Hours"
+                          min={0}
+                          max={24}
+                          step={1}
+                          value={metrics.sleepHours}
+                          onChange={(e) =>
+                            setMetrics({
+                              ...metrics,
+                              sleepHours: clampNumberInput(
+                                e.target.value,
+                                0,
+                                24,
+                              ),
+                            })
+                          }
+                          className="bg-black/20 border-white/10 text-white focus-visible:ring-emerald-500"
+                        />
+                        <Input
+                          type="number"
+                          placeholder="Minutes"
+                          min={0}
+                          max={59}
+                          step={1}
+                          value={metrics.sleepMinutes}
+                          onChange={(e) =>
+                            setMetrics({
+                              ...metrics,
+                              sleepMinutes: clampNumberInput(
+                                e.target.value,
+                                0,
+                                59,
+                              ),
+                            })
+                          }
+                          className="bg-black/20 border-white/10 text-white focus-visible:ring-emerald-500"
+                        />
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
-                        <Monitor className="h-3 w-3" /> Screen Time (Hrs)
+                        <Monitor className="h-3 w-3" /> Screen Time
                       </label>
-                      <Input
-                        type="number"
-                        placeholder="0.0"
-                        value={metrics.screen}
-                        onChange={(e) =>
-                          setMetrics({ ...metrics, screen: e.target.value })
-                        }
-                        className="bg-black/20 border-white/10 text-white focus-visible:ring-emerald-500"
-                      />
+                      <div className="grid grid-cols-2 gap-3">
+                        <Input
+                          type="number"
+                          placeholder="Hours"
+                          min={0}
+                          max={24}
+                          step={1}
+                          value={metrics.screenHours}
+                          onChange={(e) =>
+                            setMetrics({
+                              ...metrics,
+                              screenHours: clampNumberInput(
+                                e.target.value,
+                                0,
+                                24,
+                              ),
+                            })
+                          }
+                          className="bg-black/20 border-white/10 text-white focus-visible:ring-emerald-500"
+                        />
+                        <Input
+                          type="number"
+                          placeholder="Minutes"
+                          min={0}
+                          max={59}
+                          step={1}
+                          value={metrics.screenMinutes}
+                          onChange={(e) =>
+                            setMetrics({
+                              ...metrics,
+                              screenMinutes: clampNumberInput(
+                                e.target.value,
+                                0,
+                                59,
+                              ),
+                            })
+                          }
+                          className="bg-black/20 border-white/10 text-white focus-visible:ring-emerald-500"
+                        />
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
-                        <Briefcase className="h-3 w-3" /> Work/Study (Hrs)
+                        <Briefcase className="h-3 w-3" /> Work/Study
                       </label>
-                      <Input
-                        type="number"
-                        placeholder="0.0"
-                        value={metrics.workStudy}
-                        onChange={(e) =>
-                          setMetrics({ ...metrics, workStudy: e.target.value })
-                        }
-                        className="bg-black/20 border-white/10 text-white focus-visible:ring-emerald-500"
-                      />
+                      <div className="grid grid-cols-2 gap-3">
+                        <Input
+                          type="number"
+                          placeholder="Hours"
+                          min={0}
+                          max={24}
+                          step={1}
+                          value={metrics.workStudyHours}
+                          onChange={(e) =>
+                            setMetrics({
+                              ...metrics,
+                              workStudyHours: clampNumberInput(
+                                e.target.value,
+                                0,
+                                24,
+                              ),
+                            })
+                          }
+                          className="bg-black/20 border-white/10 text-white focus-visible:ring-emerald-500"
+                        />
+                        <Input
+                          type="number"
+                          placeholder="Minutes"
+                          min={0}
+                          max={59}
+                          step={1}
+                          value={metrics.workStudyMinutes}
+                          onChange={(e) =>
+                            setMetrics({
+                              ...metrics,
+                              workStudyMinutes: clampNumberInput(
+                                e.target.value,
+                                0,
+                                59,
+                              ),
+                            })
+                          }
+                          className="bg-black/20 border-white/10 text-white focus-visible:ring-emerald-500"
+                        />
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
@@ -922,10 +1097,13 @@ export default function TrackPage() {
               <Card className="flex h-full flex-col border-rose-500/25 bg-gradient-to-br from-rose-500/6 via-slate-900/70 to-slate-950/95 backdrop-blur-xl">
                 <CardHeader className="space-y-3">
                   <div className="flex flex-col gap-2">
-                    <CardTitle className="text-white flex items-center gap-2">
-                      <Heart className="h-5 w-5 text-rose-400" />
-                      Daily Emotion
-                    </CardTitle>
+                    <div className="flex items-center justify-between gap-3">
+                      <CardTitle className="text-white flex items-center gap-2">
+                        <Heart className="h-5 w-5 text-rose-400" />
+                        Daily Emotion
+                      </CardTitle>
+                      {dateBadge}
+                    </div>
                     <CardDescription>
                       Select how you feel for the selected day and save it to
                       your log.
@@ -990,10 +1168,13 @@ export default function TrackPage() {
             <Card className="mt-6 border-amber-500/25 bg-gradient-to-br from-amber-500/6 via-slate-900/70 to-slate-950/95 backdrop-blur-xl">
               <CardHeader>
                 <div>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Star className="h-5 w-5 text-amber-400" />
-                    Life Balance
-                  </CardTitle>
+                  <div className="flex items-center justify-between gap-3">
+                    <CardTitle className="text-white flex items-center gap-2">
+                      <Star className="h-5 w-5 text-amber-400" />
+                      Life Balance
+                    </CardTitle>
+                    {dateBadge}
+                  </div>
                   <CardDescription>
                     Rate your satisfaction across 8 key areas of your life
                     (0-10).

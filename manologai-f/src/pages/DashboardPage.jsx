@@ -1,5 +1,5 @@
-import { useMemo, useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useMemo, useRef, useState, useEffect } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
   BookOpenText,
@@ -195,8 +195,10 @@ export default function DashboardPage() {
   const [heatmapMax, setHeatmapMax] = useState(0);
   const [heatmapLoading, setHeatmapLoading] = useState(true);
   const [heatmapMonthOffset, setHeatmapMonthOffset] = useState(0);
+  const [heatmapSlideDirection, setHeatmapSlideDirection] = useState(1);
   const [heatmapJumpDate, setHeatmapJumpDate] = useState("");
   const [heatmapJumpError, setHeatmapJumpError] = useState("");
+  const heatmapTouchStart = useRef(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
     const saved = localStorage.getItem("sidebar-collapsed");
     return saved !== null ? JSON.parse(saved) : true;
@@ -382,6 +384,8 @@ export default function DashboardPage() {
     };
   }, [heatmapMonthRange]);
 
+  const heatmapTransitionKey = `${heatmapMonthRange.start.getFullYear()}-${heatmapMonthRange.start.getMonth()}`;
+
   const heatmapCells = useMemo(() => {
     if (heatmapDays.length === 0) return [];
     const firstDay = heatmapDays[0].date.getDay();
@@ -400,11 +404,43 @@ export default function DashboardPage() {
     ];
   }, [heatmapMax]);
 
+  const clampMonthOffset = (offset) =>
+    Math.min(0, Math.max(-HEATMAP_MAX_MONTHS_BACK, offset));
+
   const canGoPrevMonth = heatmapMonthOffset > -HEATMAP_MAX_MONTHS_BACK;
   const canGoNextMonth = heatmapMonthOffset < 0;
 
-  const clampMonthOffset = (offset) =>
-    Math.min(0, Math.max(-HEATMAP_MAX_MONTHS_BACK, offset));
+  const shiftHeatmapMonth = (delta) => {
+    setHeatmapSlideDirection(delta < 0 ? -1 : 1);
+    setHeatmapMonthOffset((prev) => clampMonthOffset(prev + delta));
+  };
+
+  const handleHeatmapTouchStart = (event) => {
+    const touch = event.touches?.[0];
+    if (!touch) return;
+    heatmapTouchStart.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+    };
+  };
+
+  const handleHeatmapTouchEnd = (event) => {
+    const start = heatmapTouchStart.current;
+    if (!start) return;
+    const touch = event.changedTouches?.[0];
+    heatmapTouchStart.current = null;
+    if (!touch) return;
+
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+    if (Math.abs(deltaX) < 40 || Math.abs(deltaX) < Math.abs(deltaY)) return;
+
+    if (deltaX > 0) {
+      if (canGoPrevMonth) shiftHeatmapMonth(-1);
+      return;
+    }
+    if (canGoNextMonth) shiftHeatmapMonth(1);
+  };
 
   const getMonthOffsetForDate = (date) => {
     const now = new Date();
@@ -434,7 +470,20 @@ export default function DashboardPage() {
       return;
     }
     setHeatmapJumpError("");
+    setHeatmapSlideDirection(offset < heatmapMonthOffset ? -1 : 1);
     setHeatmapMonthOffset(clampMonthOffset(offset));
+  };
+
+  const heatmapSlideVariants = {
+    enter: (direction) => ({
+      x: direction > 0 ? 40 : -40,
+      opacity: 0,
+    }),
+    center: { x: 0, opacity: 1 },
+    exit: (direction) => ({
+      x: direction > 0 ? -40 : 40,
+      opacity: 0,
+    }),
   };
 
   function getHeatmapStyle(count) {
@@ -738,9 +787,7 @@ export default function DashboardPage() {
                       <div className="flex items-center gap-2 text-xs font-semibold text-slate-200">
                         <button
                           type="button"
-                          onClick={() =>
-                            setHeatmapMonthOffset((prev) => prev - 1)
-                          }
+                          onClick={() => shiftHeatmapMonth(-1)}
                           disabled={!canGoPrevMonth}
                           className={`flex h-7 w-7 items-center justify-center rounded-full border transition-all ${
                             canGoPrevMonth
@@ -756,9 +803,7 @@ export default function DashboardPage() {
                         </span>
                         <button
                           type="button"
-                          onClick={() =>
-                            setHeatmapMonthOffset((prev) => prev + 1)
-                          }
+                          onClick={() => shiftHeatmapMonth(1)}
                           disabled={!canGoNextMonth}
                           className={`flex h-7 w-7 items-center justify-center rounded-full border transition-all ${
                             canGoNextMonth
@@ -814,60 +859,82 @@ export default function DashboardPage() {
                         Loading {heatmapMonthLabel}…
                       </div>
                     )}
-                    {!heatmapLoading && heatmapDays.length > 0 && (
-                      <div className="space-y-3">
-                        <div className="grid grid-cols-7 gap-2 text-[10px] uppercase tracking-[0.2em] text-slate-500">
-                          {heatmapWeekdays.map((label) => (
-                            <span key={label} className="text-center">
-                              {label}
-                            </span>
-                          ))}
-                        </div>
-                        <div className="grid grid-cols-7 gap-2">
-                          {heatmapCells.map((day, index) => {
-                            if (!day) {
-                              return (
-                                <div
-                                  key={`empty-${index}`}
-                                  className="h-9 rounded-lg border border-transparent"
-                                />
-                              );
-                            }
-                            const label = day.date.toLocaleDateString(
-                              undefined,
-                              {
-                                month: "short",
-                                day: "numeric",
-                              },
-                            );
-                            const countLabel = Number.isInteger(day.count)
-                              ? `${day.count}`
-                              : day.count.toFixed(1);
-                            return (
-                              <div
-                                key={day.key}
-                                className="h-9 rounded-lg border transition-all hover:scale-[1.02]"
-                                style={getHeatmapStyle(day.count)}
-                                title={`${label}: ${countLabel} inputs`}
-                              />
-                            );
-                          })}
-                        </div>
-                        <div className="flex items-center justify-between text-xs text-slate-400">
-                          <span>Less</span>
-                          <div className="flex items-center gap-2">
-                            {heatmapLegend.map((value) => (
-                              <div
-                                key={`legend-${value}`}
-                                className="h-3 w-3 rounded border"
-                                style={getHeatmapStyle(value)}
-                              />
-                            ))}
-                          </div>
-                          <span>More</span>
-                        </div>
-                      </div>
-                    )}
+                    <div className="relative min-h-[240px] overflow-hidden">
+                      <AnimatePresence
+                        mode="wait"
+                        initial={false}
+                        custom={heatmapSlideDirection}
+                      >
+                        {!heatmapLoading && heatmapDays.length > 0 && (
+                          <motion.div
+                            key={heatmapTransitionKey}
+                            custom={heatmapSlideDirection}
+                            variants={heatmapSlideVariants}
+                            initial="enter"
+                            animate="center"
+                            exit="exit"
+                            transition={{
+                              duration: 0.35,
+                              ease: [0.22, 1, 0.36, 1],
+                            }}
+                            className="absolute inset-0 space-y-3"
+                            onTouchStart={handleHeatmapTouchStart}
+                            onTouchEnd={handleHeatmapTouchEnd}
+                          >
+                            <div className="grid grid-cols-7 gap-2 text-[10px] uppercase tracking-[0.2em] text-slate-500">
+                              {heatmapWeekdays.map((label) => (
+                                <span key={label} className="text-center">
+                                  {label}
+                                </span>
+                              ))}
+                            </div>
+                            <div className="grid grid-cols-7 gap-2">
+                              {heatmapCells.map((day, index) => {
+                                if (!day) {
+                                  return (
+                                    <div
+                                      key={`empty-${index}`}
+                                      className="h-9 rounded-lg border border-transparent"
+                                    />
+                                  );
+                                }
+                                const label = day.date.toLocaleDateString(
+                                  undefined,
+                                  {
+                                    month: "short",
+                                    day: "numeric",
+                                  },
+                                );
+                                const countLabel = Number.isInteger(day.count)
+                                  ? `${day.count}`
+                                  : day.count.toFixed(1);
+                                return (
+                                  <div
+                                    key={day.key}
+                                    className="h-9 rounded-lg border transition-all hover:scale-[1.02]"
+                                    style={getHeatmapStyle(day.count)}
+                                    title={`${label}: ${countLabel} inputs`}
+                                  />
+                                );
+                              })}
+                            </div>
+                            <div className="flex items-center justify-between text-xs text-slate-400">
+                              <span>Less</span>
+                              <div className="flex items-center gap-2">
+                                {heatmapLegend.map((value) => (
+                                  <div
+                                    key={`legend-${value}`}
+                                    className="h-3 w-3 rounded border"
+                                    style={getHeatmapStyle(value)}
+                                  />
+                                ))}
+                              </div>
+                              <span>More</span>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                     {!heatmapLoading &&
                       heatmapDays.length === 0 &&
                       !heatmapError && (

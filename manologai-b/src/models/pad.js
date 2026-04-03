@@ -9,6 +9,14 @@ const padItemSchema = new mongoose.Schema({
     type: String,
     default: "",
   },
+  startDate: {
+    type: Date,
+    default: null,
+  },
+  endDate: {
+    type: Date,
+    default: null,
+  },
   done: {
     type: Boolean,
     default: false,
