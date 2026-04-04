@@ -13,8 +13,6 @@ import {
   FolderKanban,
   AlertCircle,
   CheckCircle,
-  Menu,
-  X,
   Smartphone,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
@@ -66,14 +64,6 @@ export default function ProfilePage() {
     type: null,
     message: "",
   });
-  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
-    const saved = localStorage.getItem("sidebar-collapsed");
-    return saved !== null ? JSON.parse(saved) : true;
-  });
-
-  useEffect(() => {
-    localStorage.setItem("sidebar-collapsed", JSON.stringify(isSidebarOpen));
-  }, [isSidebarOpen]);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (event) => {
@@ -209,114 +199,14 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="h-screen bg-slate-950 text-slate-100 flex overflow-hidden">
+    <div className="h-screen bg-slate-950 text-slate-100 overflow-hidden">
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute left-[-10%] top-8 h-[600px] w-[600px] rounded-full bg-pink-600/5 blur-[120px]" />
         <div className="absolute right-[-8%] top-40 h-[600px] w-[600px] rounded-full bg-emerald-600/5 blur-[120px]" />
       </div>
 
-      <div className="relative z-10 flex h-full w-full">
-        {/* Sidebar */}
-        <motion.aside
-          initial={false}
-          animate={{
-            width: isSidebarOpen ? 288 : 88,
-          }}
-          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-          className="sticky top-0 hidden h-screen shrink-0 overflow-hidden border-r border-white/10 bg-slate-900/40 p-6 backdrop-blur-3xl lg:flex lg:flex-col group"
-        >
-          <div
-            className={`flex items-center gap-3 mb-10 overflow-hidden ${isSidebarOpen ? "justify-between" : "justify-center"}`}
-          >
-            {isSidebarOpen && (
-              <div className="flex items-center gap-3 shrink-0">
-                <Link
-                  to="/profile"
-                  className="flex h-11 w-11 items-center justify-center rounded-xl border border-transparent bg-white/5 text-slate-400 hover:border-pink-500/30 hover:bg-pink-500/10 hover:text-white transition-all"
-                >
-                  <User className="h-5 w-5" />
-                </Link>
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  className="whitespace-nowrap"
-                >
-                  <p className="text-lg font-semibold text-white tracking-tight truncate max-w-[140px]">
-                    {user?.firstName || "ManologAI"}
-                  </p>
-                  <p className="text-sm text-slate-400">Settings hub</p>
-                </motion.div>
-              </div>
-            )}
-
-            <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className={`p-2 rounded-lg text-slate-500 hover:text-white hover:bg-white/5 transition-all ${isSidebarOpen ? "-mr-2" : ""}`}
-            >
-              {isSidebarOpen ? (
-                <X className="h-4 w-4" />
-              ) : (
-                <Menu className="h-4 w-4" />
-              )}
-            </button>
-          </div>
-
-          <nav className="space-y-2 overflow-hidden">
-            {navItems.map(({ label, icon: Icon, to, active }) => (
-              <Button
-                key={label}
-                asChild
-                variant="ghost"
-                className={`h-auto w-full justify-start rounded-xl border px-4 py-3 text-left text-sm font-medium transition-all ${
-                  active
-                    ? "border-pink-500/30 bg-pink-500/10 text-white shadow-[0_0_20px_-10px_rgba(236,72,153,0.3)]"
-                    : "border-transparent text-slate-400 hover:border-white/10 hover:bg-white/5 hover:text-slate-200"
-                }`}
-              >
-                <Link to={to} className="flex items-center">
-                  <Icon
-                    className={`mr-3 h-4 w-4 shrink-0 ${active ? "text-pink-300" : ""}`}
-                  />
-                  {isSidebarOpen && (
-                    <motion.span
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="whitespace-nowrap"
-                    >
-                      {label}
-                    </motion.span>
-                  )}
-                </Link>
-              </Button>
-            ))}
-          </nav>
-
-          {isSidebarOpen && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="mt-auto"
-            >
-              <Card className="mt-auto border-white/5 bg-white/5 backdrop-blur-xl shrink-0">
-                <CardHeader className="p-4">
-                  <CardTitle className="text-[10px] font-mono uppercase tracking-widest text-slate-500">
-                    Status
-                  </CardTitle>
-                  <div className="flex items-center gap-2 mt-2">
-                    <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <p className="text-xs text-slate-300">
-                      Account access online
-                    </p>
-                  </div>
-                </CardHeader>
-              </Card>
-            </motion.div>
-          )}
-        </motion.aside>
-
-        {/* Main Content */}
-        <main className="flex-1 overflow-y-auto p-4 pb-28 sm:p-6 sm:pb-32 lg:p-12 lg:pb-12">
+      <div className="relative z-10 h-full w-full">
+        <main className="h-full overflow-y-auto p-4 pb-28 sm:p-6 sm:pb-32 lg:p-12 lg:pb-12">
           <div className="mx-auto max-w-3xl">
             <header className="mb-12">
               <Link

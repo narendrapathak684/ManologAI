@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpenText,
@@ -20,8 +20,6 @@ import {
   GraduationCap,
   ClipboardList,
   User,
-  X,
-  Menu,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
@@ -375,10 +373,6 @@ export default function OrganisePage() {
   const [deletingItemId, setDeletingItemId] = useState(null);
   const itemRefs = useRef({});
   const { user } = useAuth();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
-    const saved = localStorage.getItem("sidebar-collapsed");
-    return saved !== null ? JSON.parse(saved) : true;
-  });
   const selectedPadIndex = selectedPad
     ? pads.findIndex((pad) => pad._id === selectedPad._id)
     : -1;
@@ -393,10 +387,6 @@ export default function OrganisePage() {
     editingItemStartDate,
     editingItemEndDate,
   );
-
-  useEffect(() => {
-    localStorage.setItem("sidebar-collapsed", JSON.stringify(isSidebarOpen));
-  }, [isSidebarOpen]);
 
   useEffect(() => {
     fetchData();
@@ -1308,89 +1298,12 @@ export default function OrganisePage() {
     );
 
   return (
-    <div className="h-screen bg-slate-950 text-slate-100 flex overflow-hidden">
+    <div className="h-screen bg-slate-950 text-slate-100 overflow-hidden">
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-pink-600/5 blur-[120px] rounded-full" />
         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-emerald-600/5 blur-[120px] rounded-full" />
       </div>
-
-      <motion.aside
-        initial={false}
-        animate={{
-          width: isSidebarOpen ? 288 : 88,
-        }}
-        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-        className="sticky top-0 hidden h-screen shrink-0 overflow-hidden border-r border-white/10 bg-slate-900/40 p-6 backdrop-blur-3xl lg:flex lg:flex-col group z-10"
-      >
-        <div
-          className={`flex items-center gap-3 mb-10 overflow-hidden ${isSidebarOpen ? "justify-between" : "justify-center"}`}
-        >
-          {isSidebarOpen && (
-            <div className="flex items-center gap-3 shrink-0">
-              <Link
-                to="/profile"
-                className="flex h-11 w-11 items-center justify-center rounded-xl border border-transparent bg-white/5 text-slate-400 hover:border-pink-500/30 hover:bg-pink-500/10 hover:text-white transition-all"
-              >
-                <User className="h-5 w-5" />
-              </Link>
-              <motion.div
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                className="whitespace-nowrap"
-              >
-                <p className="text-lg font-bold text-white tracking-tight truncate max-w-[140px]">
-                  {user?.firstName || "ManologAI"}
-                </p>
-                <p className="text-xs text-slate-500 font-mono">Organise</p>
-              </motion.div>
-            </div>
-          )}
-
-          <button
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className={`p-2 rounded-lg text-slate-500 hover:text-white hover:bg-white/5 transition-all ${isSidebarOpen ? "-mr-1" : ""}`}
-          >
-            {isSidebarOpen ? (
-              <X className="h-4 w-4" />
-            ) : (
-              <Menu className="h-4 w-4" />
-            )}
-          </button>
-        </div>
-
-        <nav className="space-y-2 overflow-hidden">
-          {navItems.map(({ label, icon: Icon, to, active }) => (
-            <Button
-              key={label}
-              asChild
-              variant="ghost"
-              className={`h-auto w-full justify-start rounded-xl border px-4 py-3 text-left text-sm font-medium transition-all ${
-                active
-                  ? "border-pink-500/30 bg-pink-500/10 text-white shadow-[0_0_20px_-10px_rgba(236,72,153,0.3)]"
-                  : "border-transparent text-slate-400 hover:border-white/10 hover:bg-white/5 hover:text-slate-200"
-              }`}
-            >
-              <Link to={to} className="flex items-center">
-                <Icon
-                  className={`mr-3 h-4 w-4 shrink-0 ${active ? "text-pink-300" : ""}`}
-                />
-                {isSidebarOpen && (
-                  <motion.span
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="whitespace-nowrap"
-                  >
-                    {label}
-                  </motion.span>
-                )}
-              </Link>
-            </Button>
-          ))}
-        </nav>
-      </motion.aside>
-
-      <main className="relative z-10 flex-1 overflow-y-auto p-4 pb-28 sm:p-6 sm:pb-32 lg:p-8 lg:pb-8">
+      <main className="relative z-10 h-full overflow-y-auto p-4 pb-28 sm:p-6 sm:pb-32 lg:p-8 lg:pb-8">
         <div className="mx-auto max-w-7xl">
           <header className="mb-8">
             <h1 className="text-4xl font-extrabold tracking-tight text-white mb-2">

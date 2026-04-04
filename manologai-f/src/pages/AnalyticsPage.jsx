@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Radar,
@@ -42,8 +42,6 @@ import {
   ArrowDownRight,
   DollarSign,
   User,
-  X,
-  Menu,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import MobileTabBar from "../components/MobileTabBar";
@@ -204,15 +202,6 @@ export default function AnalyticsPage() {
   const [habitImpactRange, setHabitImpactRange] = useState("month");
   const { user } = useAuth();
   const hasInitialized = useRef(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
-    const saved = localStorage.getItem("sidebar-collapsed");
-    return saved !== null ? JSON.parse(saved) : true;
-  });
-
-  useEffect(() => {
-    localStorage.setItem("sidebar-collapsed", JSON.stringify(isSidebarOpen));
-  }, [isSidebarOpen]);
-
   useEffect(() => {
     if (!location.hash || pageLoading) return;
     const targetId = location.hash.slice(1);
@@ -785,6 +774,47 @@ export default function AnalyticsPage() {
     return `Lower ${insightMetricLabel.toLowerCase()} days align with more ${lowerLabel} emotions.`;
   }, [insightPlotData, insightMetricLabel]);
 
+  const insightStrength = useMemo(() => {
+    const valid = insightPlotData
+      .filter(
+        (entry) =>
+          Number.isFinite(entry.x) && Number.isFinite(entry.emotionScore),
+      )
+      .map((entry) => ({ x: entry.x, y: entry.emotionScore }));
+
+    if (valid.length < 4) {
+      return `Not enough ${insightMetricLabel.toLowerCase()} data to assess strength.`;
+    }
+
+    const mean = (items, key) =>
+      items.reduce((sum, item) => sum + item[key], 0) / items.length;
+    const meanX = mean(valid, "x");
+    const meanY = mean(valid, "y");
+
+    let num = 0;
+    let denX = 0;
+    let denY = 0;
+    for (const item of valid) {
+      const dx = item.x - meanX;
+      const dy = item.y - meanY;
+      num += dx * dy;
+      denX += dx * dx;
+      denY += dy * dy;
+    }
+
+    const denom = Math.sqrt(denX * denY);
+    if (!denom) {
+      return `Not enough ${insightMetricLabel.toLowerCase()} variance to assess strength.`;
+    }
+
+    const r = num / denom;
+    const absR = Math.abs(r);
+    const strength = absR >= 0.5 ? "strong" : absR >= 0.3 ? "moderate" : "weak";
+    const direction = r >= 0 ? "positive" : "negative";
+
+    return `Overall correlation looks ${strength} and ${direction}.`;
+  }, [insightPlotData, insightMetricLabel]);
+
   const dayEmotionInsight = useMemo(() => {
     if (dayEmotionData.length === 0) {
       return "Log emotions to see weekly patterns.";
@@ -864,6 +894,117 @@ export default function AnalyticsPage() {
     }
   };
 
+  const expenseInsight = useMemo(() => {
+    if (expenseData.length < 3) {
+      return "Log a few more expense entries to unlock insights.";
+    }
+
+    const values = expenseData
+      .map((item) => Number(item.Expense))
+      .filter((value) => Number.isFinite(value));
+
+    if (values.length < 3) {
+      return "Log a few more expense entries to unlock insights.";
+    }
+
+    const total = values.reduce((sum, value) => sum + value, 0);
+    const average = total / values.length;
+    const last = values[values.length - 1];
+    const prevAvg =
+      values.length > 1
+        ? values.slice(0, -1).reduce((sum, value) => sum + value, 0) /
+          (values.length - 1)
+        : average;
+    const delta = last - prevAvg;
+    const deltaAbs = Math.abs(delta);
+    const peak = Math.max(...values);
+    const peakIndex = values.indexOf(peak);
+    const peakLabel = expenseData[peakIndex]?.name || "the peak day";
+
+    const rangeLabel =
+      expenseRange === "week"
+        ? "last 7 days"
+        : expenseRange === "year"
+          ? "last 365 days"
+          : "last 30 days";
+
+    const avgText = `Average daily spend is ${formatCurrency(average)} over the ${rangeLabel}.`;
+
+    if (deltaAbs < Math.max(average * 0.08, 5)) {
+      return `${avgText} Spending is steady, with a peak on ${peakLabel}.`;
+    }
+
+    if (delta > 0) {
+      return `${avgText} Latest spend is ${formatCurrency(deltaAbs)} above your recent average, with a peak on ${peakLabel}.`;
+    }
+
+    return `${avgText} Latest spend is ${formatCurrency(deltaAbs)} below your recent average, with a peak on ${peakLabel}.`;
+  }, [expenseData, expenseRange, formatCurrency]);
+
+  const timeInsight = useMemo(() => {
+    if (timeData.length < 3) {
+      return "Log a few more time entries to unlock insights.";
+    }
+
+    const rows = timeData
+      .map((item) => ({
+        sleep: Number(item.Sleep),
+        work: Number(item.Work),
+        screen: Number(item.Screen),
+      }))
+      .filter(
+        (item) =>
+          Number.isFinite(item.sleep) &&
+          Number.isFinite(item.work) &&
+          Number.isFinite(item.screen),
+      );
+
+    if (rows.length < 3) {
+      return "Log a few more time entries to unlock insights.";
+    }
+
+    const totals = rows.reduce(
+      (acc, item) => {
+        acc.sleep += item.sleep;
+        acc.work += item.work;
+        acc.screen += item.screen;
+        return acc;
+      },
+      { sleep: 0, work: 0, screen: 0 },
+    );
+
+    const avgSleep = totals.sleep / rows.length;
+    const avgWork = totals.work / rows.length;
+    const avgScreen = totals.screen / rows.length;
+
+    const dominant = [
+      { label: "Sleep", value: avgSleep },
+      { label: "Work/Study", value: avgWork },
+      { label: "Screen", value: avgScreen },
+    ].sort((a, b) => b.value - a.value)[0];
+
+    const rangeLabel =
+      timeRange === "week"
+        ? "last 7 days"
+        : timeRange === "year"
+          ? "last 365 days"
+          : "last 30 days";
+
+    const sleepNote =
+      avgSleep < 6
+        ? " Sleep averages below 6h."
+        : avgSleep > 9
+          ? " Sleep averages above 9h."
+          : "";
+    const screenWorkGap = avgScreen - avgWork;
+    const balanceNote =
+      Math.abs(screenWorkGap) >= 1.5
+        ? ` Screen time is ${screenWorkGap > 0 ? "higher" : "lower"} than work/study by ~${Math.abs(screenWorkGap).toFixed(1)}h.`
+        : "";
+
+    return `Average daily time in the ${rangeLabel}: ${avgSleep.toFixed(1)}h sleep, ${avgWork.toFixed(1)}h work/study, ${avgScreen.toFixed(1)}h screen. ${dominant.label} is highest.${sleepNote}${balanceNote}`;
+  }, [timeData, timeRange]);
+
   const topHabit = useMemo(() => {
     if (habits.length === 0) return null;
     return habits.reduce((prev, current) =>
@@ -892,106 +1033,8 @@ export default function AnalyticsPage() {
         <div className="absolute bottom-[-10%] left-1/2 -translate-x-1/2 h-[600px] w-[600px] rounded-full bg-indigo-600/5 blur-[120px]" />
       </div>
 
-      <div className="relative z-10 flex h-full">
-        <motion.aside
-          initial={false}
-          animate={{
-            width: isSidebarOpen ? 288 : 88,
-          }}
-          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-          className="sticky top-0 hidden h-screen shrink-0 overflow-hidden border-r border-white/10 bg-slate-900/40 p-6 backdrop-blur-3xl lg:flex lg:flex-col group"
-        >
-          <div
-            className={`flex items-center gap-3 mb-10 overflow-hidden ${isSidebarOpen ? "justify-between" : "justify-center"}`}
-          >
-            {isSidebarOpen && (
-              <div className="flex items-center gap-3 shrink-0">
-                <Link
-                  to="/profile"
-                  className="flex h-11 w-11 items-center justify-center rounded-xl border border-transparent bg-white/5 text-slate-400 hover:border-pink-500/30 hover:bg-pink-500/10 hover:text-white transition-all"
-                >
-                  <User className="h-5 w-5" />
-                </Link>
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  className="whitespace-nowrap"
-                >
-                  <p className="text-lg font-semibold text-white tracking-tight truncate max-w-[140px]">
-                    {user?.firstName || "ManologAI"}
-                  </p>
-                  <p className="text-sm text-slate-400">Intelligence engine</p>
-                </motion.div>
-              </div>
-            )}
-
-            <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className={`p-2 rounded-lg text-slate-500 hover:text-white hover:bg-white/5 transition-all ${isSidebarOpen ? "-mr-2" : ""}`}
-            >
-              {isSidebarOpen ? (
-                <X className="h-4 w-4" />
-              ) : (
-                <Menu className="h-4 w-4" />
-              )}
-            </button>
-          </div>
-
-          <nav className="space-y-2 overflow-hidden">
-            {navItems.map(({ label, icon: Icon, to, active }) => (
-              <Button
-                key={label}
-                asChild
-                variant="ghost"
-                className={`h-auto w-full justify-start rounded-xl border px-4 py-3 text-left text-sm font-medium transition-all ${
-                  active
-                    ? "border-pink-500/30 bg-pink-500/10 text-white shadow-[0_0_20px_-10px_rgba(236,72,153,0.3)]"
-                    : "border-transparent text-slate-400 hover:border-white/10 hover:bg-white/5 hover:text-slate-200"
-                }`}
-              >
-                <Link to={to} className="flex items-center">
-                  <Icon
-                    className={`mr-3 h-4 w-4 shrink-0 ${active ? "text-pink-300" : ""}`}
-                  />
-                  {isSidebarOpen && (
-                    <motion.span
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="whitespace-nowrap"
-                    >
-                      {label}
-                    </motion.span>
-                  )}
-                </Link>
-              </Button>
-            ))}
-          </nav>
-
-          {isSidebarOpen && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="mt-auto"
-            >
-              <Card className="mt-auto border-white/5 bg-white/5 backdrop-blur-xl shrink-0">
-                <CardHeader className="p-4">
-                  <CardTitle className="text-[10px] font-mono uppercase tracking-widest text-slate-500">
-                    Status
-                  </CardTitle>
-                  <div className="flex items-center gap-2 mt-2">
-                    <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <p className="text-xs text-slate-300">
-                      Analysis Engine Online
-                    </p>
-                  </div>
-                </CardHeader>
-              </Card>
-            </motion.div>
-          )}
-        </motion.aside>
-
-        <main className="flex-1 overflow-y-auto p-4 pb-28 sm:p-6 sm:pb-32 lg:p-8 lg:pb-8">
+      <div className="relative z-10 h-full">
+        <main className="h-full overflow-y-auto p-4 pb-28 sm:p-6 sm:pb-32 lg:p-8 lg:pb-8">
           <div className="mx-auto max-w-7xl">
             <motion.header
               initial={{ opacity: 0, y: -20 }}
@@ -1676,8 +1719,9 @@ export default function AnalyticsPage() {
                         </div>
                       )}
                     </CardContent>
-                    <div className="px-6 pb-6 text-xs text-slate-400">
-                      {insightSummary}
+                    <div className="px-6 pb-6 text-xs text-slate-400 space-y-2">
+                      <p>{insightSummary}</p>
+                      <p>{insightStrength}</p>
                     </div>
                   </Card>
                 </motion.div>
@@ -2008,6 +2052,9 @@ export default function AnalyticsPage() {
                       </div>
                     )}
                   </CardContent>
+                  <div className="px-6 pb-5 text-xs font-mono text-emerald-200/80">
+                    {timeInsight}
+                  </div>
                 </Card>
               </motion.div>
 
@@ -2101,6 +2148,9 @@ export default function AnalyticsPage() {
                       </div>
                     )}
                   </CardContent>
+                  <div className="px-6 pb-5 text-xs font-mono text-amber-200/80">
+                    {expenseInsight}
+                  </div>
                 </Card>
               </motion.div>
             </div>

@@ -16,19 +16,18 @@ export default function MobileTabBar({ items }) {
               key={label}
               to={to}
               aria-label={label}
-              className={`flex min-w-0 flex-1 items-center justify-center rounded-2xl px-2 py-3 transition-all ${
+              className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 transition-all ${
                 isActive
-                  ? "bg-pink-500/15 text-pink-300"
+                  ? "bg-pink-500/15 text-pink-300 shadow-[0_0_16px_0_rgba(236,72,153,0.45)] border border-pink-400/30"
                   : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
               }`}
             >
               <span className="relative flex items-center justify-center">
                 <Icon className="h-5 w-5" />
-                {isActive && (
-                  <span className="absolute -bottom-2 h-1.5 w-1.5 rounded-full bg-pink-300" />
-                )}
               </span>
-              <span className="sr-only">{label}</span>
+              <span className="text-[9px] font-semibold uppercase tracking-[0.14em]">
+                {label}
+              </span>
             </Link>
           );
         })}

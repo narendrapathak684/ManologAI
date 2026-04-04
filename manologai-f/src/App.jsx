@@ -12,7 +12,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { SaveAlertProvider } from "./context/SaveAlertContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import GlobalSaveAlert from "./components/GlobalSaveAlert";
-
+import AppLayout from "./components/AppLayout";
 
 function App() {
   return (
@@ -27,12 +27,20 @@ function App() {
             <Route path="/signup" element={<SignupPage />} />
 
             {/* Protected Routes */}
-            <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-            <Route path="/journal" element={<ProtectedRoute><JournalPage /></ProtectedRoute>} />
-            <Route path="/track" element={<ProtectedRoute><TrackPage /></ProtectedRoute>} />
-            <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
-            <Route path="/organise" element={<ProtectedRoute><OrganisePage /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route
+              element={
+                <ProtectedRoute>
+                  <AppLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/journal" element={<JournalPage />} />
+              <Route path="/track" element={<TrackPage />} />
+              <Route path="/analytics" element={<AnalyticsPage />} />
+              <Route path="/organise" element={<OrganisePage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+            </Route>
           </Routes>
         </BrowserRouter>
       </SaveAlertProvider>
