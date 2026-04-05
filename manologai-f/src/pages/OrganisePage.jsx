@@ -344,6 +344,7 @@ export default function OrganisePage() {
   const [pads, setPads] = useState([]);
   const [selectedPad, setSelectedPad] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [padsLoading, setPadsLoading] = useState(true);
   const [error, setError] = useState("");
 
   const [newBlock, setNewBlock] = useState(createDefaultBlockForm);
@@ -422,20 +423,33 @@ export default function OrganisePage() {
 
   const fetchData = async () => {
     setLoading(true);
+    setPadsLoading(true);
+    setError("");
+
     try {
-      const [{ data: ttJson }, { data: padsJson }] = await Promise.all([
-        api.get("/timetable"),
-        api.get("/pads"),
-      ]);
+      const { data: ttJson } = await api.get("/timetable");
       setTimetable(ttJson.schedule);
-      setPads(padsJson.pads);
     } catch (err) {
-      console.error("Fetch failed:", err);
+      console.error("Timetable fetch failed:", err);
       setError(
-        getApiErrorMessage(err, "Failed to connect to the organisation hub."),
+        (current) =>
+          current ||
+          getApiErrorMessage(err, "Failed to connect to the organisation hub."),
       );
     } finally {
       setLoading(false);
+    }
+
+    try {
+      const { data: padsJson } = await api.get("/pads");
+      setPads(padsJson.pads);
+    } catch (err) {
+      console.error("Pads fetch failed:", err);
+      setError(
+        (current) => current || getApiErrorMessage(err, "Failed to load pads."),
+      );
+    } finally {
+      setPadsLoading(false);
     }
   };
 
@@ -1292,16 +1306,17 @@ export default function OrganisePage() {
 
   if (loading)
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-950 text-white font-mono text-sm tracking-[0.3em] uppercase animate-pulse">
+      <div className="flex h-screen items-center justify-center bg-black text-white font-mono text-sm tracking-[0.3em] uppercase animate-pulse">
         Initialising Organisation Hub...
       </div>
     );
 
   return (
-    <div className="h-screen bg-slate-950 text-slate-100 overflow-hidden">
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-pink-600/5 blur-[120px] rounded-full" />
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-emerald-600/5 blur-[120px] rounded-full" />
+    <div className="h-screen bg-black text-slate-100 overflow-hidden relative">
+      <div className="absolute top-0 inset-x-0 h-[800px] pointer-events-none">
+        <div className="absolute left-[-10%] top-8 h-80 w-80 rounded-full bg-pink-600/10 blur-[140px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-pink-600/20 blur-[120px] rounded-full" />
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-emerald-600/10 blur-[100px] rounded-full" />
       </div>
       <main className="relative z-10 h-full overflow-y-auto p-4 pb-28 sm:p-6 sm:pb-32 lg:p-8 lg:pb-8">
         <div className="mx-auto max-w-7xl">
@@ -1756,46 +1771,71 @@ export default function OrganisePage() {
                     </CardContent>
                   </Card>
 
-                  {pads.map((pad, index) => {
-                    const Icon = PAD_ICONS[pad.padType] || FolderKanban;
-                    const isActive = selectedPad?._id === pad._id;
-                    const theme = getPadTheme(pad, index);
-                    return (
-                      <Fragment key={pad._id}>
-                        <button
-                          onClick={() => setSelectedPad(isActive ? null : pad)}
-                          className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all text-left ${
-                            isActive ? theme.activeButton : theme.idleButton
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={`p-2 rounded-lg ${isActive ? theme.activeIcon : theme.idleIcon}`}
-                            >
-                              <Icon className="w-4 h-4" />
+                  {padsLoading ? (
+                    <div className="rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-6 text-center text-xs uppercase tracking-[0.3em] text-slate-500">
+                      Loading pads...
+                    </div>
+                  ) : pads.length === 0 ? (
+                    <div className="rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-6 text-center text-xs uppercase tracking-[0.3em] text-slate-500">
+                      No pads yet
+                    </div>
+                  ) : (
+                    pads.map((pad, index) => {
+                      const Icon = PAD_ICONS[pad.padType] || FolderKanban;
+                      const isActive = selectedPad?._id === pad._id;
+                      const theme = getPadTheme(pad, index);
+                      return (
+                        <Fragment key={pad._id}>
+                          <button
+                            onClick={() =>
+                              setSelectedPad(isActive ? null : pad)
+                            }
+                            className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all text-left ${
+                              isActive ? theme.activeButton : theme.idleButton
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div
+                                className={`p-2 rounded-lg ${isActive ? theme.activeIcon : theme.idleIcon}`}
+                              >
+                                <Icon className="w-4 h-4" />
+                              </div>
+                              <span className="font-medium text-sm">
+                                {pad.title}
+                              </span>
                             </div>
-                            <span className="font-medium text-sm">
-                              {pad.title}
-                            </span>
-                          </div>
-                          <ChevronRight
-                            className={`w-4 h-4 transition-transform ${isActive ? `rotate-90 ${theme.chevron}` : "text-slate-600"}`}
-                          />
-                        </button>
-                        {isActive && (
-                          <div className="lg:hidden">
-                            {renderPadDetailCard(pad, theme)}
-                          </div>
-                        )}
-                      </Fragment>
-                    );
-                  })}
+                            <ChevronRight
+                              className={`w-4 h-4 transition-transform ${
+                                isActive
+                                  ? `rotate-90 ${theme.chevron}`
+                                  : "text-slate-600"
+                              }`}
+                            />
+                          </button>
+                          {isActive && (
+                            <div className="lg:hidden">
+                              {renderPadDetailCard(pad, theme)}
+                            </div>
+                          )}
+                        </Fragment>
+                      );
+                    })
+                  )}
                 </div>
 
                 {/* Pad Items View */}
                 <div className="hidden min-h-[600px] lg:block">
                   <AnimatePresence mode="wait">
-                    {selectedPad ? (
+                    {padsLoading ? (
+                      <div className="h-full flex items-center justify-center border-2 border-dashed border-white/5 rounded-[40px]">
+                        <div className="text-center space-y-2">
+                          <FolderKanban className="w-12 h-12 text-slate-800 mx-auto" />
+                          <p className="text-slate-500 font-mono text-[10px] uppercase tracking-[0.4em]">
+                            Loading pads
+                          </p>
+                        </div>
+                      </div>
+                    ) : selectedPad ? (
                       <motion.div
                         key={selectedPad._id}
                         initial={{ opacity: 0, y: 10 }}

@@ -27,10 +27,10 @@ export default function AppNavbar() {
   }, [location.pathname]);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-slate-950/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-black/80 backdrop-blur-xl">
       <div className="relative">
         <GlobalSaveAlert />
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-2 sm:px-6 lg:px-8">
           <Link to="/dashboard" className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/5 shadow-[0_0_30px_-14px_rgba(56,189,248,0.6)]">
               <img
@@ -40,10 +40,7 @@ export default function AppNavbar() {
               />
             </span>
             <div className="leading-tight">
-              <p className="text-sm font-semibold tracking-[0.2em] text-slate-400">
-                MANOLOG
-              </p>
-              <p className="text-lg font-semibold text-white">ManologAI</p>
+              <p className="text-lg font-semibold text-white">Manolog</p>
             </div>
           </Link>
           <nav className="hidden flex-1 items-center justify-end gap-2 text-sm font-medium text-slate-300 lg:flex">

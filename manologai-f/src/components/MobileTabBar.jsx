@@ -25,7 +25,7 @@ export default function MobileTabBar({ items }) {
               <span className="relative flex items-center justify-center">
                 <Icon className="h-5 w-5" />
               </span>
-              <span className="text-[9px] font-semibold uppercase tracking-[0.14em]">
+              <span className="text-[7px] font-semibold uppercase tracking-[0.14em]">
                 {label}
               </span>
             </Link>

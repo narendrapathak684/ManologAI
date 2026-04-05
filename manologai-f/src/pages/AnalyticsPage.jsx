@@ -1014,7 +1014,7 @@ export default function AnalyticsPage() {
 
   if (pageLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
+      <div className="flex min-h-screen items-center justify-center bg-black text-white">
         <div className="text-center space-y-4">
           <div className="w-12 h-12 border-4 border-pink-500/30 border-t-pink-500 rounded-full animate-spin mx-auto" />
           <p className="text-slate-400 font-mono text-sm tracking-widest animate-pulse uppercase">
@@ -1026,11 +1026,11 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="h-screen overflow-hidden bg-slate-950 text-slate-100">
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute left-[-10%] top-8 h-[600px] w-[600px] rounded-full bg-pink-600/5 blur-[120px]" />
-        <div className="absolute right-[-8%] top-40 h-[600px] w-[600px] rounded-full bg-emerald-600/5 blur-[120px]" />
-        <div className="absolute bottom-[-10%] left-1/2 -translate-x-1/2 h-[600px] w-[600px] rounded-full bg-indigo-600/5 blur-[120px]" />
+    <div className="h-screen overflow-hidden bg-black text-slate-100 relative">
+      <div className="absolute top-0 inset-x-0 h-[800px] pointer-events-none">
+        <div className="absolute left-[-10%] top-8 h-80 w-80 rounded-full bg-pink-600/10 blur-[140px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-pink-600/20 blur-[120px] rounded-full" />
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-emerald-600/10 blur-[100px] rounded-full" />
       </div>
 
       <div className="relative z-10 h-full">

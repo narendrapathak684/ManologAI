@@ -231,9 +231,12 @@ export default function JournalPage() {
   };
 
   return (
-    <div className="h-screen overflow-hidden bg-slate-950 text-slate-100">
-      <div className="pointer-events-none absolute left-[-10%] top-8 h-80 w-80 rounded-full bg-pink-600/10 blur-[140px]" />
-      <div className="pointer-events-none absolute right-[-8%] top-40 h-96 w-96 rounded-full bg-emerald-600/10 blur-[150px]" />
+    <div className="h-screen overflow-hidden bg-black text-slate-100 relative">
+      <div className="absolute top-0 inset-x-0 h-[800px] pointer-events-none">
+        <div className="absolute left-[-10%] top-8 h-80 w-80 rounded-full bg-pink-600/10 blur-[140px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-pink-600/20 blur-[120px] rounded-full" />
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-emerald-600/10 blur-[100px] rounded-full" />
+      </div>
 
       <div className="relative z-10 h-full">
         <main className="h-full overflow-y-auto p-4 pb-28 sm:p-6 sm:pb-32 lg:p-8 lg:pb-8">
