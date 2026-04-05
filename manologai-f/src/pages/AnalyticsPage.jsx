@@ -108,6 +108,7 @@ const LIFE_RATING_FIELDS = [
 
 const HABIT_IMPACT_THRESHOLD = 1;
 const HABIT_IMPACT_MIN_SAMPLES = 2;
+const STREAK_MILESTONES = [7, 30, 100, 365];
 
 const formatEmotionLabel = (value) => {
   const label = EMOTION_LABELS[value];
@@ -131,6 +132,9 @@ const getNearestEmotionLabel = (score) => {
   }
   return formatEmotionLabel(nearest);
 };
+
+const getStreakMilestones = (currentStreak) =>
+  STREAK_MILESTONES.filter((milestone) => currentStreak >= milestone);
 
 const formatEmotionName = (emotion) => {
   if (!emotion) return "Unknown";
@@ -230,23 +234,31 @@ export default function AnalyticsPage() {
       setPageLoading(true);
       setError("");
       try {
-        await Promise.all([
-          fetchLifeData(lifeAverageRange, true),
-          fetchMoodData(moodBarRange, setMoodBarData, setMoodBarLoading, true),
-          fetchMoodData(
-            moodLineRange,
-            setMoodLineData,
-            setMoodLineLoading,
-            true,
-          ),
-          fetchMoodData(moodPieRange, setMoodPieData, setMoodPieLoading, true),
-          fetchTimeData(timeRange, true),
-          fetchExpenseData(expenseRange, true),
-          fetchSleepEmotionData(sleepEmotionRange, true),
-          fetchDayEmotionData(dayEmotionRange, true),
-          fetchHabitImpactData(habitImpactRange, true),
-          fetchHabits(true),
-        ]);
+        await fetchLifeData(lifeAverageRange, true);
+        await fetchMoodData(
+          moodBarRange,
+          setMoodBarData,
+          setMoodBarLoading,
+          true,
+        );
+        await fetchMoodData(
+          moodLineRange,
+          setMoodLineData,
+          setMoodLineLoading,
+          true,
+        );
+        await fetchMoodData(
+          moodPieRange,
+          setMoodPieData,
+          setMoodPieLoading,
+          true,
+        );
+        await fetchTimeData(timeRange, true);
+        await fetchExpenseData(expenseRange, true);
+        await fetchSleepEmotionData(sleepEmotionRange, true);
+        await fetchDayEmotionData(dayEmotionRange, true);
+        await fetchHabitImpactData(habitImpactRange, true);
+        await fetchHabits(true);
       } finally {
         setPageLoading(false);
         hasInitialized.current = true;
@@ -418,10 +430,10 @@ export default function AnalyticsPage() {
         range === "week"
           ? { weekday: "short" }
           : { month: "short", day: "numeric" };
-      const [{ data: timeJson }, { data: emotionJson }] = await Promise.all([
-        api.get("/time-tracker", { params: { limit: timeLimit } }),
-        api.get(`/emotions/range/${range}`),
-      ]);
+      const { data: timeJson } = await api.get("/time-tracker", {
+        params: { limit: timeLimit },
+      });
+      const { data: emotionJson } = await api.get(`/emotions/range/${range}`);
 
       const emotionMap = new Map(
         (emotionJson.emotions || []).map((entry) => [
@@ -543,12 +555,10 @@ export default function AnalyticsPage() {
       const { from, to, days } = getRangeWindow(range);
       const fromKey = toDateKey(from);
       const toKey = toDateKey(to);
-      const [{ data: ratingsJson }, { data: habitsJson }] = await Promise.all([
-        api.get(
-          `/life-ratings/range?from=${fromKey}&to=${toKey}&limit=${days}`,
-        ),
-        api.get("/habits"),
-      ]);
+      const { data: ratingsJson } = await api.get(
+        `/life-ratings/range?from=${fromKey}&to=${toKey}&limit=${days}`,
+      );
+      const { data: habitsJson } = await api.get("/habits");
 
       const entries = ratingsJson.entries || [];
       const habitsList = habitsJson.habits || [];
@@ -1012,6 +1022,11 @@ export default function AnalyticsPage() {
     );
   }, [habits]);
 
+  const topHabitMilestones = useMemo(() => {
+    if (!topHabit) return [];
+    return getStreakMilestones(topHabit.currentStreak);
+  }, [topHabit]);
+
   if (pageLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black text-white">
@@ -1105,6 +1120,18 @@ export default function AnalyticsPage() {
                             {topHabit.name}
                           </span>
                         </div>
+                        {topHabitMilestones.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {topHabitMilestones.map((milestone) => (
+                              <span
+                                key={milestone}
+                                className="inline-flex items-center rounded-full border border-pink-500/30 bg-pink-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-pink-200"
+                              >
+                                {milestone}d badge
+                              </span>
+                            ))}
+                          </div>
+                        )}
                         <div className="flex items-center gap-1 text-[10px] text-pink-400 mt-2">
                           <TrendingUp className="w-3 h-3" /> New record
                         </div>

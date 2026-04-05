@@ -61,6 +61,59 @@ const HEATMAP_BASE = { r: 236, g: 72, b: 153 };
 const heatmapWeekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const HEATMAP_HABIT_WEIGHT = 0.5;
 const HEATMAP_MAX_MONTHS_BACK = 11;
+const INPUT_STREAK_DAYS = 900;
+const BADGE_TIERS = [
+  {
+    label: "Bronze I",
+    minDays: 7,
+    className: "border-amber-500/40 bg-amber-500/10 text-amber-200",
+  },
+  {
+    label: "Bronze II",
+    minDays: 30,
+    className: "border-amber-500/40 bg-amber-500/10 text-amber-200",
+  },
+  {
+    label: "Silver I",
+    minDays: 90,
+    className: "border-slate-400/40 bg-slate-400/10 text-slate-200",
+  },
+  {
+    label: "Silver II",
+    minDays: 180,
+    className: "border-slate-400/40 bg-slate-400/10 text-slate-200",
+  },
+  {
+    label: "Gold I",
+    minDays: 365,
+    className: "border-yellow-400/40 bg-yellow-400/10 text-yellow-200",
+  },
+  {
+    label: "Gold II",
+    minDays: 455,
+    className: "border-yellow-400/40 bg-yellow-400/10 text-yellow-200",
+  },
+  {
+    label: "Platinum I",
+    minDays: 545,
+    className: "border-cyan-400/40 bg-cyan-400/10 text-cyan-200",
+  },
+  {
+    label: "Platinum II",
+    minDays: 635,
+    className: "border-cyan-400/40 bg-cyan-400/10 text-cyan-200",
+  },
+  {
+    label: "Diamond I",
+    minDays: 725,
+    className: "border-sky-400/40 bg-sky-400/10 text-sky-200",
+  },
+  {
+    label: "Diamond II",
+    minDays: 815,
+    className: "border-sky-400/40 bg-sky-400/10 text-sky-200",
+  },
+];
 
 function toDateKey(dateInput) {
   const date = new Date(dateInput);
@@ -168,6 +221,14 @@ function countLifeRatings(entry) {
   );
 }
 
+function getEarnedBadges(streak) {
+  return BADGE_TIERS.filter((tier) => streak >= tier.minDays);
+}
+
+function getNextBadge(streak) {
+  return BADGE_TIERS.find((tier) => streak < tier.minDays) || null;
+}
+
 const journalEntryThemes = [
   "border-pink-500/20 bg-pink-500/5",
   "border-violet-500/20 bg-violet-500/5",
@@ -237,6 +298,9 @@ export default function DashboardPage() {
   const [averagesError, setAveragesError] = useState("");
   const [habitScore, setHabitScore] = useState(null);
   const [habitScoreError, setHabitScoreError] = useState("");
+  const [inputStreak, setInputStreak] = useState(0);
+  const [inputStreakError, setInputStreakError] = useState("");
+  const [inputStreakLoading, setInputStreakLoading] = useState(true);
   const [heatmapDays, setHeatmapDays] = useState([]);
   const [heatmapError, setHeatmapError] = useState("");
   const [heatmapMax, setHeatmapMax] = useState(0);
@@ -493,6 +557,119 @@ export default function DashboardPage() {
 
   const heatmapTransitionKey = `${heatmapMonthRange.start.getFullYear()}-${heatmapMonthRange.start.getMonth()}`;
 
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchInputStreak() {
+      setInputStreakLoading(true);
+      try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const start = new Date(today);
+        start.setDate(start.getDate() - (INPUT_STREAK_DAYS - 1));
+
+        const range = buildHeatmapRange(start, today);
+        const from = range[0]?.key;
+        const to = range[range.length - 1]?.key;
+        if (!from || !to) {
+          if (isMounted) {
+            setInputStreak(0);
+            setInputStreakError("");
+          }
+          return;
+        }
+
+        const dayMap = new Map(range.map((item) => [item.key, { ...item }]));
+        const limit = range.length;
+
+        const [diaryRes, timeRes, lifeRes, emotionRes, habitsRes] =
+          await Promise.all([
+            api.get(
+              `/diary/api/diary/range?from=${from}&to=${to}&limit=${limit}`,
+            ),
+            api.get(`/time-tracker?from=${from}&to=${to}&limit=${limit}`),
+            api.get(`/life-ratings/range?from=${from}&to=${to}&limit=${limit}`),
+            api.get(`/emotions/range?from=${from}&to=${to}&limit=${limit}`),
+            api.get("/habits"),
+          ]);
+
+        const diaryEntries = diaryRes?.data?.entries || [];
+        const timeEntries = timeRes?.data?.entries || [];
+        const lifeEntries = lifeRes?.data?.entries || [];
+        const emotionEntries = emotionRes?.data?.emotions || [];
+        const habits = habitsRes?.data?.habits || [];
+
+        for (const entry of diaryEntries) {
+          const key = toDateKey(entry.date);
+          if (dayMap.has(key) && entryHasDiaryInput(entry)) {
+            dayMap.get(key).count += 1;
+          }
+        }
+
+        for (const entry of timeEntries) {
+          const key = toDateKey(entry.date);
+          if (dayMap.has(key)) {
+            dayMap.get(key).count += 1;
+          }
+        }
+
+        for (const entry of lifeEntries) {
+          const key = toDateKey(entry.date);
+          if (dayMap.has(key)) {
+            dayMap.get(key).count += countLifeRatings(entry);
+          }
+        }
+
+        for (const entry of emotionEntries) {
+          const key = toDateKey(entry.date);
+          if (dayMap.has(key)) {
+            dayMap.get(key).count += 1;
+          }
+        }
+
+        for (const habit of habits) {
+          if (!Array.isArray(habit.history)) continue;
+          for (const historyEntry of habit.history) {
+            if (!historyEntry?.completed) continue;
+            const key = toDateKey(historyEntry.date);
+            if (dayMap.has(key)) {
+              dayMap.get(key).count += HEATMAP_HABIT_WEIGHT;
+            }
+          }
+        }
+
+        let streak = 0;
+        for (let i = range.length - 1; i >= 0; i -= 1) {
+          const day = dayMap.get(range[i].key);
+          if (!day || day.count <= 0) break;
+          streak += 1;
+        }
+
+        if (isMounted) {
+          setInputStreak(streak);
+          setInputStreakError("");
+        }
+      } catch (error) {
+        if (isMounted) {
+          setInputStreak(0);
+          setInputStreakError(
+            getApiErrorMessage(error, "Unable to load input streak"),
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setInputStreakLoading(false);
+        }
+      }
+    }
+
+    fetchInputStreak();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const heatmapCells = useMemo(() => {
     if (heatmapDays.length === 0) return [];
     const firstDay = heatmapDays[0].date.getDay();
@@ -617,6 +794,12 @@ export default function DashboardPage() {
     : habitScore && habitScore.total > 0
       ? `${habitScore.percent}% completion (last ${habitScore.days} days)`
       : "No habits tracked yet";
+
+  const earnedBadges = useMemo(
+    () => getEarnedBadges(inputStreak),
+    [inputStreak],
+  );
+  const nextBadge = useMemo(() => getNextBadge(inputStreak), [inputStreak]);
 
   const todayCards = [
     {
@@ -851,6 +1034,61 @@ export default function DashboardPage() {
                     </motion.div>
                   ))}
                 </div>
+
+                <Card className="border-pink-500/20 bg-gradient-to-br from-pink-500/10 via-slate-900/70 to-slate-950/95 backdrop-blur-xl">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-white">
+                      <Sparkles className="h-5 w-5 text-pink-300" />
+                      Streak milestones
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {inputStreakError && (
+                      <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-xs text-rose-200">
+                        {inputStreakError}
+                      </div>
+                    )}
+                    {inputStreakLoading && !inputStreakError && (
+                      <p className="text-sm text-slate-400">
+                        Loading streak data...
+                      </p>
+                    )}
+                    {!inputStreakLoading && !inputStreakError && (
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap items-baseline gap-2">
+                          <span className="text-2xl font-bold text-white">
+                            {inputStreak} days
+                          </span>
+                          <span className="text-sm text-slate-400">
+                            daily input streak
+                          </span>
+                        </div>
+                        {earnedBadges.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {earnedBadges.map((tier) => (
+                              <span
+                                key={tier.label}
+                                className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] ${tier.className}`}
+                              >
+                                {tier.label}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-slate-400">
+                            Log today to unlock Bronze I.
+                          </p>
+                        )}
+                        {nextBadge && inputStreak < nextBadge.minDays && (
+                          <p className="text-xs text-slate-500">
+                            Next badge in {nextBadge.minDays - inputStreak}{" "}
+                            days.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
                 <Card className="border-pink-500/20 bg-gradient-to-br from-pink-500/10 via-slate-900/70 to-slate-950/95 backdrop-blur-xl">
                   <CardHeader>

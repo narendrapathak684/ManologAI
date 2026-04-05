@@ -61,6 +61,7 @@ const defaultLifeRatings = {
 };
 
 const MAX_HABIT_NAME_LENGTH = 60;
+const STREAK_MILESTONES = [7, 30, 100, 365];
 
 const emotionOptions = [
   {
@@ -243,6 +244,9 @@ const resolveTimeValue = (hoursValue, minutesValue) => {
   if (hoursValue === "" && minutesValue === "") return "";
   return toDecimalHours(hoursValue, minutesValue);
 };
+
+const getStreakMilestones = (currentStreak) =>
+  STREAK_MILESTONES.filter((milestone) => currentStreak >= milestone);
 
 export default function TrackPage() {
   const [habits, setHabits] = useState([]);
@@ -771,6 +775,9 @@ export default function TrackPage() {
                             habit,
                             selectedDateKey,
                           );
+                          const earnedMilestones = getStreakMilestones(
+                            habit.currentStreak,
+                          );
                           return (
                             <div
                               key={habit._id}
@@ -789,6 +796,18 @@ export default function TrackPage() {
                                   </span>{" "}
                                   (Best: {habit.longestStreak})
                                 </p>
+                                {earnedMilestones.length > 0 && (
+                                  <div className="mt-2 flex flex-wrap gap-2">
+                                    {earnedMilestones.map((milestone) => (
+                                      <span
+                                        key={milestone}
+                                        className="inline-flex items-center rounded-full border border-pink-500/30 bg-pink-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-pink-200"
+                                      >
+                                        {milestone}d badge
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                               <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3">
                                 <Button
