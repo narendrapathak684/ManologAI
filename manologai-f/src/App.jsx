@@ -11,7 +11,6 @@ import ProfilePage from "./pages/ProfilePage";
 import { AuthProvider } from "./context/AuthContext";
 import { SaveAlertProvider } from "./context/SaveAlertContext";
 import ProtectedRoute from "./components/ProtectedRoute";
-import GlobalSaveAlert from "./components/GlobalSaveAlert";
 import AppLayout from "./components/AppLayout";
 
 function App() {
@@ -19,7 +18,6 @@ function App() {
     <AuthProvider>
       <SaveAlertProvider>
         <BrowserRouter>
-          <GlobalSaveAlert />
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<WelcomePage />} />

@@ -11,7 +11,7 @@ export default function GlobalSaveAlert() {
     <motion.div
       initial={{ opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="pointer-events-none fixed right-4 top-4 z-50 w-[calc(100%-2rem)] max-w-sm rounded-3xl border border-emerald-400/30 bg-slate-900/90 p-4 text-emerald-100 shadow-[0_24px_80px_-32px_rgba(16,185,129,0.65)] backdrop-blur-2xl"
+      className="pointer-events-none absolute right-4 top-2 z-50 w-[calc(100%-2rem)] max-w-sm rounded-3xl border border-emerald-400/30 bg-slate-900/90 p-4 text-emerald-100 shadow-[0_24px_80px_-32px_rgba(16,185,129,0.65)] backdrop-blur-2xl"
     >
       <div className="flex items-start gap-3">
         <div className="mt-0.5 rounded-2xl bg-emerald-500/15 p-2 text-emerald-300">

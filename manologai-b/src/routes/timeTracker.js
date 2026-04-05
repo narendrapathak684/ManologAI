@@ -110,7 +110,11 @@ router.post("/", auth, async (req, res) => {
       { new: true, upsert: true },
     );
 
-    return res.status(200).json({ entry });
+    return res.status(200).json({
+      entry,
+      alreadySubmitted: Boolean(existing),
+      locked: isLocked(entry),
+    });
   } catch (err) {
     console.error("POST /time-tracker error:", err);
     return res.status(500).json({ error: "Failed to save time tracker entry" });
@@ -160,7 +164,11 @@ router.post("/:date", auth, async (req, res) => {
       { new: true, upsert: true },
     );
 
-    return res.status(200).json({ entry, locked: isLocked(entry) });
+    return res.status(200).json({
+      entry,
+      locked: isLocked(entry),
+      alreadySubmitted: Boolean(existing),
+    });
   } catch (err) {
     console.error("POST /time-tracker/:date error:", err);
     return res.status(500).json({ error: "Failed to save time tracker entry" });
@@ -179,7 +187,11 @@ router.get("/today", auth, async (req, res) => {
     if (!entry)
       return res.status(404).json({ error: "No entry for today yet" });
 
-    return res.status(200).json({ entry, locked: isLocked(entry) });
+    return res.status(200).json({
+      entry,
+      locked: isLocked(entry),
+      alreadySubmitted: true,
+    });
   } catch (err) {
     console.error("GET /time-tracker/today error:", err);
     return res.status(500).json({ error: "Failed to fetch today's entry" });
@@ -316,7 +328,11 @@ router.get("/:date", auth, async (req, res) => {
     if (!entry)
       return res.status(404).json({ error: "No entry found for this date" });
 
-    return res.status(200).json({ entry, locked: isLocked(entry) });
+    return res.status(200).json({
+      entry,
+      locked: isLocked(entry),
+      alreadySubmitted: true,
+    });
   } catch (err) {
     console.error("GET /time-tracker/:date error:", err);
     return res.status(500).json({ error: "Failed to fetch entry" });

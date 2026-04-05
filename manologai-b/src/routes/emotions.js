@@ -91,6 +91,7 @@ router.post("/", auth, async (req, res) => {
       date: entry.date,
       emotion: entry.emotion,
       locked: isLocked(entry),
+      alreadySubmitted: Boolean(existing),
     });
   } catch (err) {
     console.error("POST /emotions error:", err);
@@ -144,6 +145,7 @@ router.post("/:date", auth, async (req, res) => {
       date: entry.date,
       emotion: entry.emotion,
       locked: isLocked(entry),
+      alreadySubmitted: Boolean(existing),
     });
   } catch (err) {
     console.error("POST /emotions/:date error:", err);

@@ -193,6 +193,15 @@ const getRelativeDateKey = (offsetDays) => {
   return `${year}-${month}-${day}`;
 };
 
+const toDateKey = (dateInput) => {
+  const date = new Date(dateInput);
+  if (Number.isNaN(date.getTime())) return "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 const formatShortDate = (dateKey) => {
   const date = new Date(`${dateKey}T00:00:00`);
   return date.toLocaleDateString(undefined, {
@@ -246,12 +255,15 @@ export default function TrackPage() {
     workStudyMinutes: "",
     expense: "",
   });
+  const [metricsSubmitted, setMetricsSubmitted] = useState(false);
   const [lifeRatings, setLifeRatings] = useState(defaultLifeRatings);
   const [lifeRatingsLocked, setLifeRatingsLocked] = useState(false);
   const [lifeRatingsLoaded, setLifeRatingsLoaded] = useState(false);
+  const [lifeRatingsSubmitted, setLifeRatingsSubmitted] = useState(false);
   const [selectedEmotion, setSelectedEmotion] = useState("neutral");
   const [emotionLocked, setEmotionLocked] = useState(false);
   const [emotionLoaded, setEmotionLoaded] = useState(false);
+  const [emotionSubmitted, setEmotionSubmitted] = useState(false);
   const [newHabitName, setNewHabitName] = useState("");
   const [loading, setLoading] = useState(true);
   const [addingHabit, setAddingHabit] = useState(false);
@@ -323,6 +335,9 @@ export default function TrackPage() {
       setEmotionLoaded(false);
       setLifeRatingsLocked(false);
       setEmotionLocked(false);
+      setLifeRatingsSubmitted(false);
+      setEmotionSubmitted(false);
+      setMetricsSubmitted(false);
 
       const isToday = dateKey === today;
 
@@ -345,6 +360,7 @@ export default function TrackPage() {
           workStudyMinutes: workStudyParts.minutes,
           expense: metricsData.entry.expense || "",
         });
+        setMetricsSubmitted(Boolean(metricsData?.alreadySubmitted ?? true));
       } catch (err) {
         if (err?.response?.status === 404) {
           setMetrics({
@@ -356,6 +372,7 @@ export default function TrackPage() {
             workStudyMinutes: "",
             expense: "",
           });
+          setMetricsSubmitted(false);
         } else {
           throw err;
         }
@@ -370,12 +387,16 @@ export default function TrackPage() {
           setLifeRatings(mapEntryToLifeRatings(lifeRatingsData.entry));
           setLifeRatingsLocked(Boolean(lifeRatingsData.locked));
           setLifeRatingsLoaded(true);
+          setLifeRatingsSubmitted(
+            Boolean(lifeRatingsData?.alreadySubmitted ?? true),
+          );
         }
       } catch (err) {
         if (err?.response?.status === 404) {
           setLifeRatings(defaultLifeRatings);
           setLifeRatingsLocked(false);
           setLifeRatingsLoaded(true);
+          setLifeRatingsSubmitted(false);
         } else {
           throw err;
         }
@@ -389,11 +410,15 @@ export default function TrackPage() {
         setSelectedEmotion(emotionData?.emotion || "neutral");
         setEmotionLocked(Boolean(emotionData?.locked));
         setEmotionLoaded(true);
+        setEmotionSubmitted(
+          Boolean(emotionData?.alreadySubmitted ?? emotionData?.emotion),
+        );
       } catch (err) {
         if (err?.response?.status === 404) {
           setSelectedEmotion("neutral");
           setEmotionLocked(false);
           setEmotionLoaded(true);
+          setEmotionSubmitted(false);
         } else {
           throw err;
         }
@@ -532,11 +557,11 @@ export default function TrackPage() {
         ),
         expense: metrics.expense,
       };
-      if (selectedDateKey === today) {
-        await api.post("/time-tracker", payload);
-      } else {
-        await api.post(`/time-tracker/${selectedDateKey}`, payload);
-      }
+      const { data } =
+        selectedDateKey === today
+          ? await api.post("/time-tracker", payload)
+          : await api.post(`/time-tracker/${selectedDateKey}`, payload);
+      setMetricsSubmitted(Boolean(data?.alreadySubmitted ?? true));
       showSaveAlert({
         title: "Daily Metrics",
         message: `Metrics for ${selectedDateLabel} were saved successfully.`,
@@ -566,6 +591,7 @@ export default function TrackPage() {
       }
       setLifeRatingsLocked(Boolean(data.locked));
       setLifeRatingsLoaded(true);
+      setLifeRatingsSubmitted(Boolean(data?.alreadySubmitted ?? true));
 
       showSaveAlert({
         title: "Life Ratings",
@@ -596,6 +622,7 @@ export default function TrackPage() {
       setSelectedEmotion(data?.emotion || selectedEmotion);
       setEmotionLocked(Boolean(data?.locked));
       setEmotionLoaded(true);
+      setEmotionSubmitted(Boolean(data?.alreadySubmitted ?? true));
 
       showSaveAlert({
         title: "Daily Emotion",
@@ -612,8 +639,10 @@ export default function TrackPage() {
   const isHabitDoneOnDate = (habit, dateKey) => {
     if (!habit || !habit.history || !Array.isArray(habit.history)) return false;
     return habit.history.some((h) => {
-      const hDate = typeof h.date === "string" ? h.date : String(h.date || "");
-      return hDate && hDate.startsWith(dateKey) && h.completed;
+      if (!h?.date || !h.completed) return false;
+      const parsed = new Date(h.date);
+      if (Number.isNaN(parsed.getTime())) return false;
+      return toDateKey(parsed) === dateKey;
     });
   };
 
@@ -808,6 +837,11 @@ export default function TrackPage() {
                     </CardTitle>
                     {dateBadge}
                   </div>
+                  {metricsSubmitted && (
+                    <span className="inline-flex w-fit rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-200">
+                      Submitted
+                    </span>
+                  )}
                   <CardDescription>
                     Quantify your day to understand your baseline.
                   </CardDescription>
@@ -991,6 +1025,11 @@ export default function TrackPage() {
                       </CardTitle>
                       {dateBadge}
                     </div>
+                    {emotionLoaded && emotionSubmitted && (
+                      <span className="inline-flex w-fit rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-200">
+                        Submitted
+                      </span>
+                    )}
                     <CardDescription>
                       Select how you feel for the selected day and save it to
                       your log.
@@ -1062,6 +1101,11 @@ export default function TrackPage() {
                     </CardTitle>
                     {dateBadge}
                   </div>
+                  {lifeRatingsLoaded && lifeRatingsSubmitted && (
+                    <span className="inline-flex w-fit rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-200">
+                      Submitted
+                    </span>
+                  )}
                   <CardDescription>
                     Rate your satisfaction across 8 key areas of your life
                     (0-10).

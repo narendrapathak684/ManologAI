@@ -139,7 +139,11 @@ router.post("/", auth, async (req, res) => {
       { new: true, upsert: true },
     );
 
-    return res.status(200).json({ entry, locked: isLocked(entry) });
+    return res.status(200).json({
+      entry,
+      locked: isLocked(entry),
+      alreadySubmitted: Boolean(existing),
+    });
   } catch (err) {
     console.error("POST /life-ratings error:", err);
     return res.status(500).json({ error: "Failed to save life rating" });
@@ -190,7 +194,11 @@ router.post("/:date", auth, async (req, res) => {
       { new: true, upsert: true },
     );
 
-    return res.status(200).json({ entry, locked: isLocked(entry) });
+    return res.status(200).json({
+      entry,
+      locked: isLocked(entry),
+      alreadySubmitted: Boolean(existing),
+    });
   } catch (err) {
     console.error("POST /life-ratings/:date error:", err);
     return res.status(500).json({ error: "Failed to save life rating" });
