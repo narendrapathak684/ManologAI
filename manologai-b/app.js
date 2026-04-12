@@ -38,10 +38,9 @@ app.use(
           hostname.startsWith("192.168.") ||
           hostname.startsWith("10.") ||
           /^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname);
-        const isDevPort = port === "5173";
         const isHttp = protocol === "http:";
 
-        if ((isLocalhost || isPrivateLan) && isDevPort && isHttp) {
+        if ((isLocalhost || isPrivateLan) && isHttp) {
           return callback(null, true);
         }
       } catch (err) {
