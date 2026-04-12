@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/card";
 import { useSaveAlert } from "../context/SaveAlertContext";
 import { api, getApiErrorMessage } from "../lib/api";
-import MobileTabBar from "../components/MobileTabBar";
 
 const navItems = [
   { label: "Today", icon: LayoutDashboard, to: "/dashboard" },
@@ -435,8 +434,6 @@ export default function JournalPage() {
           </div>
         </main>
       </div>
-
-      <MobileTabBar items={navItems} />
     </div>
   );
 }

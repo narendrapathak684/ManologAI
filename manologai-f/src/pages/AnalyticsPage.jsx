@@ -44,7 +44,6 @@ import {
   User,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import MobileTabBar from "../components/MobileTabBar";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -2184,8 +2183,6 @@ export default function AnalyticsPage() {
           </div>
         </main>
       </div>
-
-      <MobileTabBar items={navItems} />
     </div>
   );
 }

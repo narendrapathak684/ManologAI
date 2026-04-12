@@ -17,7 +17,6 @@ import {
   User,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import MobileTabBar from "../components/MobileTabBar";
 import { api, getApiErrorMessage } from "../lib/api";
 
 import { Button } from "@/components/ui/button";
@@ -1517,8 +1516,6 @@ export default function DashboardPage() {
           </div>
         </main>
       </div>
-
-      <MobileTabBar items={navItems} />
     </div>
   );
 }

@@ -34,7 +34,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { api, getApiErrorMessage } from "../lib/api";
-import MobileTabBar from "../components/MobileTabBar";
 
 const navItems = [
   { label: "Today", icon: LayoutDashboard, to: "/dashboard" },
@@ -1861,8 +1860,6 @@ export default function OrganisePage() {
           </AnimatePresence>
         </div>
       </main>
-
-      <MobileTabBar items={navItems} />
     </div>
   );
 }
