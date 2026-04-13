@@ -1,19 +1,23 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import GlobalSaveAlert from "./GlobalSaveAlert";
 import {
+  BellRing,
   Bell,
   BookOpenText,
   ChartColumnBig,
   CheckCircle2,
+  CircleCheckBig,
   FolderKanban,
   LayoutDashboard,
+  Sparkles,
   UserRound,
 } from "lucide-react";
 
 export default function AppNavbar() {
   const location = useLocation();
-  const [activeAction, setActiveAction] = useState(null);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const notificationRef = useRef(null);
   const navItems = [
     { label: "Today", to: "/dashboard", icon: LayoutDashboard },
     { label: "Journal", to: "/journal", icon: BookOpenText },
@@ -23,8 +27,31 @@ export default function AppNavbar() {
   ];
 
   useEffect(() => {
-    setActiveAction(location.pathname);
-  }, [location.pathname]);
+    const handleDocumentClick = (event) => {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target)
+      ) {
+        setIsNotificationOpen(false);
+      }
+    };
+
+    const handleEsc = (event) => {
+      if (event.key === "Escape") {
+        setIsNotificationOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleDocumentClick);
+    document.addEventListener("touchstart", handleDocumentClick);
+    document.addEventListener("keydown", handleEsc);
+
+    return () => {
+      document.removeEventListener("mousedown", handleDocumentClick);
+      document.removeEventListener("touchstart", handleDocumentClick);
+      document.removeEventListener("keydown", handleEsc);
+    };
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-black/80 backdrop-blur-xl">
@@ -52,7 +79,6 @@ export default function AppNavbar() {
                   key={item.to}
                   to={item.to}
                   aria-label={item.label}
-                  onClick={() => setActiveAction(item.to)}
                   className={`flex items-center gap-2 rounded-2xl border border-transparent px-3 py-2 transition-all ${
                     isActive
                       ? "bg-pink-500/15 text-white shadow-[0_0_16px_0_rgba(236,72,153,0.45)] border-pink-400/30"
@@ -60,7 +86,7 @@ export default function AppNavbar() {
                   }`}
                 >
                   <Icon className="h-5 w-5" />
-                  {activeAction === item.to && (
+                  {isActive && (
                     <span className="text-sm font-semibold text-white">
                       {item.label}
                     </span>
@@ -70,28 +96,90 @@ export default function AppNavbar() {
             })}
           </nav>
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setActiveAction("notifications")}
-              className={`relative flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-slate-300 transition hover:border-pink-400/40 hover:bg-pink-400/10 hover:text-white hover:shadow-[0_0_16px_0_rgba(236,72,153,0.45)] ${
-                activeAction === "notifications"
-                  ? "border-pink-400/50 bg-pink-400/15 text-white shadow-[0_0_16px_0_rgba(236,72,153,0.45)]"
-                  : ""
-              }`}
-              aria-label="Notifications"
-            >
-              <Bell className="h-5 w-5" />
-              {activeAction === "notifications" && (
-                <span className="text-sm font-semibold text-white">
-                  Notifications
-                </span>
+            <div className="relative" ref={notificationRef}>
+              <button
+                type="button"
+                onClick={() => setIsNotificationOpen((prev) => !prev)}
+                className={`relative flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-slate-300 transition hover:border-pink-400/40 hover:bg-pink-400/10 hover:text-white hover:shadow-[0_0_16px_0_rgba(236,72,153,0.45)] ${
+                  isNotificationOpen
+                    ? "border-pink-400/50 bg-pink-400/15 text-white shadow-[0_0_16px_0_rgba(236,72,153,0.45)]"
+                    : ""
+                }`}
+                aria-label="Notifications"
+                aria-expanded={isNotificationOpen}
+                aria-haspopup="menu"
+              >
+                <Bell className="h-5 w-5" />
+                {isNotificationOpen && (
+                  <span className="text-sm font-semibold text-white">
+                    Notifications
+                  </span>
+                )}
+                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-emerald-400" />
+              </button>
+
+              {isNotificationOpen && (
+                <div
+                  role="menu"
+                  className="absolute right-0 top-[calc(100%+0.6rem)] z-[80] w-[min(22rem,90vw)] overflow-hidden rounded-2xl border border-white/10 bg-slate-950/95 shadow-[0_20px_60px_-24px_rgba(15,23,42,0.95)] backdrop-blur-2xl"
+                >
+                  <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+                    <div className="flex items-center gap-2 text-white">
+                      <BellRing className="h-4 w-4 text-pink-300" />
+                      <p className="text-sm font-semibold">Notifications</p>
+                    </div>
+                    <span className="rounded-full border border-emerald-400/30 bg-emerald-400/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-300">
+                      3 New
+                    </span>
+                  </div>
+
+                  <ul className="divide-y divide-white/5">
+                    <li className="flex items-start gap-3 px-4 py-3">
+                      <span className="mt-0.5 rounded-xl bg-pink-400/15 p-2 text-pink-200">
+                        <Sparkles className="h-4 w-4" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-white">
+                          Weekly summary is ready
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          Check your latest mood and activity trends.
+                        </p>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3 px-4 py-3">
+                      <span className="mt-0.5 rounded-xl bg-cyan-400/15 p-2 text-cyan-200">
+                        <CircleCheckBig className="h-4 w-4" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-white">
+                          Journal saved successfully
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          Your latest entry was synced 2 minutes ago.
+                        </p>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3 px-4 py-3">
+                      <span className="mt-0.5 rounded-xl bg-amber-400/15 p-2 text-amber-200">
+                        <Bell className="h-4 w-4" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-white">
+                          Friendly reminder
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          Log today&apos;s track data to keep streaks alive.
+                        </p>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
               )}
-              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-emerald-400" />
-            </button>
+            </div>
             <Link
               to="/profile"
               aria-label="Profile"
-              onClick={() => setActiveAction("/profile")}
               className={`flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-slate-300 transition hover:border-pink-400/40 hover:bg-pink-400/10 hover:text-white hover:shadow-[0_0_16px_0_rgba(236,72,153,0.45)] ${
                 location.pathname === "/profile"
                   ? "border-pink-400/50 bg-pink-400/15 text-white shadow-[0_0_16px_0_rgba(236,72,153,0.45)]"
@@ -99,7 +187,7 @@ export default function AppNavbar() {
               }`}
             >
               <UserRound className="h-5 w-5" />
-              {activeAction === "/profile" && (
+              {location.pathname === "/profile" && (
                 <span className="text-sm font-semibold text-white">
                   Profile
                 </span>
