@@ -4,6 +4,7 @@ const auth = require("../middleware/auth");
 const LifeRating = require("../models/lifeRating");
 
 const router = express.Router();
+const MAX_RANGE_LIMIT = 1000;
 
 const LOCK_HOURS = 24;
 
@@ -318,7 +319,7 @@ router.get("/range", auth, async (req, res) => {
     toDate.setHours(23, 59, 59, 999);
     const safeLimit =
       limit !== undefined
-        ? Math.max(1, Math.min(Number(limit) || 62, 400))
+        ? Math.max(1, Math.min(Number(limit) || 62, MAX_RANGE_LIMIT))
         : 62;
 
     const entries = await LifeRating.find({

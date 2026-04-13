@@ -147,7 +147,7 @@ export default function JournalPage() {
       setError("");
 
       try {
-        const { data } = await api.get(`/diary/api/diary/${selectedDate}`);
+        const { data } = await api.get(`/diary/${selectedDate}`);
 
         if (!ignore) {
           setDraft(data.entry?.text || "");
@@ -199,7 +199,7 @@ export default function JournalPage() {
     clearSaveAlert();
 
     try {
-      const { data } = await api.post("/diary/api/diary", {
+      const { data } = await api.post("/diary", {
         date: selectedDate,
         text: draft,
       });

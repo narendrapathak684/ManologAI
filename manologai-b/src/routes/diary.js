@@ -4,6 +4,7 @@ const auth = require("../middleware/auth");
 const DailyEntry = require("../models/dailyEntry");
 
 const router = express.Router();
+const MAX_RANGE_LIMIT = 1000;
 
 function parseDateOnlyToLocalMidnight(dateInput) {
   // Accepts `YYYY-MM-DD` or a Date (or any parseable string).
@@ -26,8 +27,8 @@ function getTodayLocalMidnight() {
   return today;
 }
 
-// POST /api/diary - create/update entry for a given date (defaults to today)
-router.post("/api/diary", auth, async (req, res) => {
+// POST /diary - create/update entry for a given date (defaults to today)
+router.post("/", auth, async (req, res) => {
   try {
     const userId = req.user?._id;
     if (!userId) return res.status(401).json({ error: "Please login first" });
@@ -71,9 +72,9 @@ router.post("/api/diary", auth, async (req, res) => {
   }
 });
 
-// GET /api/diary/range - entries within a date range
+// GET /diary/range - entries within a date range
 // Query params: ?from=YYYY-MM-DD&to=YYYY-MM-DD&limit=N
-router.get("/api/diary/range", auth, async (req, res) => {
+router.get("/range", auth, async (req, res) => {
   try {
     const userId = req.user?._id;
     if (!userId) return res.status(401).json({ error: "Please login first" });
@@ -97,7 +98,7 @@ router.get("/api/diary/range", auth, async (req, res) => {
     toDate.setHours(23, 59, 59, 999);
     const safeLimit =
       limit !== undefined
-        ? Math.max(1, Math.min(Number(limit) || 62, 400))
+        ? Math.max(1, Math.min(Number(limit) || 62, MAX_RANGE_LIMIT))
         : 62;
 
     const entries = await DailyEntry.find({
@@ -116,8 +117,8 @@ router.get("/api/diary/range", auth, async (req, res) => {
   }
 });
 
-// GET /api/diary/:date - get entry for a specific date
-router.get("/api/diary/:date", auth, async (req, res) => {
+// GET /diary/:date - get entry for a specific date
+router.get("/:date", auth, async (req, res) => {
   try {
     const userId = req.user?._id;
     if (!userId) return res.status(401).json({ error: "Please login first" });
@@ -135,8 +136,8 @@ router.get("/api/diary/:date", auth, async (req, res) => {
   }
 });
 
-// GET /api/diary - recent entries
-router.get("/api/diary", auth, async (req, res) => {
+// GET /diary - recent entries
+router.get("/", auth, async (req, res) => {
   try {
     const userId = req.user?._id;
     if (!userId) return res.status(401).json({ error: "Please login first" });

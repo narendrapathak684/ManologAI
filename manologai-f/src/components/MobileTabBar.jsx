@@ -1,12 +1,8 @@
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
 
 export default function MobileTabBar({ items }) {
   const location = useLocation();
-  const [show, setShow] = useState(true);
-  const lastScrollY = useRef(window.scrollY);
-  const ticking = useRef(false);
 
   // Filter out Profile button if on /profile page
   const filteredItems =
@@ -14,35 +10,9 @@ export default function MobileTabBar({ items }) {
       ? items.filter((item) => item.label !== "Profile")
       : items;
 
-  useEffect(() => {
-    const handleScroll = () => {
-      if (!ticking.current) {
-        window.requestAnimationFrame(() => {
-          const currentScrollY = window.scrollY;
-          if (currentScrollY > lastScrollY.current + 10) {
-            setShow(false); // Scroll down, hide
-          } else if (currentScrollY < lastScrollY.current - 10) {
-            setShow(true); // Scroll up, show
-          }
-          lastScrollY.current = currentScrollY;
-          ticking.current = false;
-        });
-        ticking.current = true;
-      }
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
   const content = (
     <div
-      className={`pointer-events-none fixed inset-x-0 bottom-0 z-50 px-4 pb-4 lg:hidden transition-transform duration-300 ${
-        show ? "translate-y-0" : "translate-y-full"
-      }`}
-      style={{
-        transform: show ? "translateY(0)" : "translateY(100%)",
-        transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-      }}
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-[70] px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] lg:hidden"
     >
       <nav className="pointer-events-auto mx-auto flex max-w-xl items-center justify-between rounded-[28px] border border-white/10 bg-slate-900/90 px-3 py-2 shadow-[0_20px_60px_-24px_rgba(15,23,42,0.95)] backdrop-blur-2xl">
         {filteredItems.map(({ label, icon, to }) => {

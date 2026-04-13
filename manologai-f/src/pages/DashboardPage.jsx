@@ -220,6 +220,70 @@ function countLifeRatings(entry) {
   );
 }
 
+async function fetchActivitySources({ from, to, limit }) {
+  const [diaryRes, timeRes, lifeRes, emotionRes, habitsRes] = await Promise.all(
+    [
+      api.get(`/diary/range?from=${from}&to=${to}&limit=${limit}`),
+      api.get(`/time-tracker?from=${from}&to=${to}&limit=${limit}`),
+      api.get(`/life-ratings/range?from=${from}&to=${to}&limit=${limit}`),
+      api.get(`/emotions/range?from=${from}&to=${to}&limit=${limit}`),
+      api.get("/habits"),
+    ],
+  );
+
+  return {
+    diaryEntries: diaryRes?.data?.entries || [],
+    timeEntries: timeRes?.data?.entries || [],
+    lifeEntries: lifeRes?.data?.entries || [],
+    emotionEntries: emotionRes?.data?.emotions || [],
+    habits: habitsRes?.data?.habits || [],
+  };
+}
+
+function applyActivityCounts(dayMap, activitySources) {
+  const { diaryEntries, timeEntries, lifeEntries, emotionEntries, habits } =
+    activitySources;
+
+  for (const entry of diaryEntries) {
+    const key = toDateKey(entry.date);
+    if (dayMap.has(key) && entryHasDiaryInput(entry)) {
+      dayMap.get(key).count += 1;
+    }
+  }
+
+  for (const entry of timeEntries) {
+    const key = toDateKey(entry.date);
+    if (dayMap.has(key)) {
+      dayMap.get(key).count += 1;
+    }
+  }
+
+  for (const entry of lifeEntries) {
+    const key = toDateKey(entry.date);
+    if (dayMap.has(key)) {
+      dayMap.get(key).count += countLifeRatings(entry);
+    }
+  }
+
+  for (const entry of emotionEntries) {
+    const key = toDateKey(entry.date);
+    if (dayMap.has(key)) {
+      dayMap.get(key).count += 1;
+    }
+  }
+
+  for (const habit of habits) {
+    if (!Array.isArray(habit.history)) continue;
+    for (const historyEntry of habit.history) {
+      if (!historyEntry?.completed) continue;
+      const key = toDateKey(historyEntry.date);
+      if (dayMap.has(key)) {
+        dayMap.get(key).count += HEATMAP_HABIT_WEIGHT;
+      }
+    }
+  }
+}
+
 function getEarnedBadges(streak) {
   return BADGE_TIERS.filter((tier) => streak >= tier.minDays);
 }
@@ -466,61 +530,8 @@ export default function DashboardPage() {
         const dayMap = new Map(range.map((item) => [item.key, { ...item }]));
         const limit = range.length;
 
-        const [diaryRes, timeRes, lifeRes, emotionRes, habitsRes] =
-          await Promise.all([
-            api.get(
-              `/diary/api/diary/range?from=${from}&to=${to}&limit=${limit}`,
-            ),
-            api.get(`/time-tracker?from=${from}&to=${to}&limit=${limit}`),
-            api.get(`/life-ratings/range?from=${from}&to=${to}&limit=${limit}`),
-            api.get(`/emotions/range?from=${from}&to=${to}&limit=${limit}`),
-            api.get("/habits"),
-          ]);
-
-        const diaryEntries = diaryRes?.data?.entries || [];
-        const timeEntries = timeRes?.data?.entries || [];
-        const lifeEntries = lifeRes?.data?.entries || [];
-        const emotionEntries = emotionRes?.data?.emotions || [];
-        const habits = habitsRes?.data?.habits || [];
-
-        for (const entry of diaryEntries) {
-          const key = toDateKey(entry.date);
-          if (dayMap.has(key) && entryHasDiaryInput(entry)) {
-            dayMap.get(key).count += 1;
-          }
-        }
-
-        for (const entry of timeEntries) {
-          const key = toDateKey(entry.date);
-          if (dayMap.has(key)) {
-            dayMap.get(key).count += 1;
-          }
-        }
-
-        for (const entry of lifeEntries) {
-          const key = toDateKey(entry.date);
-          if (dayMap.has(key)) {
-            dayMap.get(key).count += countLifeRatings(entry);
-          }
-        }
-
-        for (const entry of emotionEntries) {
-          const key = toDateKey(entry.date);
-          if (dayMap.has(key)) {
-            dayMap.get(key).count += 1;
-          }
-        }
-
-        for (const habit of habits) {
-          if (!Array.isArray(habit.history)) continue;
-          for (const historyEntry of habit.history) {
-            if (!historyEntry?.completed) continue;
-            const key = toDateKey(historyEntry.date);
-            if (dayMap.has(key)) {
-              dayMap.get(key).count += HEATMAP_HABIT_WEIGHT;
-            }
-          }
-        }
+        const activitySources = await fetchActivitySources({ from, to, limit });
+        applyActivityCounts(dayMap, activitySources);
 
         const days = Array.from(dayMap.values());
         const maxCount = days.reduce(
@@ -581,61 +592,8 @@ export default function DashboardPage() {
         const dayMap = new Map(range.map((item) => [item.key, { ...item }]));
         const limit = range.length;
 
-        const [diaryRes, timeRes, lifeRes, emotionRes, habitsRes] =
-          await Promise.all([
-            api.get(
-              `/diary/api/diary/range?from=${from}&to=${to}&limit=${limit}`,
-            ),
-            api.get(`/time-tracker?from=${from}&to=${to}&limit=${limit}`),
-            api.get(`/life-ratings/range?from=${from}&to=${to}&limit=${limit}`),
-            api.get(`/emotions/range?from=${from}&to=${to}&limit=${limit}`),
-            api.get("/habits"),
-          ]);
-
-        const diaryEntries = diaryRes?.data?.entries || [];
-        const timeEntries = timeRes?.data?.entries || [];
-        const lifeEntries = lifeRes?.data?.entries || [];
-        const emotionEntries = emotionRes?.data?.emotions || [];
-        const habits = habitsRes?.data?.habits || [];
-
-        for (const entry of diaryEntries) {
-          const key = toDateKey(entry.date);
-          if (dayMap.has(key) && entryHasDiaryInput(entry)) {
-            dayMap.get(key).count += 1;
-          }
-        }
-
-        for (const entry of timeEntries) {
-          const key = toDateKey(entry.date);
-          if (dayMap.has(key)) {
-            dayMap.get(key).count += 1;
-          }
-        }
-
-        for (const entry of lifeEntries) {
-          const key = toDateKey(entry.date);
-          if (dayMap.has(key)) {
-            dayMap.get(key).count += countLifeRatings(entry);
-          }
-        }
-
-        for (const entry of emotionEntries) {
-          const key = toDateKey(entry.date);
-          if (dayMap.has(key)) {
-            dayMap.get(key).count += 1;
-          }
-        }
-
-        for (const habit of habits) {
-          if (!Array.isArray(habit.history)) continue;
-          for (const historyEntry of habit.history) {
-            if (!historyEntry?.completed) continue;
-            const key = toDateKey(historyEntry.date);
-            if (dayMap.has(key)) {
-              dayMap.get(key).count += HEATMAP_HABIT_WEIGHT;
-            }
-          }
-        }
+        const activitySources = await fetchActivitySources({ from, to, limit });
+        applyActivityCounts(dayMap, activitySources);
 
         let streak = 0;
         for (let i = range.length - 1; i >= 0; i -= 1) {

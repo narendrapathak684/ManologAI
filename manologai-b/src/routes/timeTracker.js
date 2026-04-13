@@ -6,6 +6,7 @@ const TimeTracker = require("../models/timeTracker");
 const router = express.Router();
 
 const LOCK_HOURS = 24; // entry becomes read-only after this many hours
+const MAX_RANGE_LIMIT = 1000;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -227,7 +228,7 @@ router.get("/", auth, async (req, res) => {
 
     const safeLimit =
       limit !== undefined
-        ? Math.max(1, Math.min(Number(limit) || 30, 365))
+        ? Math.max(1, Math.min(Number(limit) || 30, MAX_RANGE_LIMIT))
         : 30;
 
     const entries = await TimeTracker.find(filter)
