@@ -377,6 +377,7 @@ export default function DashboardPage() {
   const [todoLoading, setTodoLoading] = useState(true);
   const [todoPadStats, setTodoPadStats] = useState({});
   const heatmapTouchStart = useRef(null);
+  const heatmapDatePickerRef = useRef(null);
 
   const dayOfYear = Math.floor(
     (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) /
@@ -644,6 +645,11 @@ export default function DashboardPage() {
       Math.ceil(heatmapMax * 0.75),
     ];
   }, [heatmapMax]);
+  const heatmapMinDate = useMemo(
+    () => toDateKey(getMonthRange(-HEATMAP_MAX_MONTHS_BACK).start),
+    [],
+  );
+  const heatmapMaxDate = useMemo(() => toDateKey(new Date()), []);
 
   const clampMonthOffset = (offset) =>
     Math.min(0, Math.max(-HEATMAP_MAX_MONTHS_BACK, offset));
@@ -691,12 +697,12 @@ export default function DashboardPage() {
     );
   };
 
-  const handleHeatmapJump = () => {
-    if (!heatmapJumpDate) {
+  const handleHeatmapJump = (selectedDate) => {
+    if (!selectedDate) {
       setHeatmapJumpError("Choose a date to jump to.");
       return;
     }
-    const parsed = new Date(`${heatmapJumpDate}T00:00:00`);
+    const parsed = new Date(`${selectedDate}T00:00:00`);
     if (Number.isNaN(parsed.getTime())) {
       setHeatmapJumpError("Enter a valid date.");
       return;
@@ -713,6 +719,17 @@ export default function DashboardPage() {
     setHeatmapJumpError("");
     setHeatmapSlideDirection(offset < heatmapMonthOffset ? -1 : 1);
     setHeatmapMonthOffset(clampMonthOffset(offset));
+  };
+
+  const openHeatmapDatePicker = () => {
+    const picker = heatmapDatePickerRef.current;
+    if (!picker) return;
+    if (typeof picker.showPicker === "function") {
+      picker.showPicker();
+      return;
+    }
+    picker.focus();
+    picker.click();
   };
 
   const heatmapSlideVariants = {
@@ -1068,9 +1085,30 @@ export default function DashboardPage() {
                         >
                           <ChevronLeft className="h-4 w-4" />
                         </button>
-                        <span className="min-w-[120px] text-center text-slate-300">
+                        <button
+                          type="button"
+                          onClick={openHeatmapDatePicker}
+                          className="min-w-[120px] rounded-lg px-2 py-1 text-center text-slate-300 transition-all hover:bg-white/5 hover:text-white"
+                          aria-label="Open calendar to jump to a date"
+                          title="Jump to date"
+                        >
                           {heatmapMonthLabel}
-                        </span>
+                        </button>
+                        <input
+                          ref={heatmapDatePickerRef}
+                          type="date"
+                          value={heatmapJumpDate}
+                          onChange={(event) => {
+                            const selectedDate = event.target.value;
+                            setHeatmapJumpDate(selectedDate);
+                            handleHeatmapJump(selectedDate);
+                          }}
+                          min={heatmapMinDate}
+                          max={heatmapMaxDate}
+                          className="pointer-events-none absolute h-0 w-0 opacity-0"
+                          tabIndex={-1}
+                          aria-hidden="true"
+                        />
                         <button
                           type="button"
                           onClick={() => shiftHeatmapMonth(1)}
@@ -1096,29 +1134,6 @@ export default function DashboardPage() {
                         {heatmapError}
                       </div>
                     )}
-                    <div className="flex flex-wrap items-center gap-3">
-                      <label className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                        Jump to date
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="date"
-                          value={heatmapJumpDate}
-                          onChange={(event) =>
-                            setHeatmapJumpDate(event.target.value)
-                          }
-                          className="h-8 rounded-lg border border-white/10 bg-white/5 px-3 text-xs text-slate-200 focus:border-pink-500/40 focus:outline-none"
-                          max={toDateKey(new Date())}
-                        />
-                        <button
-                          type="button"
-                          onClick={handleHeatmapJump}
-                          className="h-8 rounded-lg border border-white/10 bg-white/5 px-3 text-xs font-semibold text-slate-200 transition-all hover:border-pink-500/40 hover:text-white"
-                        >
-                          Go
-                        </button>
-                      </div>
-                    </div>
                     {heatmapJumpError && (
                       <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-200">
                         {heatmapJumpError}
