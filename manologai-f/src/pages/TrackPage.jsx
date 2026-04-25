@@ -401,23 +401,24 @@ export default function TrackPage() {
         const { data: metricsData } = isToday
           ? await api.get("/time-tracker/today")
           : await api.get(`/time-tracker/${dateKey}`);
-        const sleepParts = splitHoursAndMinutes(metricsData.entry.sleep);
-        const screenParts = splitHoursAndMinutes(metricsData.entry.screen);
-        const workStudyParts = splitHoursAndMinutes(
-          metricsData.entry.workStudy,
-        );
-        setMetrics({
-          sleepHours: sleepParts.hours,
-          sleepMinutes: sleepParts.minutes,
-          screenHours: screenParts.hours,
-          screenMinutes: screenParts.minutes,
-          workStudyHours: workStudyParts.hours,
-          workStudyMinutes: workStudyParts.minutes,
-          expense: metricsData.entry.expense || "",
-        });
-        setMetricsSubmitted(Boolean(metricsData?.alreadySubmitted ?? true));
-      } catch (err) {
-        if (err?.response?.status === 404) {
+        
+        if (metricsData.entry) {
+          const sleepParts = splitHoursAndMinutes(metricsData.entry.sleep);
+          const screenParts = splitHoursAndMinutes(metricsData.entry.screen);
+          const workStudyParts = splitHoursAndMinutes(
+            metricsData.entry.workStudy,
+          );
+          setMetrics({
+            sleepHours: sleepParts.hours,
+            sleepMinutes: sleepParts.minutes,
+            screenHours: screenParts.hours,
+            screenMinutes: screenParts.minutes,
+            workStudyHours: workStudyParts.hours,
+            workStudyMinutes: workStudyParts.minutes,
+            expense: metricsData.entry.expense || "",
+          });
+          setMetricsSubmitted(Boolean(metricsData?.alreadySubmitted ?? true));
+        } else {
           setMetrics({
             sleepHours: "",
             sleepMinutes: "",
@@ -428,9 +429,9 @@ export default function TrackPage() {
             expense: "",
           });
           setMetricsSubmitted(false);
-        } else {
-          throw err;
         }
+      } catch (err) {
+        console.error("Failed to fetch metrics:", err);
       }
 
       // Fetch life ratings for selected day
@@ -445,16 +446,14 @@ export default function TrackPage() {
           setLifeRatingsSubmitted(
             Boolean(lifeRatingsData?.alreadySubmitted ?? true),
           );
-        }
-      } catch (err) {
-        if (err?.response?.status === 404) {
+        } else {
           setLifeRatings(defaultLifeRatings);
           setLifeRatingsLocked(false);
           setLifeRatingsLoaded(true);
           setLifeRatingsSubmitted(false);
-        } else {
-          throw err;
         }
+      } catch (err) {
+        console.error("Failed to fetch life ratings:", err);
       }
 
       // Fetch emotion for selected day
@@ -462,21 +461,20 @@ export default function TrackPage() {
         const { data: emotionData } = isToday
           ? await api.get("/emotions/today")
           : await api.get(`/emotions/${dateKey}`);
-        setSelectedEmotion(emotionData?.emotion || "neutral");
-        setEmotionLocked(Boolean(emotionData?.locked));
-        setEmotionLoaded(true);
-        setEmotionSubmitted(
-          Boolean(emotionData?.alreadySubmitted ?? emotionData?.emotion),
-        );
-      } catch (err) {
-        if (err?.response?.status === 404) {
+          
+        if (emotionData?.emotion) {
+          setSelectedEmotion(emotionData.emotion);
+          setEmotionLocked(Boolean(emotionData.locked));
+          setEmotionLoaded(true);
+          setEmotionSubmitted(Boolean(emotionData.alreadySubmitted ?? true));
+        } else {
           setSelectedEmotion("neutral");
           setEmotionLocked(false);
           setEmotionLoaded(true);
           setEmotionSubmitted(false);
-        } else {
-          throw err;
         }
+      } catch (err) {
+        console.error("Failed to fetch emotion:", err);
       }
     } catch (err) {
       console.error("Failed to fetch tracking data:", err);

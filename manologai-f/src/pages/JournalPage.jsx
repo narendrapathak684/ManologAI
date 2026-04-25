@@ -321,7 +321,9 @@ export default function JournalPage() {
   };
 
   return (
-    <div className="h-screen overflow-hidden bg-black text-slate-100 relative">
+    <div className={`h-screen overflow-hidden relative transition-colors duration-500 ${
+      isLightMode ? "bg-slate-50 text-slate-900" : "bg-black text-slate-100"
+    }`}>
       <div className="absolute top-0 inset-x-0 h-[800px] pointer-events-none">
         <div className="absolute left-[-10%] top-8 h-80 w-80 rounded-full bg-pink-600/10 blur-[140px]" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-pink-600/20 blur-[120px] rounded-full" />
@@ -353,10 +355,14 @@ export default function JournalPage() {
                     Journal
                   </p>
                   <div>
-                    <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl">
+                    <h1 className={`text-3xl font-black tracking-tight sm:text-4xl ${
+                      isLightMode ? "text-slate-900" : "text-white"
+                    }`}>
                       Write for the day you actually had.
                     </h1>
-                    <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-400 sm:text-base">
+                    <p className={`mt-2 max-w-2xl text-sm leading-7 sm:text-base ${
+                      isLightMode ? "text-slate-600" : "text-slate-400"
+                    }`}>
                       Jump across recent dates, open any custom day, and keep
                       one note saved for each date.
                     </p>
@@ -377,7 +383,10 @@ export default function JournalPage() {
                       value={selectedDate}
                       max={todayDateKey}
                       onChange={(event) => handleDateChange(event.target.value)}
-                      className="border-white/10 bg-white/5 text-slate-200"
+                      className={isLightMode 
+                        ? "border-slate-200 bg-white text-slate-900 focus:ring-pink-500/20" 
+                        : "border-white/10 bg-white/5 text-slate-200"
+                      }
                     />
                     <Button
                       onClick={handleSave}
@@ -405,14 +414,14 @@ export default function JournalPage() {
                 }
               >
                 <CardHeader>
-                  <CardTitle className="text-white">Jump to date</CardTitle>
+                  <CardTitle className={isLightMode ? "text-slate-900" : "text-white"}>Jump to date</CardTitle>
                   <CardDescription>
                     Open one of the last seven days or choose your own.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="mb-4">
-                    <p className="text-sm font-semibold text-slate-300">
+                    <p className={`text-sm font-semibold ${isLightMode ? "text-slate-600" : "text-slate-300"}`}>
                       {new Date(`${selectedDate}T00:00:00`).toLocaleDateString(
                         "en-US",
                         {
@@ -501,11 +510,11 @@ export default function JournalPage() {
                 <CardHeader>
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <CardTitle style={{ color: selectedDateColor.accent }}>
+                      <CardTitle style={{ color: isLightMode ? selectedDateColor.lightAccent : selectedDateColor.accent }}>
                         {formatDateLabel(selectedDate)}
                       </CardTitle>
                       <CardDescription
-                        style={{ color: `${selectedDateColor.accent}CC` }}
+                        style={{ color: isLightMode ? `${selectedDateColor.lightAccent}CC` : `${selectedDateColor.accent}CC` }}
                       >
                         Your note for {selectedDate}
                       </CardDescription>
@@ -513,7 +522,7 @@ export default function JournalPage() {
                     {savedAt ? (
                       <span
                         className="text-sm"
-                        style={{ color: selectedDateColor.accent }}
+                        style={{ color: isLightMode ? selectedDateColor.lightAccent : selectedDateColor.accent }}
                       >
                         Saved at {savedAt}
                       </span>
@@ -554,15 +563,21 @@ export default function JournalPage() {
                         onChange={(event) => setDraft(event.target.value)}
                         placeholder="Write freely about what happened, what you felt, what you learned, and what you want to carry forward."
                         disabled={loading}
-                        className="min-h-[460px] w-full resize-none bg-transparent text-base leading-8 text-slate-200 outline-none placeholder:text-slate-500"
+                        className={`min-h-[460px] w-full resize-none bg-transparent text-base leading-8 outline-none ${
+                          isLightMode ? "text-slate-800 placeholder:text-slate-400" : "text-slate-200 placeholder:text-slate-500"
+                        }`}
                       />
 
-                      <div className="mt-4 border-t border-white/5 pt-4">
+                      <div className={`mt-4 border-t pt-4 ${isLightMode ? "border-slate-100" : "border-white/5"}`}>
                         <div className="flex flex-wrap gap-2 mb-3">
                           {tags.map((tag) => (
                             <span
                               key={tag}
-                              className="group flex items-center gap-1.5 rounded-full bg-slate-800/80 px-3 py-1 text-xs font-medium text-slate-300 border border-white/5"
+                              className={`group flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium border ${
+                                isLightMode 
+                                  ? "bg-slate-100 text-slate-700 border-slate-200" 
+                                  : "bg-slate-800/80 text-slate-300 border-white/5"
+                              }`}
                             >
                               #{tag}
                               <button
@@ -590,7 +605,11 @@ export default function JournalPage() {
                               value={tagInput}
                               onChange={(e) => setTagInput(e.target.value)}
                               placeholder="Add tag..."
-                              className="w-full rounded-lg bg-black/40 border border-white/10 px-8 py-1.5 text-xs text-white focus:outline-none focus:border-pink-500/50 transition-colors"
+                              className={`w-full rounded-lg px-8 py-1.5 text-xs outline-none transition-colors ${
+                                isLightMode 
+                                  ? "bg-white border-slate-200 text-slate-800 focus:border-pink-500/50" 
+                                  : "bg-black/40 border-white/10 text-white focus:border-pink-500/50"
+                              }`}
                             />
                           </div>
                           <Button

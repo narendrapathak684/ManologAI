@@ -282,12 +282,15 @@ router.get("/day", auth, async (req, res) => {
         .json({ error: "Invalid date format. Use YYYY-MM-DD" });
 
     const entry = await LifeRating.findOne({ user: userId, date: target });
-    if (!entry)
-      return res
-        .status(404)
-        .json({ error: "No life rating found for this date" });
+    if (!entry) {
+      return res.status(200).json({
+        entry: null,
+        locked: false,
+        alreadySubmitted: false,
+      });
+    }
 
-    return res.status(200).json({ entry, locked: isLocked(entry) });
+    return res.status(200).json({ entry, locked: isLocked(entry), alreadySubmitted: true });
   } catch (err) {
     console.error("GET /life-ratings/day error:", err);
     return res.status(500).json({ error: "Failed to fetch life rating" });

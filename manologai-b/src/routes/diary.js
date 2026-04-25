@@ -128,7 +128,7 @@ router.get("/:date", auth, async (req, res) => {
     if (!date) return res.status(400).json({ error: "Invalid date format" });
 
     const entry = await DailyEntry.findOne({ user: userId, date });
-    if (!entry) return res.status(404).json({ error: "No entry found" });
+    if (!entry) return res.status(200).json({ entry: null });
 
     return res.status(200).json({ entry });
   } catch (error) {

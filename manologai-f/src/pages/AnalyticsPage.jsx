@@ -1214,7 +1214,7 @@ export default function AnalyticsPage() {
                         <div className="h-10 w-10 rounded-full border-2 border-pink-400/40 border-t-pink-400 animate-spin" />
                       </div>
                     ) : moodBarData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <BarChart data={moodBarData}>
                           <CartesianGrid
                             strokeDasharray="3 3"
@@ -1309,7 +1309,7 @@ export default function AnalyticsPage() {
                         <div className="h-10 w-10 rounded-full border-2 border-indigo-400/40 border-t-indigo-400 animate-spin" />
                       </div>
                     ) : moodLineData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <LineChart data={moodLineData}>
                           <CartesianGrid
                             strokeDasharray="3 3"
@@ -1411,7 +1411,7 @@ export default function AnalyticsPage() {
                         <div className="h-10 w-10 rounded-full border-2 border-cyan-400/40 border-t-cyan-400 animate-spin" />
                       </div>
                     ) : emotionDistribution.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <PieChart>
                           <Tooltip
                             contentStyle={{
@@ -1491,7 +1491,7 @@ export default function AnalyticsPage() {
                         <div className="h-10 w-10 rounded-full border-2 border-amber-400/40 border-t-amber-400 animate-spin" />
                       </div>
                     ) : lifeData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <RadarChart
                           cx="50%"
                           cy="50%"
@@ -1620,7 +1620,7 @@ export default function AnalyticsPage() {
                           <div className="h-10 w-10 rounded-full border-2 border-violet-400/40 border-t-violet-400 animate-spin" />
                         </div>
                       ) : insightPlotData.length > 0 ? (
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                           {sleepEmotionView === "scatter" ? (
                             <ScatterChart
                               margin={{
@@ -1794,7 +1794,7 @@ export default function AnalyticsPage() {
                           <div className="h-10 w-10 rounded-full border-2 border-slate-400/40 border-t-slate-300 animate-spin" />
                         </div>
                       ) : dayEmotionData.length > 0 ? (
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                           <BarChart data={dayEmotionData}>
                             <CartesianGrid
                               strokeDasharray="3 3"
@@ -1904,7 +1904,7 @@ export default function AnalyticsPage() {
                           <div className="h-10 w-10 rounded-full border-2 border-emerald-400/40 border-t-emerald-400 animate-spin" />
                         </div>
                       ) : habitImpactTop.length > 0 ? (
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                           <BarChart data={habitImpactTop} layout="vertical">
                             <CartesianGrid
                               strokeDasharray="3 3"
@@ -2012,7 +2012,7 @@ export default function AnalyticsPage() {
                         <div className="h-10 w-10 rounded-full border-2 border-emerald-400/40 border-t-emerald-400 animate-spin" />
                       </div>
                     ) : timeData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <LineChart
                           data={timeData}
                           margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
@@ -2124,7 +2124,7 @@ export default function AnalyticsPage() {
                         <div className="h-10 w-10 rounded-full border-2 border-amber-400/40 border-t-amber-400 animate-spin" />
                       </div>
                     ) : expenseData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <LineChart
                           data={expenseData}
                           margin={{ top: 20, right: 30, left: 0, bottom: 0 }}

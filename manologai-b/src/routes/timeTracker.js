@@ -185,8 +185,13 @@ router.get("/today", auth, async (req, res) => {
     const today = todayMidnight();
 
     const entry = await TimeTracker.findOne({ user: userId, date: today });
-    if (!entry)
-      return res.status(404).json({ error: "No entry for today yet" });
+    if (!entry) {
+      return res.status(200).json({
+        entry: null,
+        locked: false,
+        alreadySubmitted: false,
+      });
+    }
 
     return res.status(200).json({
       entry,
@@ -326,8 +331,13 @@ router.get("/:date", auth, async (req, res) => {
     }
 
     const entry = await TimeTracker.findOne({ user: userId, date });
-    if (!entry)
-      return res.status(404).json({ error: "No entry found for this date" });
+    if (!entry) {
+      return res.status(200).json({
+        entry: null,
+        locked: false,
+        alreadySubmitted: false,
+      });
+    }
 
     return res.status(200).json({
       entry,

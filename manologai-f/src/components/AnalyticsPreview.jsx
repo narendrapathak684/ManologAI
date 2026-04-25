@@ -106,7 +106,7 @@ export default function AnalyticsPreview() {
               <CardDescription className="text-sm">7-day life balance distribution</CardDescription>
             </CardHeader>
             <div className="h-[350px]">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <AreaChart data={multiData}>
                   <defs>
                     <linearGradient id="colorScreen" x1="0" y1="0" x2="0" y2="1">
@@ -150,7 +150,7 @@ export default function AnalyticsPreview() {
               </CardTitle>
             </CardHeader>
             <div className="h-[250px] relative">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <PieChart>
                   <Pie
                     data={overallCompletion}
@@ -190,7 +190,7 @@ export default function AnalyticsPreview() {
               <CardDescription className="text-sm">Satisfaction across core pillars</CardDescription>
             </CardHeader>
             <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
                   <PolarGrid stroke="#ffffff10" />
                   <PolarAngleAxis dataKey="subject" tick={{fill: '#10b981', fontSize: 12}} />
@@ -215,7 +215,7 @@ export default function AnalyticsPreview() {
               <CardDescription className="text-sm">Daily habit consistency trends</CardDescription>
             </CardHeader>
             <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <BarChart data={multiData}>
                   <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dy={10} />
                   <Tooltip content={<CustomTooltip />} />

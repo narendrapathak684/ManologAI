@@ -210,13 +210,20 @@ router.get("/today", auth, async (req, res) => {
     const entry = await Emotion.findOne({ user: userId, date: today }).select(
       "date emotion lockedUntil",
     );
-    if (!entry)
-      return res.status(404).json({ error: "No emotion logged for today yet" });
+    if (!entry) {
+      return res.status(200).json({
+        date: today,
+        emotion: null,
+        locked: false,
+        alreadySubmitted: false,
+      });
+    }
 
     return res.status(200).json({
       date: entry.date,
       emotion: entry.emotion,
       locked: isLocked(entry),
+      alreadySubmitted: true,
     });
   } catch (err) {
     console.error("GET /emotions/today error:", err);
@@ -342,13 +349,20 @@ router.get("/:date", auth, async (req, res) => {
     const entry = await Emotion.findOne({ user: userId, date }).select(
       "date emotion lockedUntil",
     );
-    if (!entry)
-      return res.status(404).json({ error: "No entry found for this date" });
+    if (!entry) {
+      return res.status(200).json({
+        date: date,
+        emotion: null,
+        locked: false,
+        alreadySubmitted: false,
+      });
+    }
 
     return res.status(200).json({
       date: entry.date,
       emotion: entry.emotion,
       locked: isLocked(entry),
+      alreadySubmitted: true,
     });
   } catch (err) {
     console.error("GET /emotions/:date error:", err);

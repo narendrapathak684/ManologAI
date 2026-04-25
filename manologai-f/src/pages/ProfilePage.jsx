@@ -38,6 +38,7 @@ import {
   Info,
   Share,
   PlusSquare,
+  Sparkles,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -1721,6 +1722,7 @@ export default function ProfilePage() {
                         </label>
                         <Input
                           type="password"
+                          autoComplete="current-password"
                           className="bg-black/20 border-white/10 text-white h-12 focus:border-pink-500/50"
                           value={passForm.currentPassword}
                           onChange={(e) =>
@@ -1738,6 +1740,7 @@ export default function ProfilePage() {
                         </label>
                         <Input
                           type="password"
+                          autoComplete="new-password"
                           className="bg-black/20 border-white/10 text-white h-12 focus:border-emerald-500/50"
                           value={passForm.newPassword}
                           onChange={(e) =>

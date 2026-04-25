@@ -50,6 +50,15 @@ export const subscribeUserToPush = async () => {
 
 export const showNotification = (title, body, tag = "manolog-reminder") => {
   if (Notification.permission === "granted") {
+    const urlMap = {
+      habits: "/track",
+      journal: "/journal",
+      tracking: "/track",
+      dailyLog: "/dashboard",
+      "manolog-reminder": "/dashboard",
+    };
+    const targetUrl = urlMap[tag] || "/dashboard";
+
     // Try to show via Service Worker if available for better PWA support
     if (navigator.serviceWorker && navigator.serviceWorker.controller) {
       navigator.serviceWorker.ready.then((registration) => {
@@ -59,14 +68,22 @@ export const showNotification = (title, body, tag = "manolog-reminder") => {
           vibrate: [200, 100, 200],
           tag,
           badge: NOTIFICATION_ICON,
+          data: { url: targetUrl },
         });
       });
     } else {
       // Fallback to standard Notification
-      new Notification(title, {
+      const notification = new Notification(title, {
         body,
         icon: NOTIFICATION_ICON,
+        tag,
       });
+
+      notification.onclick = () => {
+        window.focus();
+        window.location.href = targetUrl;
+        notification.close();
+      };
     }
   }
 };
