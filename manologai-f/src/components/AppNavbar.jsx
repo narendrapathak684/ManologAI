@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import GlobalSaveAlert from "./GlobalSaveAlert";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 import {
   BellRing,
   Bell,
@@ -12,6 +13,8 @@ import {
   FolderKanban,
   LayoutDashboard,
   Sparkles,
+  Moon,
+  Sun,
   UserRound,
 } from "lucide-react";
 
@@ -30,6 +33,7 @@ const getProfilePictureUrl = (profilePicture) => {
 export default function AppNavbar() {
   const location = useLocation();
   const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const notificationRef = useRef(null);
   const profilePictureUrl = getProfilePictureUrl(user?.profilePicture);
@@ -111,6 +115,23 @@ export default function AppNavbar() {
             })}
           </nav>
           <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-slate-300 transition hover:border-pink-400/40 hover:bg-pink-400/10 hover:text-white hover:shadow-[0_0_16px_0_rgba(236,72,153,0.45)]"
+              aria-label={
+                theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
+              }
+              title={
+                theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
+              }
+            >
+              {theme === "dark" ? (
+                <Sun className="h-5 w-5" />
+              ) : (
+                <Moon className="h-5 w-5" />
+              )}
+            </button>
             <div className="relative" ref={notificationRef}>
               <button
                 type="button"

@@ -37,6 +37,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useSaveAlert } from "../context/SaveAlertContext";
+import { useTheme } from "../context/ThemeContext";
 import { api, getApiErrorMessage } from "../lib/api";
 
 const navItems = [
@@ -70,6 +71,9 @@ const emotionOptions = [
     accent: "border-emerald-500/30 bg-emerald-500/10 text-emerald-200",
     idle: "border-emerald-500/20 bg-emerald-500/5 text-emerald-100/90 hover:bg-emerald-500/10",
     glow: "shadow-[0_0_24px_-14px_rgba(16,185,129,0.8)]",
+    lightAccent: "border-emerald-700/60 bg-emerald-200 text-emerald-950",
+    lightIdle:
+      "border-emerald-700/35 bg-emerald-100/80 text-emerald-900 hover:bg-emerald-200",
   },
   {
     value: "calm",
@@ -78,6 +82,9 @@ const emotionOptions = [
     accent: "border-sky-500/30 bg-sky-500/10 text-sky-200",
     idle: "border-sky-500/20 bg-sky-500/5 text-sky-100/90 hover:bg-sky-500/10",
     glow: "shadow-[0_0_24px_-14px_rgba(14,165,233,0.8)]",
+    lightAccent: "border-sky-700/60 bg-sky-200 text-sky-950",
+    lightIdle:
+      "border-sky-700/35 bg-sky-100/80 text-sky-900 hover:bg-sky-200",
   },
   {
     value: "neutral",
@@ -86,6 +93,9 @@ const emotionOptions = [
     accent: "border-slate-500/30 bg-slate-500/10 text-slate-200",
     idle: "border-slate-500/20 bg-slate-500/5 text-slate-100/90 hover:bg-slate-500/10",
     glow: "shadow-[0_0_24px_-14px_rgba(100,116,139,0.8)]",
+    lightAccent: "border-slate-700/60 bg-slate-200 text-slate-950",
+    lightIdle:
+      "border-slate-700/35 bg-slate-100/90 text-slate-900 hover:bg-slate-200",
   },
   {
     value: "sad",
@@ -94,6 +104,9 @@ const emotionOptions = [
     accent: "border-blue-500/30 bg-blue-500/10 text-blue-200",
     idle: "border-blue-500/20 bg-blue-500/5 text-blue-100/90 hover:bg-blue-500/10",
     glow: "shadow-[0_0_24px_-14px_rgba(59,130,246,0.8)]",
+    lightAccent: "border-blue-800/60 bg-blue-200 text-blue-950",
+    lightIdle:
+      "border-blue-800/35 bg-blue-100/80 text-blue-900 hover:bg-blue-200",
   },
   {
     value: "stressed",
@@ -102,6 +115,9 @@ const emotionOptions = [
     accent: "border-amber-500/30 bg-amber-500/10 text-amber-200",
     idle: "border-amber-500/20 bg-amber-500/5 text-amber-100/90 hover:bg-amber-500/10",
     glow: "shadow-[0_0_24px_-14px_rgba(245,158,11,0.8)]",
+    lightAccent: "border-amber-800/60 bg-amber-200 text-amber-950",
+    lightIdle:
+      "border-amber-800/35 bg-amber-100/80 text-amber-900 hover:bg-amber-200",
   },
   {
     value: "angry",
@@ -110,6 +126,9 @@ const emotionOptions = [
     accent: "border-rose-500/30 bg-rose-500/10 text-rose-200",
     idle: "border-rose-500/20 bg-rose-500/5 text-rose-100/90 hover:bg-rose-500/10",
     glow: "shadow-[0_0_24px_-14px_rgba(244,63,94,0.8)]",
+    lightAccent: "border-rose-800/60 bg-rose-200 text-rose-950",
+    lightIdle:
+      "border-rose-800/35 bg-rose-100/80 text-rose-900 hover:bg-rose-200",
   },
   {
     value: "tired",
@@ -118,6 +137,9 @@ const emotionOptions = [
     accent: "border-violet-500/30 bg-violet-500/10 text-violet-200",
     idle: "border-violet-500/20 bg-violet-500/5 text-violet-100/90 hover:bg-violet-500/10",
     glow: "shadow-[0_0_24px_-14px_rgba(139,92,246,0.8)]",
+    lightAccent: "border-violet-800/60 bg-violet-200 text-violet-950",
+    lightIdle:
+      "border-violet-800/35 bg-violet-100/80 text-violet-900 hover:bg-violet-200",
   },
   {
     value: "excited",
@@ -126,6 +148,9 @@ const emotionOptions = [
     accent: "border-pink-500/30 bg-pink-500/10 text-pink-200",
     idle: "border-pink-500/20 bg-pink-500/5 text-pink-100/90 hover:bg-pink-500/10",
     glow: "shadow-[0_0_24px_-14px_rgba(236,72,153,0.8)]",
+    lightAccent: "border-pink-800/60 bg-pink-200 text-pink-950",
+    lightIdle:
+      "border-pink-800/35 bg-pink-100/80 text-pink-900 hover:bg-pink-200",
   },
 ];
 
@@ -277,6 +302,8 @@ export default function TrackPage() {
   const [savingEmotion, setSavingEmotion] = useState(false);
   const [error, setError] = useState("");
   const { showSaveAlert, clearSaveAlert } = useSaveAlert();
+  const { theme } = useTheme();
+  const isLightMode = theme === "light";
 
   const today = getLocalDateKey();
   const [selectedDateKey, setSelectedDateKey] = useState(today);
@@ -1068,6 +1095,13 @@ export default function TrackPage() {
                   <div className="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2">
                     {emotionOptions.map((option) => {
                       const isSelected = selectedEmotion === option.value;
+                      const emotionClasses = isLightMode
+                        ? isSelected
+                          ? `${option.lightAccent} scale-[1.02]`
+                          : option.lightIdle
+                        : isSelected
+                          ? `${option.accent} ${option.glow} scale-[1.02]`
+                          : option.idle;
                       return (
                         <button
                           key={option.value}
@@ -1075,9 +1109,7 @@ export default function TrackPage() {
                           disabled={emotionLocked}
                           onClick={() => setSelectedEmotion(option.value)}
                           className={`rounded-2xl border px-4 py-3 text-left text-sm font-medium transition-all ${
-                            isSelected
-                              ? `${option.accent} ${option.glow} scale-[1.02]`
-                              : option.idle
+                            emotionClasses
                           } ${emotionLocked ? "cursor-not-allowed opacity-60" : ""}`}
                         >
                           <div className="flex items-center gap-3">

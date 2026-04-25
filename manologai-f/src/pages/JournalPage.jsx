@@ -22,6 +22,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useSaveAlert } from "../context/SaveAlertContext";
+import { useTheme } from "../context/ThemeContext";
 import { api, getApiErrorMessage } from "../lib/api";
 
 const navItems = [
@@ -120,11 +121,16 @@ export default function JournalPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const { showSaveAlert, clearSaveAlert } = useSaveAlert();
+  const { theme } = useTheme();
+  const isLightMode = theme === "light";
   const quickDates = useMemo(() => getPreviousDates(7), []);
   const selectedDateColor = useMemo(
     () => getDateColor(selectedDate, quickDates),
     [quickDates, selectedDate],
   );
+  const selectedDateSurface = isLightMode
+    ? selectedDateColor.bg.replace("0.16", "0.12")
+    : selectedDateColor.bg;
 
   const handleDateChange = (nextDate) => {
     if (!nextDate) return;
@@ -247,8 +253,12 @@ export default function JournalPage() {
               className="rounded-[28px] border p-6 shadow-2xl backdrop-blur-xl sm:p-8"
               style={{
                 borderColor: selectedDateColor.border,
-                backgroundImage: `linear-gradient(160deg, ${selectedDateColor.bg}, rgba(15, 23, 42, 0.72))`,
-                boxShadow: `0 0 0 1px ${selectedDateColor.border} inset`,
+                backgroundImage: isLightMode
+                  ? `linear-gradient(160deg, ${selectedDateSurface}, rgba(255, 255, 255, 0.94))`
+                  : `linear-gradient(160deg, ${selectedDateColor.bg}, rgba(15, 23, 42, 0.72))`,
+                boxShadow: isLightMode
+                  ? `0 18px 50px -34px ${selectedDateColor.accent}, 0 0 0 1px ${selectedDateColor.border} inset`
+                  : `0 0 0 1px ${selectedDateColor.border} inset`,
               }}
             >
               <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
@@ -289,7 +299,18 @@ export default function JournalPage() {
             </motion.section>
 
             <section className="mt-6 grid gap-6">
-              <Card className="border-white/10 bg-slate-900/50 backdrop-blur-xl">
+              <Card
+                className="border-white/10 bg-slate-900/50 backdrop-blur-xl"
+                style={
+                  isLightMode
+                    ? {
+                        backgroundColor: "rgba(255, 255, 255, 0.96)",
+                        borderColor: "rgba(15, 23, 42, 0.1)",
+                        boxShadow: "0 18px 48px -36px rgba(15, 23, 42, 0.35)",
+                      }
+                    : undefined
+                }
+              >
                 <CardHeader>
                   <CardTitle className="text-white">Jump to date</CardTitle>
                   <CardDescription>
@@ -327,10 +348,14 @@ export default function JournalPage() {
                           style={{
                             borderColor: isActive
                               ? dateColor.border
-                              : "rgba(255, 255, 255, 0.10)",
+                              : isLightMode
+                                ? "rgba(15, 23, 42, 0.12)"
+                                : "rgba(255, 255, 255, 0.10)",
                             backgroundColor: isActive
                               ? dateColor.bg
-                              : undefined,
+                              : isLightMode
+                                ? "rgba(255, 255, 255, 0.78)"
+                                : undefined,
                           }}
                         >
                           <span
@@ -364,8 +389,12 @@ export default function JournalPage() {
                 className="backdrop-blur-xl"
                 style={{
                   borderColor: selectedDateColor.border,
-                  backgroundColor: "rgba(15, 23, 42, 0.5)",
-                  boxShadow: `0 0 0 1px ${selectedDateColor.border} inset`,
+                  backgroundColor: isLightMode
+                    ? "rgba(255, 255, 255, 0.9)"
+                    : "rgba(15, 23, 42, 0.5)",
+                  boxShadow: isLightMode
+                    ? `0 18px 54px -36px ${selectedDateColor.accent}, 0 0 0 1px ${selectedDateColor.border} inset`
+                    : `0 0 0 1px ${selectedDateColor.border} inset`,
                 }}
               >
                 <CardHeader>
@@ -411,8 +440,12 @@ export default function JournalPage() {
                     className="rounded-2xl border p-4"
                     style={{
                       borderColor: selectedDateColor.border,
-                      backgroundImage: `linear-gradient(180deg, ${selectedDateColor.bg}, rgba(255,255,255,0.02))`,
-                      boxShadow: `0 18px 40px -28px ${selectedDateColor.accent}`,
+                      backgroundImage: isLightMode
+                        ? `linear-gradient(180deg, ${selectedDateSurface}, rgba(255,255,255,0.88))`
+                        : `linear-gradient(180deg, ${selectedDateColor.bg}, rgba(255,255,255,0.02))`,
+                      boxShadow: isLightMode
+                        ? `0 16px 42px -34px ${selectedDateColor.accent}`
+                        : `0 18px 40px -28px ${selectedDateColor.accent}`,
                     }}
                   >
                     <textarea
