@@ -35,6 +35,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { api, getApiErrorMessage } from "../lib/api";
+import { COUNTRIES } from "../lib/constants";
 import MobileTabBar from "../components/MobileTabBar";
 
 const navItems = [
@@ -532,6 +533,7 @@ export default function ProfilePage() {
   const [profileForm, setProfileForm] = useState({
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
+    country: user?.country || "",
   });
   const [selectedProfilePicture, setSelectedProfilePicture] = useState(null);
   const [profilePicturePreview, setProfilePicturePreview] = useState("");
@@ -825,6 +827,7 @@ export default function ProfilePage() {
                           setProfileForm({
                             firstName: user?.firstName || "",
                             lastName: user?.lastName || "",
+                            country: user?.country || "",
                           });
                           setSelectedProfilePicture(null);
                           setProfilePicturePreview("");
@@ -946,6 +949,39 @@ export default function ProfilePage() {
                               maxLength={maxNameLength}
                             />
                           </div>
+                          <div className="space-y-2 md:col-span-2">
+                            <label className="text-xs font-mono uppercase tracking-widest text-slate-500">
+                              Country
+                            </label>
+                            <select
+                              className="h-11 w-full rounded-md border border-white/10 bg-black/20 px-3 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pink-500/50"
+                              value={profileForm.country}
+                              onChange={(e) =>
+                                setProfileForm({
+                                  ...profileForm,
+                                  country: e.target.value,
+                                })
+                              }
+                              required
+                            >
+                              <option value="" disabled className="bg-slate-900">
+                                Select your country
+                              </option>
+                              {COUNTRIES.map((country) => (
+                                <option
+                                  key={country}
+                                  value={country}
+                                  className="bg-slate-900"
+                                >
+                                  {country}
+                                </option>
+                              ))}
+                            </select>
+                            <p className="text-[10px] text-slate-500 mt-1 pl-1">
+                              * Changing country will automatically update your
+                              tracking currency.
+                            </p>
+                          </div>
                         </div>
                         <div className="flex gap-3 justify-end mt-4">
                           <Button
@@ -1036,6 +1072,22 @@ export default function ProfilePage() {
                           </p>
                           <p className="text-lg font-medium text-white">
                             {user?.lastName || "—"}
+                          </p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-xs font-mono uppercase tracking-widest text-slate-500">
+                            Country
+                          </p>
+                          <p className="text-lg font-medium text-white">
+                            {user?.country || "—"}
+                          </p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-xs font-mono uppercase tracking-widest text-slate-500">
+                            Currency
+                          </p>
+                          <p className="text-lg font-medium text-pink-400">
+                            {user?.currency || "USD"}
                           </p>
                         </div>
                         <div className="space-y-1 md:col-span-2">
