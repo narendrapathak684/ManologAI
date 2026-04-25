@@ -103,6 +103,15 @@ const userSchema = new mongoose.Schema({
     work: { type: Number, default: 6 }, // hours
     expenses: { type: Number, default: 50 }, // currency units
   },
+  sessions: [
+    {
+      token: String,
+      userAgent: String,
+      ip: String,
+      lastActive: { type: Date, default: Date.now },
+      createdAt: { type: Date, default: Date.now },
+    },
+  ],
 });
 
 module.exports = mongoose.model("User", userSchema);

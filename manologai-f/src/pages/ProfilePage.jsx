@@ -31,6 +31,9 @@ import {
   Bed,
   Briefcase,
   Wallet,
+  Laptop,
+  Globe,
+  Monitor,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -611,6 +614,8 @@ export default function ProfilePage() {
     expenses: 50,
   });
   const [isSavingGoals, setIsSavingGoals] = useState(false);
+  const [sessions, setSessions] = useState([]);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(false);
 
 
   useEffect(() => {
@@ -652,6 +657,8 @@ export default function ProfilePage() {
       });
     }
 
+    fetchSessions();
+
     return () => {
       window.removeEventListener(
         "beforeinstallprompt",
@@ -681,6 +688,45 @@ export default function ProfilePage() {
     } catch (err) {
       console.error("Failed to save goals:", err);
     }
+  };
+
+  const fetchSessions = async () => {
+    setIsLoadingSessions(true);
+    try {
+      const { data } = await api.get("/auth/sessions");
+      setSessions(data.sessions || []);
+    } catch (err) {
+      console.error("Failed to fetch sessions:", err);
+    } finally {
+      setIsLoadingSessions(false);
+    }
+  };
+
+  const handleRevokeSession = async (sessionId) => {
+    try {
+      await api.delete(`/auth/sessions/${sessionId}`);
+      setSessions(sessions.filter((s) => s.id !== sessionId));
+    } catch (err) {
+      console.error("Failed to revoke session:", err);
+    }
+  };
+
+  const handleRevokeOthers = async () => {
+    if (!window.confirm("Log out from all other devices?")) return;
+    try {
+      await api.delete("/auth/sessions/others");
+      setSessions(sessions.filter((s) => s.isCurrent));
+    } catch (err) {
+      console.error("Failed to revoke other sessions:", err);
+    }
+  };
+
+  const getDeviceIcon = (ua) => {
+    const userAgent = ua?.toLowerCase() || "";
+    if (userAgent.includes("iphone") || userAgent.includes("android")) return Smartphone;
+    if (userAgent.includes("ipad") || userAgent.includes("tablet")) return Monitor;
+    if (userAgent.includes("macintosh") || userAgent.includes("windows")) return Laptop;
+    return Globe;
   };
 
   const handleToggleReminder = async (id) => {
@@ -1435,6 +1481,99 @@ export default function ProfilePage() {
                         );
                       })}
                     </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* Active Sessions Card */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.12 }}
+              >
+                <Card className="border-white/10 bg-slate-900/40 backdrop-blur-3xl overflow-hidden relative group">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 relative z-10">
+                    <div>
+                      <CardTitle className="text-white flex items-center gap-2">
+                        <Laptop className="h-5 w-5 text-pink-400" /> Active Sessions
+                      </CardTitle>
+                      <CardDescription>
+                        Manage your logged-in devices.
+                      </CardDescription>
+                    </div>
+                    {sessions.length > 1 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleRevokeOthers}
+                        className="text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
+                      >
+                        Log out all others
+                      </Button>
+                    )}
+                  </CardHeader>
+                  <CardContent className="relative z-10">
+                    {isLoadingSessions ? (
+                      <div className="flex justify-center py-8">
+                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-pink-500 border-t-transparent" />
+                      </div>
+                    ) : sessions.length === 0 ? (
+                      <p className="text-center py-6 text-sm text-slate-500">No active sessions found.</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {sessions.map((session) => {
+                          const DeviceIcon = getDeviceIcon(session.userAgent);
+                          return (
+                            <div
+                              key={session.id}
+                              className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
+                                session.isCurrent
+                                  ? "bg-pink-500/10 border-pink-500/30 ring-1 ring-pink-500/20"
+                                  : "bg-black/20 border-white/5 hover:border-white/10"
+                              }`}
+                            >
+                              <div className="flex items-center gap-4">
+                                <div className={`p-2.5 rounded-xl ${session.isCurrent ? 'bg-pink-500/20 text-pink-300' : 'bg-white/5 text-slate-400'}`}>
+                                  <DeviceIcon className="h-5 w-5" />
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-sm font-semibold text-white truncate max-w-[140px] sm:max-w-xs">
+                                      {session.userAgent || "Unknown Device"}
+                                    </p>
+                                    {session.isCurrent && (
+                                      <span className="bg-emerald-500/20 text-emerald-400 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border border-emerald-500/30 pulse-emerald">
+                                        Current
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-[10px] text-slate-500 font-mono mt-1 flex items-center gap-2">
+                                    <Globe className="h-3 w-3" /> {session.ip || "Unknown IP"} 
+                                    <span className="text-slate-700">•</span>
+                                    {new Date(session.lastActive).toLocaleString(undefined, {
+                                      month: 'short',
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </p>
+                                </div>
+                              </div>
+                              {!session.isCurrent && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRevokeSession(session.id)}
+                                  className="h-8 px-3 text-xs text-slate-400 hover:text-rose-400 hover:bg-rose-500/10"
+                                >
+                                  Revoke
+                                </Button>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </motion.div>

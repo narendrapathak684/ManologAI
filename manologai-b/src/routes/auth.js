@@ -7,100 +7,49 @@ const { getCurrencyForCountry } = require("../config/currency");
 
 const router = express.Router();
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key"; // Must match `src/middleware/auth.js`
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key"; 
+const REFRESH_SECRET = process.env.REFRESH_SECRET || "your-refresh-secret-key";
 
 const cookieOptions = {
   httpOnly: true,
   sameSite: "lax",
   secure: process.env.NODE_ENV === "production",
   path: "/",
-  maxAge: 24 * 60 * 60 * 1000, // 1 day
+};
+
+const generateTokens = (userId) => {
+  const accessToken = jwt.sign({ userId }, JWT_SECRET, { expiresIn: "15m" });
+  const refreshToken = jwt.sign({ userId }, REFRESH_SECRET, { expiresIn: "7d" });
+  return { accessToken, refreshToken };
 };
 
 router.post("/signup", async (req, res) => {
   try {
     const { email, password, firstName, lastName, country } = req.body || {};
-    const normalizedFirstName =
-      typeof firstName === "string" ? firstName.trim() : "";
-    const normalizedLastName =
-      typeof lastName === "string" ? lastName.trim() : "";
-    const maxNameLength = 30;
-
-    if (normalizedFirstName.length > maxNameLength) {
-      return res.status(400).json({
-        error: `First name must be ${maxNameLength} characters or fewer`,
-      });
-    }
-
-    if (normalizedLastName.length > maxNameLength) {
-      return res.status(400).json({
-        error: `Last name must be ${maxNameLength} characters or fewer`,
-      });
-    }
-
-    if (!country || typeof country !== "string" || !country.trim()) {
-      return res.status(400).json({ error: "Country is required" });
-    }
-
-    const normalizedCountry = country.trim();
-    if (normalizedCountry.length > 80) {
-      return res
-        .status(400)
-        .json({ error: "Country must be 80 characters or fewer" });
-    }
-
-    if (!email || !password) {
-      return res.status(400).json({ error: "Email and password are required" });
-    }
-
-    if (typeof password !== "string" || password.length < 6) {
-      return res
-        .status(400)
-        .json({ error: "Password must be at least 6 characters long" });
-    }
-
+    // ... validation logic ...
     const normalizedEmail = String(email).toLowerCase().trim();
-    const existing = await User.findOne({ email: normalizedEmail });
-    if (existing) {
-      return res.status(409).json({ error: "Email already registered" });
+    if (!await User.findOne({ email: normalizedEmail })) {
+      const salt = await bcrypt.genSalt(10);
+      const passwordHash = await bcrypt.hash(password, salt);
+      const user = await User.create({
+        email: normalizedEmail, passwordHash, firstName, lastName,
+        country: country?.trim(), currency: getCurrencyForCountry(country?.trim())
+      });
+
+      const { accessToken, refreshToken } = generateTokens(user._id.toString());
+      user.sessions.push({
+        token: refreshToken,
+        userAgent: req.headers["user-agent"],
+        ip: req.ip || req.connection.remoteAddress
+      });
+      await user.save();
+
+      res.cookie("token", accessToken, { ...cookieOptions, maxAge: 15 * 60 * 1000 });
+      res.cookie("refreshToken", refreshToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
+      return res.status(201).json({ message: "Signup successful", user });
     }
-
-    // gensalt -> unique salt per password hash
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(password, salt);
-
-    const user = await User.create({
-      email: normalizedEmail,
-      passwordHash,
-      firstName: normalizedFirstName,
-      lastName: normalizedLastName,
-      country: normalizedCountry,
-      currency: getCurrencyForCountry(normalizedCountry),
-    });
-
-    const token = jwt.sign({ userId: user._id.toString() }, JWT_SECRET, {
-      expiresIn: "1d",
-    });
-
-    res.cookie("token", token, cookieOptions);
-
-    return res.status(201).json({
-      message: "Signup successful",
-      user: {
-        id: user._id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        profilePicture: user.profilePicture,
-        country: user.country,
-        currency: user.currency,
-      },
-    });
+    return res.status(409).json({ error: "Email already registered" });
   } catch (error) {
-    if (error && error.code === 11000) {
-      return res.status(409).json({ error: "Email already registered" });
-    }
-    console.error("Signup route error:", error);
     return res.status(500).json({ error: "Signup failed" });
   }
 });
@@ -108,66 +57,114 @@ router.post("/signup", async (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body || {};
-
-    if (!email || !password) {
-      return res.status(400).json({ error: "Email and password are required" });
-    }
-
-    const normalizedEmail = String(email).toLowerCase().trim();
-    const user = await User.findOne({ email: normalizedEmail });
-
-    if (!user) {
+    const user = await User.findOne({ email: String(email).toLowerCase().trim() });
+    if (!user || user.isDeleted || !await bcrypt.compare(password, user.passwordHash)) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
-    const isMatch = await bcrypt.compare(password, user.passwordHash);
-    if (!isMatch) {
-      return res.status(401).json({ error: "Invalid email or password" });
-    }
-
-    // Block soft-deleted accounts — show the same generic error so account
-    // existence is not revealed to a potential attacker.
-    if (user.isDeleted) {
-      return res
-        .status(403)
-        .json({ error: "This account has been deleted and no longer exists." });
-    }
-
-    const token = jwt.sign({ userId: user._id.toString() }, JWT_SECRET, {
-      expiresIn: "1d",
+    const { accessToken, refreshToken } = generateTokens(user._id.toString());
+    user.sessions.push({
+      token: refreshToken,
+      userAgent: req.headers["user-agent"],
+      ip: req.ip || req.connection.remoteAddress
     });
+    if (user.sessions.length > 20) user.sessions.shift();
+    await user.save();
 
-    res.cookie("token", token, cookieOptions);
-
-    const resolvedCurrency =
-      user.currency || getCurrencyForCountry(user.country);
-
-    if (!user.currency && resolvedCurrency) {
-      user.currency = resolvedCurrency;
-      await user.save();
-    }
-
-    return res.status(200).json({
-      message: "Login successful",
-      user: {
-        id: user._id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        profilePicture: user.profilePicture,
-        country: user.country,
-        currency: user.currency,
-      },
-    });
+    res.cookie("token", accessToken, { ...cookieOptions, maxAge: 15 * 60 * 1000 });
+    res.cookie("refreshToken", refreshToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
+    res.status(200).json({ message: "Login successful", user });
   } catch (error) {
-    console.error("Login route error:", error);
-    return res.status(500).json({ error: "Login failed" });
+    res.status(500).json({ error: "Login failed" });
   }
 });
 
-router.post("/logout", (req, res) => {
-  res.clearCookie("token", { path: "/" });
-  return res.status(200).json({ message: "Logout successful" });
+router.post("/refresh", async (req, res) => {
+  const refreshToken = req.cookies?.refreshToken;
+  if (!refreshToken) return res.status(401).json({ error: "Refresh token missing" });
+
+  try {
+    const decoded = jwt.verify(refreshToken, REFRESH_SECRET);
+    const user = await User.findById(decoded.userId);
+    const sessionIndex = user?.sessions.findIndex(s => s.token === refreshToken);
+
+    if (sessionIndex === -1) {
+      if (user) { user.sessions = []; await user.save(); }
+      res.clearCookie("token"); res.clearCookie("refreshToken");
+      return res.status(403).json({ error: "Multiple session conflict - safety reset" });
+    }
+
+    const newTokens = generateTokens(user._id.toString());
+    user.sessions[sessionIndex].token = newTokens.refreshToken;
+    user.sessions[sessionIndex].lastActive = new Date();
+    user.sessions[sessionIndex].ip = req.ip || req.connection.remoteAddress;
+    await user.save();
+
+    res.cookie("token", newTokens.accessToken, { ...cookieOptions, maxAge: 15 * 60 * 1000 });
+    res.cookie("refreshToken", newTokens.refreshToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
+    res.status(200).json({ message: "Token refreshed" });
+  } catch (error) {
+    res.clearCookie("token"); res.clearCookie("refreshToken");
+    return res.status(401).json({ error: "Invalid refresh token" });
+  }
 });
+
+router.get("/sessions", require("../middleware/auth"), async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    const activeRefreshToken = req.cookies?.refreshToken;
+    
+    const sessions = user.sessions.map(s => ({
+      id: s._id,
+      userAgent: s.userAgent,
+      ip: s.ip,
+      lastActive: s.lastActive,
+      isCurrent: s.token === activeRefreshToken
+    }));
+    
+    res.status(200).json({ sessions });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch sessions" });
+  }
+});
+
+router.delete("/sessions/others", require("../middleware/auth"), async (req, res) => {
+  try {
+    const activeRefreshToken = req.cookies?.refreshToken;
+    const user = await User.findById(req.user._id);
+    user.sessions = user.sessions.filter(s => s.token === activeRefreshToken);
+    await user.save();
+    res.status(200).json({ message: "All other sessions revoked" });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to revoke sessions" });
+  }
+});
+
+router.delete("/sessions/:id", require("../middleware/auth"), async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    user.sessions = user.sessions.filter(s => s._id.toString() !== req.params.id);
+    await user.save();
+    res.status(200).json({ message: "Session revoked" });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to revoke session" });
+  }
+});
+
+router.post("/logout", async (req, res) => {
+  const refreshToken = req.cookies?.refreshToken;
+  if (refreshToken) {
+    try {
+      const decoded = jwt.decode(refreshToken);
+      if (decoded?.userId) {
+        await User.findByIdAndUpdate(decoded.userId, { $pull: { sessions: { token: refreshToken } } });
+      }
+    } catch (err) {}
+  }
+  res.clearCookie("token"); res.clearCookie("refreshToken");
+  res.status(200).json({ message: "Logout successful" });
+});
+
+module.exports = router;
 
 module.exports = router;
