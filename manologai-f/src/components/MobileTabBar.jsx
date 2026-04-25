@@ -1,14 +1,20 @@
 import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+
+const getProfilePictureUrl = (profilePicture) => {
+  if (!profilePicture) return "";
+  if (typeof profilePicture === "string") return profilePicture;
+  return profilePicture.url || "";
+};
 
 export default function MobileTabBar({ items }) {
   const location = useLocation();
+  const { user } = useAuth();
+  const profilePictureUrl = getProfilePictureUrl(user?.profilePicture);
 
-  // Filter out Profile button if on /profile page
-  const filteredItems =
-    location.pathname === "/profile"
-      ? items.filter((item) => item.label !== "Profile")
-      : items;
+  // Keep all items for mobile tab bar
+  const filteredItems = items;
 
   const content = (
     <div
@@ -31,7 +37,21 @@ export default function MobileTabBar({ items }) {
               }`}
             >
               <span className="relative flex items-center justify-center">
-                <Icon className="h-5 w-5" />
+                {label === "Profile" && profilePictureUrl ? (
+                  <div
+                    className={`h-5 w-5 overflow-hidden rounded-full border ${
+                      isActive ? "border-pink-300" : "border-white/10"
+                    }`}
+                  >
+                    <img
+                      src={profilePictureUrl}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <Icon className="h-5 w-5" />
+                )}
               </span>
               <span className="text-[7px] font-semibold uppercase tracking-[0.14em]">
                 {label}

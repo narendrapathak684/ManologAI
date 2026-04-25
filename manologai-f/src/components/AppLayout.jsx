@@ -16,7 +16,7 @@ const navItems = [
   { label: "Track", icon: CheckCircle2, to: "/track" },
   { label: "Analytics", icon: ChartColumnBig, to: "/analytics" },
   { label: "Organise", icon: FolderKanban, to: "/organise" },
-  // Profile button removed for mobile tab bar
+  { label: "Profile", icon: User, to: "/profile" },
 ];
 
 export default function AppLayout() {

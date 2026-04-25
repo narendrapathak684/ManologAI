@@ -216,31 +216,26 @@ export default function AppNavbar() {
             <Link
               to="/profile"
               aria-label="Profile"
-              className={`flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-slate-300 transition hover:border-pink-400/40 hover:bg-pink-400/10 hover:text-white hover:shadow-[0_0_16px_0_rgba(236,72,153,0.45)] ${
+              className={`group hidden h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl border transition-all lg:flex ${
                 location.pathname === "/profile"
-                  ? "border-pink-400/50 bg-pink-400/15 text-white shadow-[0_0_16px_0_rgba(236,72,153,0.45)]"
-                  : ""
+                  ? "border-pink-500/50 bg-pink-500/10 shadow-[0_0_20px_-8px_rgba(236,72,153,0.5)]"
+                  : "border-white/10 bg-white/5 hover:border-pink-500/40 hover:bg-pink-500/5"
               }`}
             >
-              <span
-                className={`flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-black/30 ${
-                  profilePictureUrl ? "h-8 w-8" : "h-6 w-6"
-                }`}
-              >
-                {profilePictureUrl ? (
-                  <img
-                    src={profilePictureUrl}
-                    alt=""
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <UserRound className="h-4 w-4" />
-                )}
-              </span>
-              {location.pathname === "/profile" && (
-                <span className="text-sm font-semibold text-white">
-                  Profile
-                </span>
+              {profilePictureUrl ? (
+                <img
+                  src={profilePictureUrl}
+                  alt=""
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+                />
+              ) : (
+                <UserRound
+                  className={`h-5 w-5 transition-colors ${
+                    location.pathname === "/profile"
+                      ? "text-pink-300"
+                      : "text-slate-400 group-hover:text-pink-300"
+                  }`}
+                />
               )}
             </Link>
           </div>
