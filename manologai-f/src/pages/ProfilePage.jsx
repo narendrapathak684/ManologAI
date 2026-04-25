@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
@@ -17,6 +17,10 @@ import {
   Upload,
   Trash2,
   X,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Crop,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -52,6 +56,312 @@ const getProfilePictureUrl = (profilePicture) => {
   return profilePicture.url || "";
 };
 
+/* ────────────────────────────────────────────────────────────
+   Image Crop Modal (canvas-based, zero extra dependencies)
+   ──────────────────────────────────────────────────────────── */
+function ImageCropModal({ imageSrc, onConfirm, onCancel }) {
+  const canvasRef = useRef(null);
+  const containerRef = useRef(null);
+
+  // image natural dimensions
+  const imgRef = useRef(null);
+  const [imgLoaded, setImgLoaded] = useState(false);
+
+  // pan & zoom state
+  const [scale, setScale] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const dragRef = useRef(null); // { startX, startY, startOffsetX, startOffsetY }
+
+  const CROP_SIZE = 300; // visible crop circle diameter in logic pixels
+  const CANVAS = CROP_SIZE + 80; // canvas size with padding
+
+  // ── draw ──────────────────────────────────────────────────
+  const draw = useCallback(() => {
+    const canvas = canvasRef.current;
+    const img = imgRef.current;
+    if (!canvas || !img || !imgLoaded) return;
+    const ctx = canvas.getContext("2d");
+    const W = canvas.width;
+    const H = canvas.height;
+    const cx = W / 2;
+    const cy = H / 2;
+    const r = CROP_SIZE / 2;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // draw image
+    const drawW = img.naturalWidth * scale;
+    const drawH = img.naturalHeight * scale;
+    ctx.drawImage(img, cx + offset.x - drawW / 2, cy + offset.y - drawH / 2, drawW, drawH);
+
+    // dark overlay outside circle
+    ctx.save();
+    ctx.fillStyle = "rgba(0,0,0,0.65)";
+    ctx.beginPath();
+    ctx.rect(0, 0, W, H);
+    ctx.arc(cx, cy, r, 0, Math.PI * 2, true);
+    ctx.fill("evenodd");
+    ctx.restore();
+
+    // circle border
+    ctx.save();
+    ctx.strokeStyle = "rgba(236,72,153,0.8)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }, [scale, offset, imgLoaded, CROP_SIZE]);
+
+  useEffect(() => { draw(); }, [draw]);
+
+  // ── load image ────────────────────────────────────────────
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => {
+      imgRef.current = img;
+      // fit image to crop circle initially
+      const fitScale = Math.max(CROP_SIZE / img.naturalWidth, CROP_SIZE / img.naturalHeight);
+      setScale(fitScale);
+      setOffset({ x: 0, y: 0 });
+      setImgLoaded(true);
+    };
+    img.src = imageSrc;
+  }, [imageSrc, CROP_SIZE]);
+
+  // ── mouse drag ────────────────────────────────────────────
+  const onMouseDown = (e) => {
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startOffsetX: offset.x,
+      startOffsetY: offset.y,
+    };
+  };
+  const onMouseMove = (e) => {
+    if (!dragRef.current) return;
+    const dx = e.clientX - dragRef.current.startX;
+    const dy = e.clientY - dragRef.current.startY;
+    setOffset({
+      x: dragRef.current.startOffsetX + dx,
+      y: dragRef.current.startOffsetY + dy,
+    });
+  };
+  const onMouseUp = () => { dragRef.current = null; };
+
+  // ── touch drag ────────────────────────────────────────────
+  const touchRef = useRef(null);
+  const onTouchStart = (e) => {
+    if (e.touches.length === 1) {
+      touchRef.current = {
+        startX: e.touches[0].clientX,
+        startY: e.touches[0].clientY,
+        startOffsetX: offset.x,
+        startOffsetY: offset.y,
+        type: "pan",
+      };
+    } else if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      touchRef.current = {
+        type: "pinch",
+        startDist: Math.hypot(dx, dy),
+        startScale: scale,
+      };
+    }
+  };
+  const onTouchMove = (e) => {
+    e.preventDefault();
+    if (!touchRef.current) return;
+    if (touchRef.current.type === "pan" && e.touches.length === 1) {
+      setOffset({
+        x: touchRef.current.startOffsetX + (e.touches[0].clientX - touchRef.current.startX),
+        y: touchRef.current.startOffsetY + (e.touches[0].clientY - touchRef.current.startY),
+      });
+    } else if (touchRef.current.type === "pinch" && e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.hypot(dx, dy);
+      setScale(Math.max(0.3, touchRef.current.startScale * (dist / touchRef.current.startDist)));
+    }
+  };
+  const onTouchEnd = () => { touchRef.current = null; };
+
+  // ── scroll zoom ───────────────────────────────────────────
+  const onWheel = (e) => {
+    e.preventDefault();
+    setScale((s) => Math.max(0.3, s - e.deltaY * 0.002));
+  };
+
+  const zoomIn = () => setScale((s) => Math.min(s + 0.15, 8));
+  const zoomOut = () => setScale((s) => Math.max(s - 0.15, 0.15));
+  const reset = () => {
+    const img = imgRef.current;
+    if (!img) return;
+    const fitScale = Math.max(CROP_SIZE / img.naturalWidth, CROP_SIZE / img.naturalHeight);
+    setScale(fitScale);
+    setOffset({ x: 0, y: 0 });
+  };
+
+  // ── confirm — extract circle from canvas ──────────────────
+  const handleConfirm = () => {
+    const canvas = canvasRef.current;
+    const img = imgRef.current;
+    if (!canvas || !img) return;
+
+    const OUTPUT = 400; // output image px
+    const out = document.createElement("canvas");
+    out.width = OUTPUT;
+    out.height = OUTPUT;
+    const ctx = out.getContext("2d");
+
+    const W = canvas.width; // = CANVAS
+    const cx = W / 2;
+    const r = CROP_SIZE / 2;
+
+    // clip to circle
+    ctx.beginPath();
+    ctx.arc(OUTPUT / 2, OUTPUT / 2, OUTPUT / 2, 0, Math.PI * 2);
+    ctx.clip();
+
+    // draw the image region inside the crop circle, scaled to OUTPUT
+    const ratio = OUTPUT / CROP_SIZE;
+    const drawW = img.naturalWidth * scale * ratio;
+    const drawH = img.naturalHeight * scale * ratio;
+    const srcCenterX = cx + offset.x;
+    const srcCenterY = cx + offset.y; // cy == cx since square
+    const destX = (srcCenterX - (cx - r)) * ratio - ((cx - r) * ratio);
+    const destY = (srcCenterY - (cx - r)) * ratio - ((cx - r) * ratio);
+    ctx.drawImage(
+      img,
+      OUTPUT / 2 + offset.x * ratio - drawW / 2,
+      OUTPUT / 2 + offset.y * ratio - drawH / 2,
+      drawW,
+      drawH,
+    );
+    // silence unused var warnings
+    void destX; void destY;
+
+    out.toBlob((blob) => {
+      if (!blob) return;
+      const file = new File([blob], "profile.jpg", { type: "image/jpeg" });
+      onConfirm(file, URL.createObjectURL(blob));
+    }, "image/jpeg", 0.92);
+  };
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
+        <motion.div
+          className="relative w-full max-w-sm rounded-2xl border border-white/10 bg-slate-900/90 shadow-2xl shadow-pink-950/30 overflow-hidden"
+          initial={{ scale: 0.94, opacity: 0, y: 24 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.94, opacity: 0, y: 24 }}
+          transition={{ type: "spring", stiffness: 320, damping: 28 }}
+        >
+          {/* header */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">
+            <div className="flex items-center gap-2">
+              <Crop className="h-4 w-4 text-pink-400" />
+              <span className="text-sm font-semibold text-white">Crop Photo</span>
+            </div>
+            <button
+              type="button"
+              onClick={onCancel}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-slate-400 hover:border-pink-500/40 hover:text-white transition-colors"
+              aria-label="Cancel crop"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* canvas */}
+          <div
+            ref={containerRef}
+            className="flex items-center justify-center bg-black/50 cursor-grab active:cursor-grabbing select-none"
+            style={{ touchAction: "none" }}
+          >
+            <canvas
+              ref={canvasRef}
+              width={CANVAS}
+              height={CANVAS}
+              onMouseDown={onMouseDown}
+              onMouseMove={onMouseMove}
+              onMouseUp={onMouseUp}
+              onMouseLeave={onMouseUp}
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEnd}
+              onWheel={onWheel}
+              style={{ display: "block", maxWidth: "100%" }}
+            />
+          </div>
+
+          {/* hint */}
+          <p className="text-center text-xs text-slate-500 pt-1 pb-0">Drag to pan · Scroll or pinch to zoom</p>
+
+          {/* zoom controls */}
+          <div className="flex items-center justify-center gap-3 px-5 py-2">
+            <button
+              type="button"
+              onClick={zoomOut}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 text-slate-300 hover:border-pink-500/40 hover:text-pink-300 transition-colors"
+              aria-label="Zoom out"
+            >
+              <ZoomOut className="h-4 w-4" />
+            </button>
+            <div className="flex-1 relative h-1.5 rounded-full bg-white/10">
+              <div
+                className="absolute left-0 top-0 h-full rounded-full bg-pink-500 transition-all"
+                style={{ width: `${Math.min(((scale - 0.15) / 7.85) * 100, 100)}%` }}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={zoomIn}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 text-slate-300 hover:border-pink-500/40 hover:text-pink-300 transition-colors"
+              aria-label="Zoom in"
+            >
+              <ZoomIn className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={reset}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 text-slate-400 hover:border-white/30 hover:text-white transition-colors"
+              aria-label="Reset position"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          {/* actions */}
+          <div className="flex gap-3 px-5 pb-5">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="flex-1 h-11 rounded-xl border border-white/10 bg-white/5 text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirm}
+              className="flex-1 h-11 rounded-xl bg-pink-600 text-sm font-semibold text-white hover:bg-pink-500 transition-colors shadow-lg shadow-pink-950/40"
+            >
+              Apply Crop
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
 export default function ProfilePage() {
   const { user, setUser, loading: authLoading, logout } = useAuth();
   const [passForm, setPassForm] = useState({
@@ -70,6 +380,11 @@ export default function ProfilePage() {
   const [selectedProfilePicture, setSelectedProfilePicture] = useState(null);
   const [profilePicturePreview, setProfilePicturePreview] = useState("");
   const [enlargedProfilePicture, setEnlargedProfilePicture] = useState("");
+
+  // Crop modal state
+  const [cropSrc, setCropSrc] = useState(""); // raw data-URL fed into cropper
+  const [showCropModal, setShowCropModal] = useState(false);
+  const fileInputRef = useRef(null);
   const maxNameLength = 30;
   const [profileStatus, setProfileStatus] = useState({
     type: null,
@@ -201,16 +516,31 @@ export default function ProfilePage() {
 
   const handleProfilePictureChange = (event) => {
     const file = event.target.files?.[0];
-    if (!file) {
-      return;
-    }
+    if (!file) return;
 
-    if (profilePicturePreview) {
-      URL.revokeObjectURL(profilePicturePreview);
-    }
+    // Read as data-URL so the cropper canvas can draw cross-origin-safely
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setCropSrc(e.target.result);
+      setShowCropModal(true);
+    };
+    reader.readAsDataURL(file);
 
-    setSelectedProfilePicture(file);
-    setProfilePicturePreview(URL.createObjectURL(file));
+    // Reset input so the same file can be re-selected after cancel
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleCropConfirm = (croppedFile, croppedPreviewUrl) => {
+    if (profilePicturePreview) URL.revokeObjectURL(profilePicturePreview);
+    setSelectedProfilePicture(croppedFile);
+    setProfilePicturePreview(croppedPreviewUrl);
+    setShowCropModal(false);
+    setCropSrc("");
+  };
+
+  const handleCropCancel = () => {
+    setShowCropModal(false);
+    setCropSrc("");
   };
 
   const handleRemoveProfilePicture = async () => {
@@ -411,6 +741,7 @@ export default function ProfilePage() {
                                 ? selectedProfilePicture.name
                                 : "Choose image"}
                               <input
+                                ref={fileInputRef}
                                 type="file"
                                 accept="image/*"
                                 className="sr-only"
@@ -704,6 +1035,15 @@ export default function ProfilePage() {
       </div>
 
       <MobileTabBar items={navItems} />
+
+      {/* Crop Modal */}
+      {showCropModal && cropSrc && (
+        <ImageCropModal
+          imageSrc={cropSrc}
+          onConfirm={handleCropConfirm}
+          onCancel={handleCropCancel}
+        />
+      )}
 
       <AnimatePresence>
         {enlargedProfilePicture && (

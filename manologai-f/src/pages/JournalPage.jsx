@@ -63,36 +63,43 @@ function getPreviousDates(count) {
 const quickDateColors = [
   {
     accent: "#f472b6",
+    lightAccent: "#be185d",
     bg: "rgba(244, 114, 182, 0.16)",
     border: "rgba(244, 114, 182, 0.34)",
   },
   {
     accent: "#fb923c",
+    lightAccent: "#c2410c",
     bg: "rgba(251, 146, 60, 0.16)",
     border: "rgba(251, 146, 60, 0.34)",
   },
   {
     accent: "#facc15",
+    lightAccent: "#a16207",
     bg: "rgba(250, 204, 21, 0.16)",
     border: "rgba(250, 204, 21, 0.34)",
   },
   {
     accent: "#4ade80",
+    lightAccent: "#047857",
     bg: "rgba(74, 222, 128, 0.16)",
     border: "rgba(74, 222, 128, 0.34)",
   },
   {
     accent: "#22d3ee",
+    lightAccent: "#0e7490",
     bg: "rgba(34, 211, 238, 0.16)",
     border: "rgba(34, 211, 238, 0.34)",
   },
   {
     accent: "#60a5fa",
+    lightAccent: "#1d4ed8",
     bg: "rgba(96, 165, 250, 0.16)",
     border: "rgba(96, 165, 250, 0.34)",
   },
   {
     accent: "#c084fc",
+    lightAccent: "#7e22ce",
     bg: "rgba(192, 132, 252, 0.16)",
     border: "rgba(192, 132, 252, 0.34)",
   },
@@ -362,8 +369,12 @@ export default function JournalPage() {
                             className="shrink-0 whitespace-nowrap text-sm font-medium"
                             style={{
                               color: isActive
-                                ? dateColor.accent
-                                : `${dateColor.accent}CC`,
+                                ? isLightMode
+                                  ? dateColor.lightAccent
+                                  : dateColor.accent
+                                : isLightMode
+                                  ? dateColor.lightAccent
+                                  : `${dateColor.accent}CC`,
                             }}
                           >
                             {parseInt(dateKey.split("-")[2])}
@@ -373,8 +384,12 @@ export default function JournalPage() {
                               className="h-1.5 w-1.5 rounded-full"
                               style={{
                                 backgroundColor: isActive
-                                  ? dateColor.accent
-                                  : `${dateColor.accent}66`,
+                                  ? isLightMode
+                                    ? dateColor.lightAccent
+                                    : dateColor.accent
+                                  : isLightMode
+                                    ? dateColor.lightAccent
+                                    : `${dateColor.accent}66`,
                               }}
                             />
                           )}
