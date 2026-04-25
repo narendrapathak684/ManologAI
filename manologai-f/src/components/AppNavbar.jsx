@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import GlobalSaveAlert from "./GlobalSaveAlert";
+import { useAuth } from "../context/AuthContext";
 import {
   BellRing,
   Bell,
@@ -14,10 +15,24 @@ import {
   UserRound,
 } from "lucide-react";
 
+const getProfilePictureUrl = (profilePicture) => {
+  if (!profilePicture) {
+    return "";
+  }
+
+  if (typeof profilePicture === "string") {
+    return profilePicture;
+  }
+
+  return profilePicture.url || "";
+};
+
 export default function AppNavbar() {
   const location = useLocation();
+  const { user } = useAuth();
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const notificationRef = useRef(null);
+  const profilePictureUrl = getProfilePictureUrl(user?.profilePicture);
   const navItems = [
     { label: "Today", to: "/dashboard", icon: LayoutDashboard },
     { label: "Journal", to: "/journal", icon: BookOpenText },
@@ -186,7 +201,21 @@ export default function AppNavbar() {
                   : ""
               }`}
             >
-              <UserRound className="h-5 w-5" />
+              <span
+                className={`flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-black/30 ${
+                  profilePictureUrl ? "h-8 w-8" : "h-6 w-6"
+                }`}
+              >
+                {profilePictureUrl ? (
+                  <img
+                    src={profilePictureUrl}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <UserRound className="h-4 w-4" />
+                )}
+              </span>
               {location.pathname === "/profile" && (
                 <span className="text-sm font-semibold text-white">
                   Profile

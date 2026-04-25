@@ -14,6 +14,9 @@ import {
   AlertCircle,
   CheckCircle,
   Smartphone,
+  Image,
+  Upload,
+  Trash2,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -37,6 +40,18 @@ const navItems = [
   { label: "Profile", icon: User, to: "/profile", active: true },
 ];
 
+const getProfilePictureUrl = (profilePicture) => {
+  if (!profilePicture) {
+    return "";
+  }
+
+  if (typeof profilePicture === "string") {
+    return profilePicture;
+  }
+
+  return profilePicture.url || "";
+};
+
 export default function ProfilePage() {
   const { user, setUser, loading: authLoading, logout } = useAuth();
   const [passForm, setPassForm] = useState({
@@ -52,12 +67,16 @@ export default function ProfilePage() {
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
   });
+  const [selectedProfilePicture, setSelectedProfilePicture] = useState(null);
+  const [profilePicturePreview, setProfilePicturePreview] = useState("");
   const maxNameLength = 30;
   const [profileStatus, setProfileStatus] = useState({
     type: null,
     message: "",
   });
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isRemovingProfilePicture, setIsRemovingProfilePicture] =
+    useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isAppInstalled, setIsAppInstalled] = useState(false);
   const [installStatus, setInstallStatus] = useState({
@@ -97,6 +116,14 @@ export default function ProfilePage() {
       window.removeEventListener("appinstalled", handleAppInstalled);
     };
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (profilePicturePreview) {
+        URL.revokeObjectURL(profilePicturePreview);
+      }
+    };
+  }, [profilePicturePreview]);
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
@@ -138,11 +165,28 @@ export default function ProfilePage() {
     }
     try {
       const res = await api.patch("/profile/me", profileForm);
+      let updatedUser = res.data.user;
+
+      if (selectedProfilePicture) {
+        const formData = new FormData();
+        formData.append("profilePicture", selectedProfilePicture);
+        const pictureRes = await api.patch(
+          "/profile/me/profile-picture",
+          formData,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          },
+        );
+        updatedUser = pictureRes.data.user;
+      }
+
       setProfileStatus({
         type: "success",
         message: "Profile updated successfully",
       });
-      setUser(res.data.user); // update the global user context
+      setUser(updatedUser); // update the global user context
+      setSelectedProfilePicture(null);
+      setProfilePicturePreview("");
       setIsEditingProfile(false);
     } catch (err) {
       setProfileStatus({
@@ -151,6 +195,43 @@ export default function ProfilePage() {
       });
     } finally {
       setIsSavingProfile(false);
+    }
+  };
+
+  const handleProfilePictureChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    if (profilePicturePreview) {
+      URL.revokeObjectURL(profilePicturePreview);
+    }
+
+    setSelectedProfilePicture(file);
+    setProfilePicturePreview(URL.createObjectURL(file));
+  };
+
+  const handleRemoveProfilePicture = async () => {
+    setIsRemovingProfilePicture(true);
+    setProfileStatus({ type: null, message: "" });
+
+    try {
+      const res = await api.delete("/profile/me/profile-picture");
+      setUser(res.data.user);
+      setSelectedProfilePicture(null);
+      setProfilePicturePreview("");
+      setProfileStatus({
+        type: "success",
+        message: "Profile picture removed successfully",
+      });
+    } catch (err) {
+      setProfileStatus({
+        type: "error",
+        message: getApiErrorMessage(err, "Failed to remove profile picture"),
+      });
+    } finally {
+      setIsRemovingProfilePicture(false);
     }
   };
 
@@ -252,6 +333,8 @@ export default function ProfilePage() {
                             firstName: user?.firstName || "",
                             lastName: user?.lastName || "",
                           });
+                          setSelectedProfilePicture(null);
+                          setProfilePicturePreview("");
                           setIsEditingProfile(true);
                           setProfileStatus({ type: null, message: "" });
                         }}
@@ -287,6 +370,40 @@ export default function ProfilePage() {
 
                     {isEditingProfile ? (
                       <form onSubmit={handleSaveProfile} className="space-y-4">
+                        <div className="flex items-center gap-4">
+                          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-black/30">
+                            {profilePicturePreview ||
+                            getProfilePictureUrl(user?.profilePicture) ? (
+                              <img
+                                src={
+                                  profilePicturePreview ||
+                                  getProfilePictureUrl(user?.profilePicture)
+                                }
+                                alt=""
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <User className="h-7 w-7 text-slate-500" />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1 space-y-2">
+                            <label className="text-xs font-mono uppercase tracking-widest text-slate-500">
+                              Profile Picture
+                            </label>
+                            <label className="flex h-11 cursor-pointer items-center justify-center gap-2 rounded-md border border-white/10 bg-black/20 px-3 text-sm font-medium text-slate-200 transition-colors hover:border-pink-500/50 hover:text-white">
+                              <Upload className="h-4 w-4 text-pink-400" />
+                              {selectedProfilePicture
+                                ? selectedProfilePicture.name
+                                : "Choose image"}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="sr-only"
+                                onChange={handleProfilePictureChange}
+                              />
+                            </label>
+                          </div>
+                        </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <label className="text-xs font-mono uppercase tracking-widest text-slate-500">
@@ -326,7 +443,11 @@ export default function ProfilePage() {
                           <Button
                             type="button"
                             variant="ghost"
-                            onClick={() => setIsEditingProfile(false)}
+                            onClick={() => {
+                              setSelectedProfilePicture(null);
+                              setProfilePicturePreview("");
+                              setIsEditingProfile(false);
+                            }}
                             className="text-slate-400 hover:text-white"
                             disabled={isSavingProfile}
                           >
@@ -343,6 +464,43 @@ export default function ProfilePage() {
                       </form>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="flex items-center gap-4 md:col-span-2">
+                          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-black/30">
+                            {getProfilePictureUrl(user?.profilePicture) ? (
+                              <img
+                                src={getProfilePictureUrl(user?.profilePicture)}
+                                alt=""
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <User className="h-7 w-7 text-slate-500" />
+                            )}
+                          </div>
+                          <div className="min-w-0 space-y-1">
+                            <p className="text-xs font-mono uppercase tracking-widest text-slate-500">
+                              Profile Picture
+                            </p>
+                            <p className="flex items-center gap-2 break-all text-sm text-slate-300">
+                              <Image className="h-4 w-4 shrink-0 text-pink-400" />
+                              {getProfilePictureUrl(user?.profilePicture) ||
+                                "No picture set"}
+                            </p>
+                            {getProfilePictureUrl(user?.profilePicture) && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={handleRemoveProfilePicture}
+                                disabled={isRemovingProfilePicture}
+                                className="mt-2 h-9 px-3 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                {isRemovingProfilePicture
+                                  ? "Removing..."
+                                  : "Remove"}
+                              </Button>
+                            )}
+                          </div>
+                        </div>
                         <div className="space-y-1">
                           <p className="text-xs font-mono uppercase tracking-widest text-slate-500">
                             First Name

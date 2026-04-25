@@ -15,7 +15,7 @@ const auth = async (req, res, next) => {
 
     const decoded = jwt.verify(token, JWT_SECRET);
     const user = await User.findById(decoded.userId).select(
-      "_id email firstName lastName profile"
+      "_id email firstName lastName profile profilePicture"
     );
 
     if (!user) {

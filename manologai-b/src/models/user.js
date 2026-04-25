@@ -26,6 +26,18 @@ const userSchema = new mongoose.Schema({
     trim: true,
     maxlength: 30,
   },
+  profilePicture: {
+    url: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    publicId: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+  },
   country: {
     type: String,
     trim: true,
