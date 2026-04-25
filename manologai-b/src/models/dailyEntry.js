@@ -24,6 +24,10 @@ const dailyEntrySchema = new mongoose.Schema({
     type: Object,
     default: {},
   },
+  tags: {
+    type: [String],
+    default: [],
+  },
   lockedUntil: {
     type: Date,
     default: () => new Date(Date.now() + 24 * 60 * 60 * 1000), // Next day

@@ -33,7 +33,7 @@ router.post("/", auth, async (req, res) => {
     const userId = req.user?._id;
     if (!userId) return res.status(401).json({ error: "Please login first" });
 
-    const { text, rating, metrics, date: rawDate } = req.body || {};
+    const { text, rating, metrics, tags, date: rawDate } = req.body || {};
     const entryDate =
       parseDateOnlyToLocalMidnight(rawDate) || getTodayLocalMidnight();
     const today = getTodayLocalMidnight();
@@ -56,6 +56,7 @@ router.post("/", auth, async (req, res) => {
       ...(text !== undefined ? { text } : {}),
       ...(rating !== undefined ? { rating } : {}),
       ...(metrics !== undefined ? { metrics } : {}),
+      ...(tags !== undefined ? { tags } : {}),
     };
 
     // Upsert based on (user, date).

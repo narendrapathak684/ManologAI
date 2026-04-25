@@ -10,6 +10,9 @@ import {
   LayoutDashboard,
   Save,
   User,
+  Tags,
+  Plus,
+  X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -130,6 +133,8 @@ export default function JournalPage() {
   const { showSaveAlert, clearSaveAlert } = useSaveAlert();
   const { theme } = useTheme();
   const isLightMode = theme === "light";
+  const [tags, setTags] = useState([]);
+  const [tagInput, setTagInput] = useState("");
   const quickDates = useMemo(() => getPreviousDates(7), []);
   const selectedDateColor = useMemo(
     () => getDateColor(selectedDate, quickDates),
@@ -164,12 +169,14 @@ export default function JournalPage() {
 
         if (!ignore) {
           setDraft(data.entry?.text || "");
+          setTags(data.entry?.tags || []);
           setSavedAt("");
         }
       } catch (err) {
         if (err?.response?.status === 404) {
           if (!ignore) {
             setDraft("");
+            setTags([]);
             setSavedAt("");
           }
           return;
@@ -182,6 +189,7 @@ export default function JournalPage() {
 
         if (!ignore) {
           setDraft("");
+          setTags([]);
           setError(message);
           if (String(message).toLowerCase().includes("log in again")) {
             navigate("/login");
@@ -215,9 +223,11 @@ export default function JournalPage() {
       const { data } = await api.post("/diary", {
         date: selectedDate,
         text: draft,
+        tags: tags,
       });
 
       setDraft(data.entry?.text || "");
+      setTags(data.entry?.tags || []);
       setSavedAt(
         new Date().toLocaleTimeString("en-US", {
           hour: "numeric",
@@ -240,6 +250,21 @@ export default function JournalPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleAddTag = (e) => {
+    e.preventDefault();
+    if (!tagInput.trim()) return;
+    if (tags.includes(tagInput.trim().toLowerCase())) {
+      setTagInput("");
+      return;
+    }
+    setTags([...tags, tagInput.trim().toLowerCase()]);
+    setTagInput("");
+  };
+
+  const handleRemoveTag = (tagToRemove) => {
+    setTags(tags.filter((t) => t !== tagToRemove));
   };
 
   return (
@@ -463,14 +488,60 @@ export default function JournalPage() {
                         : `0 18px 40px -28px ${selectedDateColor.accent}`,
                     }}
                   >
-                    <textarea
-                      value={draft}
-                      onChange={(event) => setDraft(event.target.value)}
-                      placeholder="Write freely about what happened, what you felt, what you learned, and what you want to carry forward."
-                      disabled={loading}
-                      className="min-h-[520px] w-full resize-none bg-transparent text-base leading-8 text-slate-200 outline-none placeholder:text-slate-500"
-                    />
-                  </div>
+                      <textarea
+                        value={draft}
+                        onChange={(event) => setDraft(event.target.value)}
+                        placeholder="Write freely about what happened, what you felt, what you learned, and what you want to carry forward."
+                        disabled={loading}
+                        className="min-h-[460px] w-full resize-none bg-transparent text-base leading-8 text-slate-200 outline-none placeholder:text-slate-500"
+                      />
+
+                      <div className="mt-4 border-t border-white/5 pt-4">
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {tags.map((tag) => (
+                            <span
+                              key={tag}
+                              className="group flex items-center gap-1.5 rounded-full bg-slate-800/80 px-3 py-1 text-xs font-medium text-slate-300 border border-white/5"
+                            >
+                              #{tag}
+                              <button
+                                onClick={() => handleRemoveTag(tag)}
+                                className="text-slate-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </span>
+                          ))}
+                          {tags.length === 0 && (
+                            <p className="text-[10px] text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                              <Tags className="h-3 w-3" /> No tags added
+                            </p>
+                          )}
+                        </div>
+                        <form
+                          onSubmit={handleAddTag}
+                          className="flex items-center gap-2 max-w-xs"
+                        >
+                          <div className="relative flex-1">
+                            <Plus className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
+                            <input
+                              type="text"
+                              value={tagInput}
+                              onChange={(e) => setTagInput(e.target.value)}
+                              placeholder="Add tag..."
+                              className="w-full rounded-lg bg-black/40 border border-white/10 px-8 py-1.5 text-xs text-white focus:outline-none focus:border-pink-500/50 transition-colors"
+                            />
+                          </div>
+                          <Button
+                            type="submit"
+                            variant="ghost"
+                            className="h-8 w-8 p-0 rounded-lg hover:bg-pink-500/10 text-slate-400 hover:text-pink-400"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </form>
+                      </div>
+                    </div>
                   {loading ? (
                     <p className="mt-3 text-sm text-slate-500">
                       Loading entry for {selectedDate}...
