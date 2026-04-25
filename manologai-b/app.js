@@ -12,6 +12,10 @@ const timetableRoutes = require("./src/routes/timetable");
 const lifeRatingsRoutes = require("./src/routes/lifeRatings");
 const emotionsRoutes = require("./src/routes/emotions");
 const habitsRoutes = require("./src/routes/habits");
+const notificationRoutes = require("./src/routes/notifications");
+const { initPushScheduler } = require("./src/services/pushNotificationService");
+
+
 
 const app = express();
 const PORT = process.env.PORT || 4545;
@@ -74,6 +78,8 @@ app.use("/timetable", timetableRoutes);
 app.use("/life-ratings", lifeRatingsRoutes);
 app.use("/emotions", emotionsRoutes);
 app.use("/habits", habitsRoutes);
+app.use("/notifications", notificationRoutes);
+
 
 // Database connection + server start
 connectDB()
@@ -81,6 +87,7 @@ connectDB()
     console.log("database connection established");
     app.listen(PORT, () => {
       console.log(`server is listening on port ${PORT}`);
+      initPushScheduler();
     });
   })
   .catch((err) => {

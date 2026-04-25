@@ -13,8 +13,22 @@ import { SaveAlertProvider } from "./context/SaveAlertContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./components/AppLayout";
+import { useEffect } from "react";
+import { checkAndTriggerReminders } from "./lib/NotificationService";
 
 function App() {
+  useEffect(() => {
+    // Initial check on load
+    checkAndTriggerReminders();
+
+    // Check for due reminders every 60 seconds
+    const interval = setInterval(() => {
+      checkAndTriggerReminders();
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <ThemeProvider>
       <AuthProvider>

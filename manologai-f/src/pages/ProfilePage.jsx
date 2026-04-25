@@ -23,6 +23,10 @@ import {
   Crop,
   ShieldOff,
   TriangleAlert,
+  Bell,
+  CalendarClock,
+  Clock,
+  PenLine,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -36,6 +40,10 @@ import {
 } from "@/components/ui/card";
 import { api, getApiErrorMessage } from "../lib/api";
 import { COUNTRIES } from "../lib/constants";
+import { 
+  showNotification, 
+  requestNotificationPermission 
+} from "../lib/NotificationService";
 import MobileTabBar from "../components/MobileTabBar";
 
 const navItems = [
@@ -564,6 +572,35 @@ export default function ProfilePage() {
     message: "",
   });
 
+  // Reminders State
+  const [reminders, setReminders] = useState({
+    habits: {
+      enabled: user?.reminderSettings?.habits?.enabled || false,
+      time: user?.reminderSettings?.habits?.time || "09:00",
+      title: "Habit Check-in",
+      body: "Time to log your daily habits!",
+    },
+    journal: {
+      enabled: user?.reminderSettings?.journal?.enabled || false,
+      time: user?.reminderSettings?.journal?.time || "21:00",
+      title: "Journaling Session",
+      body: "Write down your thoughts for today.",
+    },
+    tracking: {
+      enabled: user?.reminderSettings?.tracking?.enabled || false,
+      time: user?.reminderSettings?.tracking?.time || "13:00",
+      title: "Expense Tracking",
+      body: "Did you track your expenses today?",
+    },
+    dailyLog: {
+      enabled: user?.reminderSettings?.dailyLog?.enabled ?? true,
+      time: user?.reminderSettings?.dailyLog?.time || "20:00",
+      title: "Daily Log",
+      body: "Don't forget to log today! Consistency is key. 🚀",
+    },
+  });
+
+
   useEffect(() => {
     const handleBeforeInstallPrompt = (event) => {
       event.preventDefault();
@@ -588,6 +625,12 @@ export default function ProfilePage() {
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     window.addEventListener("appinstalled", handleAppInstalled);
 
+    // Load reminders from localStorage
+    const savedReminders = localStorage.getItem("manolog_reminders");
+    if (savedReminders) {
+      setReminders(JSON.parse(savedReminders));
+    }
+
     return () => {
       window.removeEventListener(
         "beforeinstallprompt",
@@ -604,6 +647,74 @@ export default function ProfilePage() {
       }
     };
   }, [profilePicturePreview]);
+
+  const handleToggleReminder = async (id) => {
+    const updated = {
+      ...reminders,
+      [id]: { ...reminders[id], enabled: !reminders[id].enabled },
+    };
+    setReminders(updated);
+    localStorage.setItem("manolog_reminders", JSON.stringify(updated));
+
+    // Sync with server
+    try {
+      await api.patch("/notifications/settings", { settings: updated });
+    } catch (err) {
+      console.error("Failed to sync settings:", err);
+    }
+
+    if (updated[id].enabled && Notification.permission !== "granted") {
+      requestNotificationPermission().then((granted) => {
+        if (!granted) {
+          // Revert if permission denied
+          const reverted = {
+            ...updated,
+            [id]: { ...updated[id], enabled: false },
+          };
+          setReminders(reverted);
+          localStorage.setItem("manolog_reminders", JSON.stringify(reverted));
+        }
+      });
+    }
+  };
+
+  const handleTimeChange = async (id, time) => {
+    const updated = {
+      ...reminders,
+      [id]: { ...reminders[id], time },
+    };
+    setReminders(updated);
+    localStorage.setItem("manolog_reminders", JSON.stringify(updated));
+
+    // Sync with server
+    try {
+      await api.patch("/notifications/settings", { settings: updated });
+    } catch (err) {
+      console.error("Failed to sync settings:", err);
+    }
+  };
+
+  const handleTestNotification = () => {
+    showNotification(
+      "ManologAI",
+      "This is a test notification. Reminders are working!"
+    );
+  };
+
+  const handleTestServerPush = async () => {
+    try {
+      await api.post("/notifications/test");
+    } catch (err) {
+      console.error("Server push test failed:", err);
+      // If it failed because of no subscription, try to subscribe first
+      if (err.response?.status === 400) {
+        const success = await subscribeUserToPush();
+        if (success) {
+          await api.post("/notifications/test");
+        }
+      }
+    }
+  };
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
@@ -1098,6 +1209,131 @@ export default function ProfilePage() {
                             {user?.email || "—"}
                           </p>
                         </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* Reminders Card */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.05 }}
+              >
+                <Card className="border-white/10 bg-slate-900/40 backdrop-blur-3xl overflow-hidden relative group">
+                  <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
+                    <Bell className="w-32 h-32" />
+                  </div>
+                  <CardHeader className="relative z-10">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-white flex items-center gap-2">
+                          <Bell className="h-5 w-5 text-sky-400" /> Reminders
+                        </CardTitle>
+                        <CardDescription>
+                          Schedule daily alerts to stay on track.
+                        </CardDescription>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          onClick={handleTestNotification}
+                          className="text-slate-400 hover:text-sky-400 hover:bg-sky-500/10 text-[10px] h-8"
+                        >
+                          Local Test
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          onClick={handleTestServerPush}
+                          className="text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 text-[10px] h-8"
+                        >
+                          Server Push Test
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-6 relative z-10">
+                    <div className="grid grid-cols-1 gap-6">
+                      {Object.keys(reminders).map((key) => {
+                        const reminder = reminders[key];
+                        return (
+                          <div
+                            key={key}
+                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-black/20 border border-white/5 hover:border-white/10 transition-colors"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div
+                                className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                                  reminder.enabled
+                                    ? "bg-sky-500/20 text-sky-400"
+                                    : "bg-white/5 text-slate-500"
+                                }`}
+                              >
+                                {key === "habits" && (
+                                  <CheckCircle2 className="h-5 w-5" />
+                                )}
+                                {key === "journal" && (
+                                  <BookOpenText className="h-5 w-5" />
+                                )}
+                                {key === "tracking" && (
+                                  <ChartColumnBig className="h-5 w-5" />
+                                )}
+                                {key === "dailyLog" && (
+                                  <PenLine className="h-5 w-5" />
+                                )}
+                              </div>
+                              <div>
+                                <h3 className="font-medium text-white capitalize">
+                                  {key} Reminders
+                                </h3>
+                                <p className="text-xs text-slate-400">
+                                  {reminder.body}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-3 ml-14 sm:ml-0">
+                              {reminder.enabled && (
+                                <div className="relative group/time">
+                                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                    <Clock className="h-3 w-3 text-slate-500 group-focus-within/time:text-sky-400 transition-colors" />
+                                  </div>
+                                  <input
+                                    type="time"
+                                    value={reminder.time}
+                                    onChange={(e) =>
+                                      handleTimeChange(key, e.target.value)
+                                    }
+                                    className="h-9 w-28 pl-8 pr-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white focus:outline-none focus:border-sky-500/50 transition-colors cursor-pointer"
+                                  />
+                                </div>
+                              )}
+                              <button
+                                onClick={() => handleToggleReminder(key)}
+                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                                  reminder.enabled ? "bg-sky-600" : "bg-slate-700"
+                                }`}
+                              >
+                                <span
+                                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                    reminder.enabled
+                                      ? "translate-x-5"
+                                      : "translate-x-0"
+                                  }`}
+                                />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {Notification.permission === "denied" && (
+                      <div className="p-3 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 shrink-0" />
+                        Notifications are blocked by your browser. Please enable
+                        them in your settings to receive reminders.
                       </div>
                     )}
                   </CardContent>

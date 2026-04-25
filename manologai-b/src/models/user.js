@@ -69,6 +69,34 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  pushSubscriptions: [
+    {
+      endpoint: String,
+      keys: {
+        p256dh: String,
+        auth: String,
+      },
+    },
+  ],
+  reminderSettings: {
+    habits: {
+      enabled: { type: Boolean, default: false },
+      time: { type: String, default: "09:00" },
+    },
+    journal: {
+      enabled: { type: Boolean, default: false },
+      time: { type: String, default: "21:00" },
+    },
+    tracking: {
+      enabled: { type: Boolean, default: false },
+      time: { type: String, default: "13:00" },
+    },
+    dailyLog: {
+      enabled: { type: Boolean, default: true }, // Default to true as it's a core feature
+      time: { type: String, default: "20:00" },
+    },
+    timezone: { type: String, default: "UTC" },
+  },
 });
 
 module.exports = mongoose.model("User", userSchema);
