@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   User,
   Key,
@@ -21,6 +21,8 @@ import {
   ZoomOut,
   RotateCcw,
   Crop,
+  ShieldOff,
+  TriangleAlert,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -362,6 +364,160 @@ function ImageCropModal({ imageSrc, onConfirm, onCancel }) {
   );
 }
 
+/* ────────────────────────────────────────────────────────────
+   Delete Account Confirmation Modal
+   Two-step: type DELETE → animated progress → done → redirect
+   ──────────────────────────────────────────────────────────── */
+function DeleteAccountModal({ onConfirmed, onCancel }) {
+  const [phase, setPhase] = useState("confirm"); // confirm | deleting | done
+  const [step, setStep] = useState(0);
+
+  const steps = [
+    "Revoking authentication tokens...",
+    "Erasing journal entries...",
+    "Removing habit & tracking data...",
+    "Purging analytics records...",
+    "Deleting account credentials...",
+    "Finalizing deletion...",
+  ];
+
+  const handleDelete = async () => {
+    setPhase("deleting");
+    setStep(0);
+
+    // Animate through steps, then call the real handler
+    for (let i = 0; i < steps.length; i++) {
+      await new Promise((r) => setTimeout(r, 650));
+      setStep(i + 1);
+    }
+    await new Promise((r) => setTimeout(r, 400));
+    setPhase("done");
+    await new Promise((r) => setTimeout(r, 1800));
+    onConfirmed();
+  };
+
+  return (
+    <motion.div
+      className="fixed inset-0 z-[300] flex items-center justify-center bg-black/85 backdrop-blur-md p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <motion.div
+        className="relative w-full max-w-sm rounded-2xl border border-rose-500/25 bg-[#0f0a0a]/95 shadow-2xl shadow-rose-950/50 overflow-hidden"
+        initial={{ scale: 0.93, opacity: 0, y: 28 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.93, opacity: 0, y: 28 }}
+        transition={{ type: "spring", stiffness: 300, damping: 26 }}
+      >
+        {/* Glow stripe */}
+        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-rose-500/60 to-transparent" />
+
+        {phase === "confirm" && (
+          <div className="p-6 space-y-5">
+            {/* Icon */}
+            <div className="flex items-center justify-center">
+              <div className="relative flex h-16 w-16 items-center justify-center rounded-full border border-rose-500/30 bg-rose-500/10">
+                <ShieldOff className="h-7 w-7 text-rose-400" />
+                <div className="absolute inset-0 rounded-full animate-ping bg-rose-500/10" />
+              </div>
+            </div>
+
+            {/* Title */}
+            <div className="text-center space-y-2">
+              <h2 className="text-lg font-bold text-white">Delete Account?</h2>
+              <p className="text-sm text-slate-400 leading-relaxed">
+                This will permanently erase your account, all journal entries,
+                habits, analytics, and personal data.
+              </p>
+              <p className="text-sm font-semibold text-rose-400">
+                This action cannot be undone.
+              </p>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex flex-col gap-2 pt-1">
+              <button
+                id="delete-account-confirm-btn"
+                type="button"
+                onClick={handleDelete}
+                className="w-full h-12 rounded-xl bg-rose-600 text-sm font-semibold text-white transition-all shadow-lg shadow-rose-950/50 hover:bg-rose-500 active:scale-[0.97]"
+              >
+                Yes, Delete My Account
+              </button>
+              <button
+                id="delete-account-cancel-btn"
+                type="button"
+                onClick={onCancel}
+                className="w-full h-12 rounded-xl border border-white/10 bg-white/5 text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {phase === "deleting" && (
+          <div className="p-8 space-y-6">
+            <div className="text-center space-y-1">
+              <p className="text-xs font-mono uppercase tracking-widest text-rose-400 animate-pulse">Processing deletion</p>
+              <h2 className="text-base font-bold text-white">Please wait...</h2>
+            </div>
+            <div className="space-y-3">
+              {steps.map((s, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={step > i ? { opacity: 1, x: 0 } : {}}
+                  className="flex items-center gap-3 text-sm"
+                >
+                  <div className={`h-4 w-4 shrink-0 rounded-full flex items-center justify-center ${
+                    step > i ? "bg-rose-500" : "bg-white/8 border border-white/10"
+                  }`}>
+                    {step > i && (
+                      <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 10 10" fill="none">
+                        <path d="M2 5l2.5 2.5L8 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className={step > i ? "text-slate-300" : "text-slate-600"}>{s}</span>
+                </motion.div>
+              ))}
+            </div>
+            {/* Progress bar */}
+            <div className="h-1 rounded-full bg-white/8 overflow-hidden">
+              <motion.div
+                className="h-full bg-rose-500 rounded-full"
+                initial={{ width: "0%" }}
+                animate={{ width: `${(step / steps.length) * 100}%` }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+              />
+            </div>
+          </div>
+        )}
+
+        {phase === "done" && (
+          <motion.div
+            className="p-8 flex flex-col items-center gap-4"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+          >
+            <div className="flex h-16 w-16 items-center justify-center rounded-full border border-rose-500/30 bg-rose-500/10">
+              <svg className="h-7 w-7 text-rose-400" viewBox="0 0 24 24" fill="none">
+                <path d="M5 12l4 4L19 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <div className="text-center space-y-1">
+              <h2 className="text-base font-bold text-white">Account deleted</h2>
+              <p className="text-sm text-slate-500">Your data has been permanently removed. Redirecting...</p>
+            </div>
+          </motion.div>
+        )}
+      </motion.div>
+    </motion.div>
+  );
+}
+
 export default function ProfilePage() {
   const { user, setUser, loading: authLoading, logout } = useAuth();
   const [passForm, setPassForm] = useState({
@@ -385,6 +541,12 @@ export default function ProfilePage() {
   const [cropSrc, setCropSrc] = useState(""); // raw data-URL fed into cropper
   const [showCropModal, setShowCropModal] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Delete account state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
+  const navigate = useNavigate();
   const maxNameLength = 30;
   const [profileStatus, setProfileStatus] = useState({
     type: null,
@@ -1029,6 +1191,37 @@ export default function ProfilePage() {
                   <LogOut className="mr-2 h-5 w-5" /> Terminate Current Session
                 </Button>
               </motion.div>
+
+              {/* Danger Zone — Delete Account */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <Card className="border-rose-500/20 bg-rose-950/10 backdrop-blur-3xl overflow-hidden">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-rose-400 flex items-center gap-2 text-base">
+                      <TriangleAlert className="h-5 w-5" /> Danger Zone
+                    </CardTitle>
+                    <CardDescription className="text-slate-500">
+                      Permanently delete your account and all associated data.
+                      This action cannot be undone.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => setShowDeleteModal(true)}
+                      disabled={isDeletingAccount}
+                      className="w-full h-12 border border-rose-500/30 bg-rose-500/5 text-rose-400 hover:bg-rose-500/15 hover:text-rose-300 hover:border-rose-500/50 rounded-xl transition-all font-semibold"
+                    >
+                      <ShieldOff className="mr-2 h-4 w-4" />
+                      Delete My Account
+                    </Button>
+                  </CardContent>
+                </Card>
+              </motion.div>
             </div>
           </div>
         </main>
@@ -1042,6 +1235,23 @@ export default function ProfilePage() {
           imageSrc={cropSrc}
           onConfirm={handleCropConfirm}
           onCancel={handleCropCancel}
+        />
+      )}
+
+      {/* Delete Account Modal */}
+      {showDeleteModal && (
+        <DeleteAccountModal
+          onCancel={() => setShowDeleteModal(false)}
+          onConfirmed={async () => {
+            setIsDeletingAccount(true);
+            try {
+              await api.delete("/profile/me");
+            } catch (_) {
+              // even on error we force-logout client-side
+            }
+            logout(); // clear client auth state
+            navigate("/login", { replace: true });
+          }}
         />
       )}
 

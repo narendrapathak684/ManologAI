@@ -15,11 +15,16 @@ const auth = async (req, res, next) => {
 
     const decoded = jwt.verify(token, JWT_SECRET);
     const user = await User.findById(decoded.userId).select(
-      "_id email firstName lastName profile profilePicture"
+      "_id email firstName lastName profile profilePicture isDeleted"
     );
 
     if (!user) {
       return res.status(401).json({ error: "Invalid authentication token" });
+    }
+
+    // Reject soft-deleted accounts from all protected endpoints.
+    if (user.isDeleted) {
+      return res.status(401).json({ error: "This account no longer exists." });
     }
 
     req.user = user;

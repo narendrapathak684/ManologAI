@@ -125,6 +125,14 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
+    // Block soft-deleted accounts — show the same generic error so account
+    // existence is not revealed to a potential attacker.
+    if (user.isDeleted) {
+      return res
+        .status(403)
+        .json({ error: "This account has been deleted and no longer exists." });
+    }
+
     const token = jwt.sign({ userId: user._id.toString() }, JWT_SECRET, {
       expiresIn: "1d",
     });

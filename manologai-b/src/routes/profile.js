@@ -207,6 +207,29 @@ router.delete("/me/profile-picture", auth, async (req, res) => {
   }
 });
 
+// Delete account — marks account as deleted (soft-delete) and clears session.
+// Data is intentionally preserved in DB; isDeleted flag blocks future logins.
+router.delete("/me", auth, async (req, res) => {
+  try {
+    const userId = req.user?._id;
+    if (!userId) {
+      return res.status(401).json({ error: "Please login first" });
+    }
+
+    // Soft-delete: stamp the flag — no data is physically removed.
+    await User.findByIdAndUpdate(userId, { $set: { isDeleted: true } });
+
+    // Invalidate the session cookie so the client is logged out immediately.
+    res.clearCookie("token", { path: "/" });
+    return res
+      .status(200)
+      .json({ message: "Account deleted successfully" });
+  } catch (error) {
+    console.error("Delete account error:", error);
+    return res.status(500).json({ error: "Failed to delete account" });
+  }
+});
+
 // Reset password for the currently logged-in user (cookie/JWT protected).
 // Body: { currentPassword, newPassword }
 router.post("/reset-password", auth, async (req, res) => {
