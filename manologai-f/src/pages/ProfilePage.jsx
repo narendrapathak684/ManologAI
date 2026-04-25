@@ -34,6 +34,10 @@ import {
   Laptop,
   Globe,
   Monitor,
+  Download,
+  Info,
+  Share,
+  PlusSquare,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -616,6 +620,7 @@ export default function ProfilePage() {
   const [isSavingGoals, setIsSavingGoals] = useState(false);
   const [sessions, setSessions] = useState([]);
   const [isLoadingSessions, setIsLoadingSessions] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
 
 
   useEffect(() => {
@@ -638,6 +643,14 @@ export default function ProfilePage() {
       window.matchMedia("(display-mode: standalone)").matches ||
       window.navigator.standalone === true;
     setIsAppInstalled(isStandalone);
+
+    const checkIsIOS = () => {
+      return (
+        /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+      );
+    };
+    setIsIOS(checkIsIOS());
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     window.addEventListener("appinstalled", handleAppInstalled);
@@ -1584,41 +1597,111 @@ export default function ProfilePage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
               >
-                <Card className="mb-8 border-white/10 bg-slate-900/40 backdrop-blur-3xl">
-                  <CardHeader>
-                    <CardTitle className="text-white flex items-center gap-2">
-                      <Smartphone className="h-5 w-5 text-sky-400" />
-                      Add to Home Screen
-                    </CardTitle>
-                    <CardDescription>
-                      Install ManologAI for faster access like a native app.
-                    </CardDescription>
+                <Card className="mb-8 border-white/10 bg-slate-900/40 backdrop-blur-3xl overflow-hidden relative">
+                  {/* Decorative background for the install card */}
+                  <div className="absolute -top-24 -right-24 w-48 h-48 bg-pink-500/10 blur-[60px] rounded-full pointer-events-none" />
+                  
+                  <CardHeader className="relative z-10">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-white flex items-center gap-2">
+                          <Smartphone className={`h-5 w-5 ${isAppInstalled ? 'text-emerald-400' : 'text-pink-400'}`} />
+                          Install ManologAI
+                        </CardTitle>
+                        <CardDescription>
+                          Enjoy the full premium experience on your mobile device.
+                        </CardDescription>
+                      </div>
+                      {isAppInstalled && (
+                         <span className="bg-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border border-emerald-500/30">
+                            App Installed
+                         </span>
+                      )}
+                    </div>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-6 relative z-10">
                     {installStatus.message && (
                       <div
                         className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-sm ${
                           installStatus.type === "success"
-                            ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
-                            : installStatus.type === "error"
-                              ? "border-rose-500/20 bg-rose-500/10 text-rose-300"
-                              : "border-sky-500/20 bg-sky-500/10 text-sky-200"
+                            ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                            : "bg-amber-500/10 border-amber-500/20 text-amber-400"
                         }`}
                       >
+                        {installStatus.type === "success" ? (
+                          <CheckCircle className="h-4 w-4" />
+                        ) : (
+                          <AlertCircle className="h-4 w-4" />
+                        )}
                         {installStatus.message}
                       </div>
                     )}
-                    <Button
-                      type="button"
-                      onClick={handleInstallApp}
-                      className="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold h-12 rounded-xl transition-all shadow-lg shadow-sky-950/20 disabled:opacity-60"
-                      disabled={isAppInstalled}
-                    >
-                      {isAppInstalled ? "App Installed" : "Add ManologAI"}
-                    </Button>
-                    <p className="text-xs text-slate-400">
-                      iOS: Use Safari, tap Share, then "Add to Home Screen".
-                    </p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                         <div className="flex items-start gap-3">
+                            <div className="mt-1 p-2 rounded-lg bg-white/5 text-pink-400">
+                               <Sparkles className="h-4 w-4" />
+                            </div>
+                            <div>
+                               <p className="text-sm font-semibold text-white">Full Screen Mode</p>
+                               <p className="text-xs text-slate-500">Immersive edge-to-edge experience without browser bars.</p>
+                            </div>
+                         </div>
+                         <div className="flex items-start gap-3">
+                            <div className="mt-1 p-2 rounded-lg bg-white/5 text-cyan-400">
+                               <CheckCircle className="h-4 w-4" />
+                            </div>
+                            <div>
+                               <p className="text-sm font-semibold text-white">Offline Access</p>
+                               <p className="text-xs text-slate-500">Log entries and check data even without an internet connection.</p>
+                            </div>
+                         </div>
+                      </div>
+
+                      <div className="flex flex-col justify-center">
+                        {!isAppInstalled ? (
+                          <>
+                            {deferredPrompt ? (
+                              <Button
+                                onClick={handleInstallApp}
+                                className="w-full bg-pink-600 hover:bg-pink-500 text-white font-bold py-6 rounded-2xl shadow-xl shadow-pink-900/40 group transition-all"
+                              >
+                                <Download className="h-5 w-5 mr-2 group-hover:bounce" />
+                                Install Now
+                              </Button>
+                            ) : isIOS ? (
+                              <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-4">
+                                <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500">iOS Installation Guide</p>
+                                <div className="space-y-3">
+                                  <div className="flex items-center gap-3 text-xs text-slate-300">
+                                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-white font-bold">1</span>
+                                    <span>Tap the <strong className="text-white flex inline-flex items-center gap-1 mx-1"><Share className="h-3 w-3" /> Share</strong> button below.</span>
+                                  </div>
+                                  <div className="flex items-center gap-3 text-xs text-slate-300">
+                                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-white font-bold">2</span>
+                                    <span>Select <strong className="text-white flex inline-flex items-center gap-1 mx-1"><PlusSquare className="h-3 w-3" /> Add to Home Screen</strong>.</span>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="p-4 rounded-2xl bg-blue-500/5 border border-blue-500/10 text-blue-400">
+                                <div className="flex items-center gap-2 mb-2 font-semibold text-sm">
+                                  <Info className="h-4 w-4" /> PWA Support
+                                </div>
+                                <p className="text-xs leading-relaxed opacity-80">
+                                  Use <strong>Chrome</strong> or <strong>Safari</strong> on mobile to install this app for the best experience.
+                                </p>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                           <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 text-center">
+                              <p className="text-emerald-400 text-xs font-medium">You are already running the installed version.</p>
+                           </div>
+                        )}
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
                 <Card className="border-white/10 bg-slate-900/40 backdrop-blur-3xl">

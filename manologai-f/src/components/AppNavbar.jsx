@@ -16,6 +16,7 @@ import {
   Moon,
   Sun,
   UserRound,
+  CloudOff,
 } from "lucide-react";
 
 const getProfilePictureUrl = (profilePicture) => {
@@ -35,7 +36,20 @@ export default function AppNavbar() {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const notificationRef = useRef(null);
+  
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
   const profilePictureUrl = getProfilePictureUrl(user?.profilePicture);
   const navItems = [
     { label: "Today", to: "/dashboard", icon: LayoutDashboard },
@@ -115,6 +129,14 @@ export default function AppNavbar() {
             })}
           </nav>
           <div className="flex items-center gap-3">
+            {isOffline && (
+              <div className="flex items-center gap-2 rounded-2xl border border-rose-500/30 bg-rose-500/15 px-3 py-1.5 text-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.2)] animate-pulse">
+                <CloudOff className="h-4 w-4" />
+                <span className="hidden text-[11px] font-bold uppercase tracking-wider sm:inline-block">
+                  Offline Mode
+                </span>
+              </div>
+            )}
             <button
               type="button"
               onClick={toggleTheme}
