@@ -13,6 +13,7 @@ const lifeRatingsRoutes = require("./src/routes/lifeRatings");
 const emotionsRoutes = require("./src/routes/emotions");
 const habitsRoutes = require("./src/routes/habits");
 const notificationRoutes = require("./src/routes/notifications");
+const goalsRoutes = require("./src/routes/goals");
 const { initPushScheduler } = require("./src/services/pushNotificationService");
 
 
@@ -79,6 +80,7 @@ app.use("/life-ratings", lifeRatingsRoutes);
 app.use("/emotions", emotionsRoutes);
 app.use("/habits", habitsRoutes);
 app.use("/notifications", notificationRoutes);
+app.use("/goals", goalsRoutes);
 
 
 // Database connection + server start

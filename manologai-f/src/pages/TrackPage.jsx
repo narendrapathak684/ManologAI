@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpenText,
   CalendarDays,
@@ -24,6 +24,9 @@ import {
   Star,
   User,
   Trash2,
+  TrendingDown,
+  Settings2,
+  X,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
@@ -304,6 +307,26 @@ export default function TrackPage() {
   const { showSaveAlert, clearSaveAlert } = useSaveAlert();
   const { theme } = useTheme();
   const isLightMode = theme === "light";
+  const { user, setUser } = useAuth();
+  
+  const [isGoalsModalOpen, setIsGoalsModalOpen] = useState(false);
+  const [localGoals, setLocalGoals] = useState({
+    sleep: user?.goals?.sleep ?? 8,
+    screenTime: user?.goals?.screenTime ?? 3,
+    work: user?.goals?.work ?? 6,
+    expenses: user?.goals?.expenses ?? 50,
+  });
+
+  useEffect(() => {
+    if (user?.goals) {
+      setLocalGoals({
+        sleep: user.goals.sleep ?? 8,
+        screenTime: user.goals.screenTime ?? 3,
+        work: user.goals.work ?? 6,
+        expenses: user.goals.expenses ?? 50,
+      });
+    }
+  }, [user]);
 
   const today = getLocalDateKey();
   const [selectedDateKey, setSelectedDateKey] = useState(today);
@@ -322,14 +345,16 @@ export default function TrackPage() {
       short: formatShortDate(twoDaysAgoKey),
     },
   ];
-  const selectedDateLabel =
-    selectedDateKey === today ? "Today" : formatShortDate(selectedDateKey);
-  const dateBadge = (
-    <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-300">
-      {selectedDateLabel}
-    </span>
-  );
-  const { user } = useAuth();
+  const { selectedDateLabel, dateBadge } = (() => {
+    const label = selectedDateKey === today ? "Today" : formatShortDate(selectedDateKey);
+    const badge = (
+      <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-300">
+        {label}
+      </span>
+    );
+    return { selectedDateLabel: label, dateBadge: badge };
+  })();
+
   const expenseCurrency = user?.currency || "USD";
   const expenseSymbol = (() => {
     try {
@@ -676,6 +701,47 @@ export default function TrackPage() {
     });
   };
 
+  const handleLocalGoalChange = (key, value) => {
+    const updatedGoals = { ...localGoals, [key]: Number(value) };
+    setLocalGoals(updatedGoals);
+  };
+
+  const handleSaveGoals = async () => {
+    try {
+      await api.patch("/goals", { goals: localGoals });
+      setUser({ ...user, goals: localGoals });
+      setIsGoalsModalOpen(false);
+      showSaveAlert({
+        title: "Daily Goals",
+        message: "Your performance targets have been updated successfully.",
+      });
+    } catch (err) {
+      console.error("Failed to save goals:", err);
+      setError("Failed to save goals. Please try again.");
+    }
+  };
+
+  const GoalIndicator = ({ current, goal, type = "min" }) => {
+    if (!goal) return null;
+    const val = Number(current);
+    if (!Number.isFinite(val) || current === "") return null;
+
+    const isSuccess = type === "min" ? val >= goal : val <= goal;
+    const Icon = isSuccess ? TrendingUp : TrendingDown;
+    const color = isSuccess ? "text-emerald-400" : "text-amber-400";
+    const bg = isSuccess ? "bg-emerald-400/10" : "bg-amber-400/10";
+    const border = isSuccess ? "border-emerald-400/20" : "border-amber-400/20";
+
+    return (
+      <div
+        className={`flex items-center gap-1.5 rounded-full border ${border} ${bg} px-2 py-0.5 text-[10px] font-bold ${color}`}
+      >
+        <Icon className="h-3 w-3" />
+        {isSuccess ? "Goal Met" : `Goal: ${goal}`}
+      </div>
+    );
+  };
+
   return (
     <div className="h-screen overflow-hidden bg-black text-slate-100 relative">
       <div className="absolute top-0 inset-x-0 h-[800px] pointer-events-none">
@@ -883,7 +949,17 @@ export default function TrackPage() {
                       <CalendarDays className="h-5 w-5 text-emerald-400" />
                       Daily Metrics
                     </CardTitle>
-                    {dateBadge}
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={() => setIsGoalsModalOpen(true)}
+                        variant="ghost"
+                        className="h-8 w-8 p-0 text-slate-500 hover:text-emerald-400 hover:bg-emerald-400/10"
+                        title="Edit Goals"
+                      >
+                        <Settings2 className="h-4 w-4" />
+                      </Button>
+                      {dateBadge}
+                    </div>
                   </div>
                   {metricsSubmitted && (
                     <span className="inline-flex w-fit rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-200">
@@ -897,9 +973,16 @@ export default function TrackPage() {
                 <CardContent className="flex flex-1 flex-col space-y-6">
                   <div className="flex w-full flex-col gap-4">
                     <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
-                        <Moon className="h-3 w-3" /> Sleep
-                      </label>
+                      <div className="flex items-center justify-between gap-2">
+                        <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
+                          <Moon className="h-3 w-3" /> Sleep
+                        </label>
+                        <GoalIndicator
+                          current={toDecimalHours(metrics.sleepHours, metrics.sleepMinutes)}
+                          goal={user?.goals?.sleep}
+                          type="min"
+                        />
+                      </div>
                       <div className="grid grid-cols-2 gap-3">
                         <Input
                           type="number"
@@ -942,9 +1025,16 @@ export default function TrackPage() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
-                        <Monitor className="h-3 w-3" /> Screen Time
-                      </label>
+                      <div className="flex items-center justify-between gap-2">
+                        <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
+                          <Monitor className="h-3 w-3" /> Screen Time
+                        </label>
+                        <GoalIndicator
+                          current={toDecimalHours(metrics.screenHours, metrics.screenMinutes)}
+                          goal={user?.goals?.screenTime}
+                          type="max"
+                        />
+                      </div>
                       <div className="grid grid-cols-2 gap-3">
                         <Input
                           type="number"
@@ -987,9 +1077,16 @@ export default function TrackPage() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
-                        <Briefcase className="h-3 w-3" /> Work/Study
-                      </label>
+                      <div className="flex items-center justify-between gap-2">
+                        <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
+                          <Briefcase className="h-3 w-3" /> Work/Study
+                        </label>
+                        <GoalIndicator
+                          current={toDecimalHours(metrics.workStudyHours, metrics.workStudyMinutes)}
+                          goal={user?.goals?.work}
+                          type="min"
+                        />
+                      </div>
                       <div className="grid grid-cols-2 gap-3">
                         <Input
                           type="number"
@@ -1032,12 +1129,19 @@ export default function TrackPage() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
-                        <span className="text-xs font-bold">
-                          {expenseSymbol}
-                        </span>
-                        Expenses ({expenseCurrency})
-                      </label>
+                        <div className="flex items-center justify-between gap-2">
+                          <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
+                            <span className="text-xs font-bold">
+                              {expenseSymbol}
+                            </span>
+                            Expenses ({expenseCurrency})
+                          </label>
+                          <GoalIndicator
+                            current={metrics.expense}
+                            goal={user?.goals?.expenses}
+                            type="max"
+                          />
+                        </div>
                       <Input
                         type="number"
                         placeholder="0.0"
@@ -1232,6 +1336,93 @@ export default function TrackPage() {
           </div>
         </main>
       </div>
+
+      <AnimatePresence>
+        {isGoalsModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsGoalsModalOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-lg overflow-hidden rounded-[32px] border border-white/10 bg-slate-900 shadow-2xl"
+            >
+              <div className="p-6 sm:p-8">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                       <Settings2 className="h-6 w-6 text-pink-400" /> Goal Settings
+                    </h2>
+                    <p className="text-sm text-slate-400">Personalize your targets for daily metrics.</p>
+                  </div>
+                  <Button
+                    onClick={() => setIsGoalsModalOpen(false)}
+                    variant="ghost"
+                    className="h-10 w-10 p-0 text-slate-500 hover:text-white"
+                  >
+                    <X className="h-6 w-6" />
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                  {[
+                    { key: "sleep", label: "Sleep Target", icon: Moon, unit: "hrs", min: 4, max: 12, step: 0.5 },
+                    { key: "screenTime", label: "Max Screen Time", icon: Monitor, unit: "hrs", min: 1, max: 24, step: 0.5 },
+                    { key: "work", label: "Work Hours", icon: Briefcase, unit: "hrs", min: 1, max: 16, step: 0.5 },
+                    { key: "expenses", label: "Spending Limit", icon: Wallet, unit: expenseCurrency, min: 0, max: 10000, step: 1 },
+                  ].map((goal) => {
+                    const Icon = goal.icon;
+                    return (
+                      <div
+                        key={goal.key}
+                        className="p-4 rounded-2xl bg-black/20 border border-white/5 space-y-3"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Icon className="h-4 w-4 text-pink-400" />
+                            <span className="text-sm font-medium text-slate-200">
+                              {goal.label}
+                            </span>
+                          </div>
+                          <span className="text-sm font-mono font-bold text-pink-400">
+                            {localGoals[goal.key]} {goal.unit}
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min={goal.min}
+                          max={goal.max}
+                          step={goal.step}
+                          value={localGoals[goal.key]}
+                          onChange={(e) => handleLocalGoalChange(goal.key, e.target.value)}
+                          className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-pink-500"
+                        />
+                        <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+                          <span>{goal.min}{goal.unit}</span>
+                          <span>{goal.max}{goal.unit}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <Button
+                  onClick={handleSaveGoals}
+                  className="mt-8 w-full bg-pink-600 hover:bg-pink-500 text-white py-6 rounded-2xl font-bold transition-all shadow-lg shadow-pink-900/20"
+                >
+                  Done
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

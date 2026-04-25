@@ -97,6 +97,12 @@ const userSchema = new mongoose.Schema({
     },
     timezone: { type: String, default: "UTC" },
   },
+  goals: {
+    sleep: { type: Number, default: 8 }, // hours
+    screenTime: { type: Number, default: 3 }, // hours
+    work: { type: Number, default: 6 }, // hours
+    expenses: { type: Number, default: 50 }, // currency units
+  },
 });
 
 module.exports = mongoose.model("User", userSchema);

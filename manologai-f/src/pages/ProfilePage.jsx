@@ -27,6 +27,10 @@ import {
   CalendarClock,
   Clock,
   PenLine,
+  Target,
+  Bed,
+  Briefcase,
+  Wallet,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -600,6 +604,14 @@ export default function ProfilePage() {
     },
   });
 
+  const [goals, setGoals] = useState({
+    sleep: 8,
+    screenTime: 3,
+    work: 6,
+    expenses: 50,
+  });
+  const [isSavingGoals, setIsSavingGoals] = useState(false);
+
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (event) => {
@@ -631,6 +643,15 @@ export default function ProfilePage() {
       setReminders(JSON.parse(savedReminders));
     }
 
+    if (user?.goals) {
+      setGoals({
+        sleep: user.goals.sleep ?? 8,
+        screenTime: user.goals.screenTime ?? 3,
+        work: user.goals.work ?? 6,
+        expenses: user.goals.expenses ?? 50,
+      });
+    }
+
     return () => {
       window.removeEventListener(
         "beforeinstallprompt",
@@ -646,7 +667,21 @@ export default function ProfilePage() {
         URL.revokeObjectURL(profilePicturePreview);
       }
     };
-  }, [profilePicturePreview]);
+  }, [profilePicturePreview, user]);
+
+  const handleGoalChange = async (key, value) => {
+    const updatedGoals = { ...goals, [key]: Number(value) };
+    setGoals(updatedGoals);
+    
+    // Auto-save goals on change
+    try {
+      await api.patch("/goals", { goals: updatedGoals });
+      // Update global user context if possible
+      setUser({ ...user, goals: updatedGoals });
+    } catch (err) {
+      console.error("Failed to save goals:", err);
+    }
+  };
 
   const handleToggleReminder = async (id) => {
     const updated = {
@@ -1336,6 +1371,70 @@ export default function ProfilePage() {
                         them in your settings to receive reminders.
                       </div>
                     )}
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* Daily Goals Card */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.08 }}
+              >
+                <Card className="border-white/10 bg-slate-900/40 backdrop-blur-3xl overflow-hidden relative group">
+                  <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
+                    <Target className="w-32 h-32" />
+                  </div>
+                  <CardHeader className="relative z-10">
+                    <CardTitle className="text-white flex items-center gap-2">
+                      <Target className="h-5 w-5 text-emerald-400" /> Daily Goals
+                    </CardTitle>
+                    <CardDescription>
+                      Set targets for your core daily metrics.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6 relative z-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {[
+                        { key: "sleep", label: "Sleep Target", icon: Bed, unit: "hrs", min: 4, max: 12, step: 0.5 },
+                        { key: "screenTime", label: "Max Screen Time", icon: Smartphone, unit: "hrs", min: 1, max: 24, step: 0.5 },
+                        { key: "work", label: "Work Hours", icon: Briefcase, unit: "hrs", min: 1, max: 16, step: 0.5 },
+                        { key: "expenses", label: "Spending Limit", icon: Wallet, unit: user?.currency || "USD", min: 0, max: 10000, step: 1 },
+                      ].map((goal) => {
+                        const Icon = goal.icon;
+                        return (
+                          <div
+                            key={goal.key}
+                            className="p-4 rounded-2xl bg-black/20 border border-white/5 hover:border-white/10 transition-colors space-y-3"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <Icon className="h-4 w-4 text-emerald-400" />
+                                <span className="text-sm font-medium text-slate-200">
+                                  {goal.label}
+                                </span>
+                              </div>
+                              <span className="text-xs font-mono text-emerald-400">
+                                {goals[goal.key]} {goal.unit}
+                              </span>
+                            </div>
+                            <input
+                              type="range"
+                              min={goal.min}
+                              max={goal.max}
+                              step={goal.step}
+                              value={goals[goal.key]}
+                              onChange={(e) => handleGoalChange(goal.key, e.target.value)}
+                              className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-emerald-500 hover:accent-emerald-400"
+                            />
+                            <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+                              <span>{goal.min}{goal.unit}</span>
+                              <span>{goal.max}{goal.unit}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </CardContent>
                 </Card>
               </motion.div>
