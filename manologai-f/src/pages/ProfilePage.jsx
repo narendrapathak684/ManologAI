@@ -14,9 +14,9 @@ import {
   AlertCircle,
   CheckCircle,
   Smartphone,
-  Image,
   Upload,
   Trash2,
+  X,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -69,6 +69,7 @@ export default function ProfilePage() {
   });
   const [selectedProfilePicture, setSelectedProfilePicture] = useState(null);
   const [profilePicturePreview, setProfilePicturePreview] = useState("");
+  const [enlargedProfilePicture, setEnlargedProfilePicture] = useState("");
   const maxNameLength = 30;
   const [profileStatus, setProfileStatus] = useState({
     type: null,
@@ -299,7 +300,7 @@ export default function ProfilePage() {
                 Back to Dashboard
               </Link>
               <h1 className="text-4xl font-extrabold tracking-tight text-white mb-2">
-                Account Settings.
+                Account
               </h1>
               <p className="text-slate-400 text-lg">
                 Manage your identity and security keys.
@@ -370,20 +371,34 @@ export default function ProfilePage() {
 
                     {isEditingProfile ? (
                       <form onSubmit={handleSaveProfile} className="space-y-4">
-                        <div className="flex items-center gap-4">
-                          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-black/30">
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                          <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-black/30">
                             {profilePicturePreview ||
                             getProfilePictureUrl(user?.profilePicture) ? (
-                              <img
-                                src={
-                                  profilePicturePreview ||
-                                  getProfilePictureUrl(user?.profilePicture)
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setEnlargedProfilePicture(
+                                    profilePicturePreview ||
+                                      getProfilePictureUrl(
+                                        user?.profilePicture,
+                                      ),
+                                  )
                                 }
-                                alt=""
-                                className="h-full w-full object-cover"
-                              />
+                                className="h-full w-full"
+                                aria-label="View profile picture"
+                              >
+                                <img
+                                  src={
+                                    profilePicturePreview ||
+                                    getProfilePictureUrl(user?.profilePicture)
+                                  }
+                                  alt=""
+                                  className="h-full w-full object-cover"
+                                />
+                              </button>
                             ) : (
-                              <User className="h-7 w-7 text-slate-500" />
+                              <User className="h-10 w-10 text-slate-500" />
                             )}
                           </div>
                           <div className="min-w-0 flex-1 space-y-2">
@@ -464,26 +479,39 @@ export default function ProfilePage() {
                       </form>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="flex items-center gap-4 md:col-span-2">
-                          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-black/30">
+                        <div className="flex flex-col gap-4 md:col-span-2 sm:flex-row sm:items-center">
+                          <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-black/30">
                             {getProfilePictureUrl(user?.profilePicture) ? (
-                              <img
-                                src={getProfilePictureUrl(user?.profilePicture)}
-                                alt=""
-                                className="h-full w-full object-cover"
-                              />
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setEnlargedProfilePicture(
+                                    getProfilePictureUrl(user?.profilePicture),
+                                  )
+                                }
+                                className="h-full w-full"
+                                aria-label="View profile picture"
+                              >
+                                <img
+                                  src={getProfilePictureUrl(
+                                    user?.profilePicture,
+                                  )}
+                                  alt=""
+                                  className="h-full w-full object-cover"
+                                />
+                              </button>
                             ) : (
-                              <User className="h-7 w-7 text-slate-500" />
+                              <User className="h-10 w-10 text-slate-500" />
                             )}
                           </div>
                           <div className="min-w-0 space-y-1">
                             <p className="text-xs font-mono uppercase tracking-widest text-slate-500">
                               Profile Picture
                             </p>
-                            <p className="flex items-center gap-2 break-all text-sm text-slate-300">
-                              <Image className="h-4 w-4 shrink-0 text-pink-400" />
-                              {getProfilePictureUrl(user?.profilePicture) ||
-                                "No picture set"}
+                            <p className="text-sm text-slate-300">
+                              {getProfilePictureUrl(user?.profilePicture)
+                                ? "Photo added"
+                                : "No picture set"}
                             </p>
                             {getProfilePictureUrl(user?.profilePicture) && (
                               <Button
@@ -676,6 +704,40 @@ export default function ProfilePage() {
       </div>
 
       <MobileTabBar items={navItems} />
+
+      <AnimatePresence>
+        {enlargedProfilePicture && (
+          <motion.div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setEnlargedProfilePicture("")}
+          >
+            <motion.div
+              className="relative max-h-[86vh] w-full max-w-3xl"
+              initial={{ scale: 0.96, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.96, opacity: 0 }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setEnlargedProfilePicture("")}
+                className="absolute right-2 top-2 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/70 text-white transition hover:bg-white/10"
+                aria-label="Close profile picture"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              <img
+                src={enlargedProfilePicture}
+                alt=""
+                className="max-h-[86vh] w-full rounded-2xl object-contain"
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
