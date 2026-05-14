@@ -16,6 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { SkeletonBone } from "@/components/SkeletonBoneyard";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -152,7 +153,11 @@ export default function LoginPage() {
                 disabled={loading}
                 className="h-11 w-full bg-pink-600 text-white shadow-[0_0_20px_-5px_rgba(236,72,153,0.5)] transition-all hover:bg-pink-500"
               >
-                {loading ? "Logging in..." : "Log In"}
+                {loading ? (
+                  <SkeletonBone className="h-4 w-28 bg-white/25" />
+                ) : (
+                  "Log In"
+                )}
                 {!loading ? (
                   <ArrowRight className="ml-2 h-4 w-4 opacity-80" />
                 ) : null}

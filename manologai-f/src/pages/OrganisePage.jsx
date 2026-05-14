@@ -33,6 +33,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ListSkeleton, PageSkeleton } from "@/components/SkeletonBoneyard";
 import { api, getApiErrorMessage } from "../lib/api";
 
 const navItems = [
@@ -1304,11 +1305,7 @@ export default function OrganisePage() {
   };
 
   if (loading)
-    return (
-      <div className="flex h-screen items-center justify-center bg-black text-white font-mono text-sm tracking-[0.3em] uppercase animate-pulse">
-        Initialising Organisation Hub...
-      </div>
-    );
+    return <PageSkeleton titleWidth="w-80" />;
 
   return (
     <div className="h-screen bg-black text-slate-100 overflow-hidden relative">
@@ -1771,9 +1768,7 @@ export default function OrganisePage() {
                   </Card>
 
                   {padsLoading ? (
-                    <div className="rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-6 text-center text-xs uppercase tracking-[0.3em] text-slate-500">
-                      Loading pads...
-                    </div>
+                    <ListSkeleton rows={4} />
                   ) : pads.length === 0 ? (
                     <div className="rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-6 text-center text-xs uppercase tracking-[0.3em] text-slate-500">
                       No pads yet
@@ -1826,13 +1821,8 @@ export default function OrganisePage() {
                 <div className="hidden min-h-[600px] lg:block">
                   <AnimatePresence mode="wait">
                     {padsLoading ? (
-                      <div className="h-full flex items-center justify-center border-2 border-dashed border-white/5 rounded-[40px]">
-                        <div className="text-center space-y-2">
-                          <FolderKanban className="w-12 h-12 text-slate-800 mx-auto" />
-                          <p className="text-slate-500 font-mono text-[10px] uppercase tracking-[0.4em]">
-                            Loading pads
-                          </p>
-                        </div>
+                      <div className="h-full rounded-[40px] border-2 border-dashed border-white/5 p-8">
+                        <ListSkeleton rows={5} />
                       </div>
                     ) : selectedPad ? (
                       <motion.div

@@ -28,6 +28,12 @@
 }
 
 @layer utilities {
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
   html[data-theme="light"] body {
     @apply bg-slate-50 text-slate-950;
   }

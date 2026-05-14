@@ -42,6 +42,7 @@ import {
 import { useSaveAlert } from "../context/SaveAlertContext";
 import { useTheme } from "../context/ThemeContext";
 import { api, getApiErrorMessage } from "../lib/api";
+import { ListSkeleton } from "@/components/SkeletonBoneyard";
 
 const navItems = [
   { label: "Today", icon: LayoutDashboard, to: "/dashboard" },
@@ -850,9 +851,7 @@ export default function TrackPage() {
                   </form>
 
                   {loading ? (
-                    <p className="text-slate-500 text-sm italic">
-                      Loading habits...
-                    </p>
+                    <ListSkeleton rows={3} />
                   ) : habits.length === 0 ? (
                     <p className="text-slate-500 text-sm italic">
                       No habits added yet.

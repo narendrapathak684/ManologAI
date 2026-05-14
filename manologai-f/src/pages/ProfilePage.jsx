@@ -50,6 +50,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ListSkeleton, PageSkeleton } from "@/components/SkeletonBoneyard";
 import { api, getApiErrorMessage } from "../lib/api";
 import { COUNTRIES } from "../lib/constants";
 import { 
@@ -973,11 +974,7 @@ export default function ProfilePage() {
   };
 
   if (authLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-black text-white font-mono text-sm tracking-[0.3em] uppercase animate-pulse">
-        Initialising Profile Hub...
-      </div>
-    );
+    return <PageSkeleton titleWidth="w-64" />;
   }
 
   return (
@@ -1528,9 +1525,7 @@ export default function ProfilePage() {
                   </CardHeader>
                   <CardContent className="relative z-10">
                     {isLoadingSessions ? (
-                      <div className="flex justify-center py-8">
-                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-pink-500 border-t-transparent" />
-                      </div>
+                      <ListSkeleton rows={3} />
                     ) : sessions.length === 0 ? (
                       <p className="text-center py-6 text-sm text-slate-500">No active sessions found.</p>
                     ) : (

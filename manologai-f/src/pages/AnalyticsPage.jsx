@@ -53,6 +53,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ChartSkeleton, PageSkeleton } from "@/components/SkeletonBoneyard";
 import { api } from "../lib/api";
 
 const navItems = [
@@ -1027,16 +1028,7 @@ export default function AnalyticsPage() {
   }, [topHabit]);
 
   if (pageLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-black text-white">
-        <div className="text-center space-y-4">
-          <div className="w-12 h-12 border-4 border-pink-500/30 border-t-pink-500 rounded-full animate-spin mx-auto" />
-          <p className="text-slate-400 font-mono text-sm tracking-widest animate-pulse uppercase">
-            Analysing life patterns...
-          </p>
-        </div>
-      </div>
-    );
+    return <PageSkeleton titleWidth="w-72" />;
   }
 
   return (
@@ -1210,9 +1202,7 @@ export default function AnalyticsPage() {
                   </CardHeader>
                   <CardContent className="h-[300px] w-full pr-6">
                     {moodBarLoading ? (
-                      <div className="h-full flex items-center justify-center">
-                        <div className="h-10 w-10 rounded-full border-2 border-pink-400/40 border-t-pink-400 animate-spin" />
-                      </div>
+                      <ChartSkeleton />
                     ) : moodBarData.length > 0 ? (
                       <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <BarChart data={moodBarData}>
@@ -1305,9 +1295,7 @@ export default function AnalyticsPage() {
                   </CardHeader>
                   <CardContent className="h-[300px] w-full pr-6">
                     {moodLineLoading ? (
-                      <div className="h-full flex items-center justify-center">
-                        <div className="h-10 w-10 rounded-full border-2 border-indigo-400/40 border-t-indigo-400 animate-spin" />
-                      </div>
+                      <ChartSkeleton />
                     ) : moodLineData.length > 0 ? (
                       <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <LineChart data={moodLineData}>
@@ -1407,9 +1395,7 @@ export default function AnalyticsPage() {
                   </CardHeader>
                   <CardContent className="h-[300px] w-full">
                     {moodPieLoading ? (
-                      <div className="h-full flex items-center justify-center">
-                        <div className="h-10 w-10 rounded-full border-2 border-cyan-400/40 border-t-cyan-400 animate-spin" />
-                      </div>
+                      <ChartSkeleton />
                     ) : emotionDistribution.length > 0 ? (
                       <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <PieChart>
@@ -1487,9 +1473,7 @@ export default function AnalyticsPage() {
                   </CardHeader>
                   <CardContent className="h-[300px] w-full">
                     {lifeLoading ? (
-                      <div className="h-full flex items-center justify-center">
-                        <div className="h-10 w-10 rounded-full border-2 border-amber-400/40 border-t-amber-400 animate-spin" />
-                      </div>
+                      <ChartSkeleton />
                     ) : lifeData.length > 0 ? (
                       <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <RadarChart
@@ -1616,9 +1600,7 @@ export default function AnalyticsPage() {
                     </CardHeader>
                     <CardContent className="h-[300px] w-full">
                       {sleepEmotionLoading ? (
-                        <div className="h-full flex items-center justify-center">
-                          <div className="h-10 w-10 rounded-full border-2 border-violet-400/40 border-t-violet-400 animate-spin" />
-                        </div>
+                        <ChartSkeleton />
                       ) : insightPlotData.length > 0 ? (
                         <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                           {sleepEmotionView === "scatter" ? (
@@ -1790,9 +1772,7 @@ export default function AnalyticsPage() {
                     </CardHeader>
                     <CardContent className="h-[240px] w-full">
                       {dayEmotionLoading ? (
-                        <div className="h-full flex items-center justify-center">
-                          <div className="h-10 w-10 rounded-full border-2 border-slate-400/40 border-t-slate-300 animate-spin" />
-                        </div>
+                        <ChartSkeleton />
                       ) : dayEmotionData.length > 0 ? (
                         <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                           <BarChart data={dayEmotionData}>
@@ -1900,9 +1880,7 @@ export default function AnalyticsPage() {
                     </CardHeader>
                     <CardContent className="h-[220px] w-full">
                       {habitImpactLoading ? (
-                        <div className="h-full flex items-center justify-center">
-                          <div className="h-10 w-10 rounded-full border-2 border-emerald-400/40 border-t-emerald-400 animate-spin" />
-                        </div>
+                        <ChartSkeleton />
                       ) : habitImpactTop.length > 0 ? (
                         <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                           <BarChart data={habitImpactTop} layout="vertical">
@@ -2008,9 +1986,7 @@ export default function AnalyticsPage() {
                   </CardHeader>
                   <CardContent className="h-[300px] w-full">
                     {timeLoading ? (
-                      <div className="h-full flex items-center justify-center">
-                        <div className="h-10 w-10 rounded-full border-2 border-emerald-400/40 border-t-emerald-400 animate-spin" />
-                      </div>
+                      <ChartSkeleton />
                     ) : timeData.length > 0 ? (
                       <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <LineChart
@@ -2120,9 +2096,7 @@ export default function AnalyticsPage() {
                   </CardHeader>
                   <CardContent className="h-[300px] w-full">
                     {expenseLoading ? (
-                      <div className="h-full flex items-center justify-center">
-                        <div className="h-10 w-10 rounded-full border-2 border-amber-400/40 border-t-amber-400 animate-spin" />
-                      </div>
+                      <ChartSkeleton />
                     ) : expenseData.length > 0 ? (
                       <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <LineChart

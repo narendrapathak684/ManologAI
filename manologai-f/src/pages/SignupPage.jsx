@@ -16,6 +16,7 @@ import { Sparkles } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { api, getApiErrorMessage } from "../lib/api";
 import { COUNTRIES } from "../lib/constants";
+import { SkeletonBone } from "@/components/SkeletonBoneyard";
 
 
 
@@ -221,7 +222,11 @@ export default function SignupPage() {
                 className="w-full bg-pink-600 hover:bg-pink-500 text-white h-11 shadow-[0_0_20px_-5px_rgba(236,72,153,0.5)] transition-all"
                 disabled={loading}
               >
-                {loading ? "Creating account..." : "Sign Up"}
+                {loading ? (
+                  <SkeletonBone className="h-4 w-36 bg-white/25" />
+                ) : (
+                  "Sign Up"
+                )}
                 {!loading && <Sparkles className="w-4 h-4 ml-2 opacity-70" />}
               </Button>
             </form>

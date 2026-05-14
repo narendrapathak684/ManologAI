@@ -27,6 +27,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  HeatmapSkeleton,
+  ListSkeleton,
+  TextSkeleton,
+} from "@/components/SkeletonBoneyard";
 
 const navItems = [
   { label: "Today", icon: LayoutDashboard, to: "/dashboard", active: true },
@@ -1023,9 +1028,7 @@ export default function DashboardPage() {
                       </div>
                     )}
                     {inputStreakLoading && !inputStreakError && (
-                      <p className="text-sm text-slate-400">
-                        Loading streak data...
-                      </p>
+                      <TextSkeleton lines={3} />
                     )}
                     {!inputStreakLoading && !inputStreakError && (
                       <div className="space-y-3">
@@ -1139,12 +1142,8 @@ export default function DashboardPage() {
                         {heatmapJumpError}
                       </div>
                     )}
-                    {heatmapLoading && (
-                      <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-slate-400">
-                        Loading {heatmapMonthLabel}…
-                      </div>
-                    )}
                     <div className="relative min-h-[240px] overflow-hidden">
+                      {heatmapLoading && <HeatmapSkeleton />}
                       <AnimatePresence
                         mode="wait"
                         initial={false}
@@ -1321,9 +1320,7 @@ export default function DashboardPage() {
                       </div>
                     )}
                     {todoLoading && !todoError && (
-                      <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-slate-400">
-                        Loading todo items...
-                      </div>
+                      <ListSkeleton rows={3} />
                     )}
                     {!todoLoading && !todoError && todoItems.length === 0 && (
                       <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-slate-400">

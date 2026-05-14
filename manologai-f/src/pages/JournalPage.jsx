@@ -29,6 +29,7 @@ import { useSaveAlert } from "../context/SaveAlertContext";
 import { useTheme } from "../context/ThemeContext";
 import { api, getApiErrorMessage } from "../lib/api";
 import { jsPDF } from "jspdf";
+import { TextSkeleton } from "@/components/SkeletonBoneyard";
 
 const navItems = [
   { label: "Today", icon: LayoutDashboard, to: "/dashboard" },
@@ -558,15 +559,20 @@ export default function JournalPage() {
                         : `0 18px 40px -28px ${selectedDateColor.accent}`,
                     }}
                   >
-                      <textarea
-                        value={draft}
-                        onChange={(event) => setDraft(event.target.value)}
-                        placeholder="Write freely about what happened, what you felt, what you learned, and what you want to carry forward."
-                        disabled={loading}
-                        className={`min-h-[460px] w-full resize-none bg-transparent text-base leading-8 outline-none ${
-                          isLightMode ? "text-slate-800 placeholder:text-slate-400" : "text-slate-200 placeholder:text-slate-500"
-                        }`}
-                      />
+                      {loading ? (
+                        <div className="min-h-[460px] py-2">
+                          <TextSkeleton lines={12} className="max-w-4xl" />
+                        </div>
+                      ) : (
+                        <textarea
+                          value={draft}
+                          onChange={(event) => setDraft(event.target.value)}
+                          placeholder="Write freely about what happened, what you felt, what you learned, and what you want to carry forward."
+                          className={`min-h-[460px] w-full resize-none bg-transparent text-base leading-8 outline-none ${
+                            isLightMode ? "text-slate-800 placeholder:text-slate-400" : "text-slate-200 placeholder:text-slate-500"
+                          }`}
+                        />
+                      )}
 
                       <div className={`mt-4 border-t pt-4 ${isLightMode ? "border-slate-100" : "border-white/5"}`}>
                         <div className="flex flex-wrap gap-2 mb-3">
@@ -622,11 +628,6 @@ export default function JournalPage() {
                         </form>
                       </div>
                     </div>
-                  {loading ? (
-                    <p className="mt-3 text-sm text-slate-500">
-                      Loading entry for {selectedDate}...
-                    </p>
-                  ) : null}
                 </CardContent>
               </Card>
             </section>
