@@ -10,8 +10,8 @@ import {
   CardTitle,
   CardDescription,
   CardContent,
-  CardFooter,
-} from "@/components/ui/card";
+  CardFooter } from
+"@/components/ui/card";
 import { Sparkles } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { api, getApiErrorMessage } from "../lib/api";
@@ -28,7 +28,7 @@ export default function SignupPage() {
     email: "",
     country: "",
     password: "",
-    confirmPassword: "",
+    confirmPassword: ""
   });
   const maxNameLength = 30;
   const [error, setError] = useState("");
@@ -56,7 +56,7 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      // Split name into firstName and lastName
+
       const nameParts = formData.name.trim().split(" ");
       const firstName = nameParts[0] || "";
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
@@ -78,7 +78,7 @@ export default function SignupPage() {
         password: formData.password,
         firstName,
         lastName,
-        country: formData.country,
+        country: formData.country
       });
 
       console.log("Signup successful:", data);
@@ -86,7 +86,7 @@ export default function SignupPage() {
       navigate("/dashboard", { replace: true });
     } catch (err) {
       setError(
-        getApiErrorMessage(err, "Failed to create account. Please try again."),
+        getApiErrorMessage(err, "Failed to create account. Please try again.")
       );
     } finally {
       setLoading(false);
@@ -105,15 +105,15 @@ export default function SignupPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="w-full max-w-md relative z-10"
-      >
+        className="w-full max-w-md relative z-10">
+        
         <Card className="bg-slate-900/50 border-white/10 backdrop-blur-xl shadow-2xl">
           <CardHeader className="space-y-3 text-center pb-6 border-b border-white/5">
             <img
               src="/logo.png"
               alt="ManologAI Logo"
-              className="mx-auto mb-2 h-12 w-12 object-contain drop-shadow-[0_0_15px_rgba(236,72,153,0.5)]"
-            />
+              className="mx-auto mb-2 h-12 w-12 object-contain drop-shadow-[0_0_15px_rgba(236,72,153,0.5)]" />
+            
             <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-pink-400 to-rose-400">
               Create your account
             </CardTitle>
@@ -124,11 +124,11 @@ export default function SignupPage() {
 
           <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <div className="p-3 rounded-md bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm text-center">
+              {error &&
+              <div className="p-3 rounded-md bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm text-center">
                   {error}
                 </div>
-              )}
+              }
 
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-slate-300">
@@ -142,8 +142,8 @@ export default function SignupPage() {
                   maxLength={maxNameLength * 2 + 1}
                   value={formData.name}
                   onChange={handleChange}
-                  className="bg-black/20 border-white/10 text-white placeholder:text-slate-600 focus-visible:ring-pink-500"
-                />
+                  className="bg-black/20 border-white/10 text-white placeholder:text-slate-600 focus-visible:ring-pink-500" />
+                
               </div>
 
               <div className="space-y-2">
@@ -158,8 +158,8 @@ export default function SignupPage() {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className="bg-black/20 border-white/10 text-white placeholder:text-slate-600 focus-visible:ring-pink-500"
-                />
+                  className="bg-black/20 border-white/10 text-white placeholder:text-slate-600 focus-visible:ring-pink-500" />
+                
               </div>
 
               <div className="space-y-2">
@@ -172,16 +172,16 @@ export default function SignupPage() {
                   required
                   value={formData.country}
                   onChange={handleChange}
-                  className="h-11 w-full rounded-md border border-white/10 bg-slate-950/70 px-3 text-sm text-slate-100 shadow-[0_0_0_1px_rgba(15,23,42,0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500"
-                >
+                  className="h-11 w-full rounded-md border border-white/10 bg-slate-950/70 px-3 text-sm text-slate-100 shadow-[0_0_0_1px_rgba(15,23,42,0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500">
+                  
                   <option value="" disabled>
                     Select your country
                   </option>
-                  {COUNTRIES.map((country) => (
-                    <option key={country} value={country}>
+                  {COUNTRIES.map((country) =>
+                  <option key={country} value={country}>
                       {country}
                     </option>
-                  ))}
+                  )}
                 </select>
               </div>
 
@@ -197,8 +197,8 @@ export default function SignupPage() {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="bg-black/20 border-white/10 text-white focus-visible:ring-pink-500"
-                />
+                  className="bg-black/20 border-white/10 text-white focus-visible:ring-pink-500" />
+                
               </div>
 
               <div className="space-y-2">
@@ -213,20 +213,20 @@ export default function SignupPage() {
                   required
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className="bg-black/20 border-white/10 text-white focus-visible:ring-pink-500"
-                />
+                  className="bg-black/20 border-white/10 text-white focus-visible:ring-pink-500" />
+                
               </div>
 
               <Button
                 type="submit"
                 className="w-full bg-pink-600 hover:bg-pink-500 text-white h-11 shadow-[0_0_20px_-5px_rgba(236,72,153,0.5)] transition-all"
-                disabled={loading}
-              >
-                {loading ? (
-                  <SkeletonBone className="h-4 w-36 bg-white/25" />
-                ) : (
-                  "Sign Up"
-                )}
+                disabled={loading}>
+                
+                {loading ?
+                <SkeletonBone className="h-4 w-36 bg-white/25" /> :
+
+                "Sign Up"
+                }
                 {!loading && <Sparkles className="w-4 h-4 ml-2 opacity-70" />}
               </Button>
             </form>
@@ -241,13 +241,13 @@ export default function SignupPage() {
 
             <Button
               variant="outline"
-              className="w-full mt-6 bg-white/5 border-white/10 hover:bg-white/10 text-slate-300"
-            >
+              className="w-full mt-6 bg-white/5 border-white/10 hover:bg-white/10 text-slate-300">
+              
               <svg
                 className="w-5 h-5 mr-2"
                 viewBox="0 0 24 24"
-                fill="currentColor"
-              >
+                fill="currentColor">
+                
                 <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z" />
               </svg>
               Google
@@ -259,14 +259,14 @@ export default function SignupPage() {
               Already have an account?{" "}
               <Link
                 to="/login"
-                className="text-pink-400 hover:text-pink-300 font-medium transition-colors"
-              >
+                className="text-pink-400 hover:text-pink-300 font-medium transition-colors">
+                
                 Log in
               </Link>
             </p>
           </CardFooter>
         </Card>
       </motion.div>
-    </div>
-  );
+    </div>);
+
 }

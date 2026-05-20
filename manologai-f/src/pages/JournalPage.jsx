@@ -13,8 +13,8 @@ import {
   Tags,
   Plus,
   X,
-  FileDown,
-} from "lucide-react";
+  FileDown } from
+"lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,8 +23,8 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  CardTitle } from
+"@/components/ui/card";
 import { useSaveAlert } from "../context/SaveAlertContext";
 import { useTheme } from "../context/ThemeContext";
 import { api, getApiErrorMessage } from "../lib/api";
@@ -32,13 +32,13 @@ import { jsPDF } from "jspdf";
 import { TextSkeleton } from "@/components/SkeletonBoneyard";
 
 const navItems = [
-  { label: "Today", icon: LayoutDashboard, to: "/dashboard" },
-  { label: "Journal", icon: BookOpenText, to: "/journal", active: true },
-  { label: "Track", icon: CheckCircle2, to: "/track" },
-  { label: "Analytics", icon: ChartColumnBig, to: "/analytics" },
-  { label: "Organise", icon: FolderKanban, to: "/organise" },
-  { label: "Profile", icon: User, to: "/profile" },
-];
+{ label: "Today", icon: LayoutDashboard, to: "/dashboard" },
+{ label: "Journal", icon: BookOpenText, to: "/journal", active: true },
+{ label: "Track", icon: CheckCircle2, to: "/track" },
+{ label: "Analytics", icon: ChartColumnBig, to: "/analytics" },
+{ label: "Organise", icon: FolderKanban, to: "/organise" },
+{ label: "Profile", icon: User, to: "/profile" }];
+
 
 function formatDateKey(date) {
   const year = date.getFullYear();
@@ -52,7 +52,7 @@ function formatDateLabel(dateKey) {
   return date.toLocaleDateString("en-US", {
     weekday: "short",
     month: "short",
-    day: "numeric",
+    day: "numeric"
   });
 }
 
@@ -67,49 +67,49 @@ function getPreviousDates(count) {
 }
 
 const quickDateColors = [
-  {
-    accent: "#f472b6",
-    lightAccent: "#be185d",
-    bg: "rgba(244, 114, 182, 0.16)",
-    border: "rgba(244, 114, 182, 0.34)",
-  },
-  {
-    accent: "#fb923c",
-    lightAccent: "#c2410c",
-    bg: "rgba(251, 146, 60, 0.16)",
-    border: "rgba(251, 146, 60, 0.34)",
-  },
-  {
-    accent: "#facc15",
-    lightAccent: "#a16207",
-    bg: "rgba(250, 204, 21, 0.16)",
-    border: "rgba(250, 204, 21, 0.34)",
-  },
-  {
-    accent: "#4ade80",
-    lightAccent: "#047857",
-    bg: "rgba(74, 222, 128, 0.16)",
-    border: "rgba(74, 222, 128, 0.34)",
-  },
-  {
-    accent: "#22d3ee",
-    lightAccent: "#0e7490",
-    bg: "rgba(34, 211, 238, 0.16)",
-    border: "rgba(34, 211, 238, 0.34)",
-  },
-  {
-    accent: "#60a5fa",
-    lightAccent: "#1d4ed8",
-    bg: "rgba(96, 165, 250, 0.16)",
-    border: "rgba(96, 165, 250, 0.34)",
-  },
-  {
-    accent: "#c084fc",
-    lightAccent: "#7e22ce",
-    bg: "rgba(192, 132, 252, 0.16)",
-    border: "rgba(192, 132, 252, 0.34)",
-  },
-];
+{
+  accent: "#f472b6",
+  lightAccent: "#be185d",
+  bg: "rgba(244, 114, 182, 0.16)",
+  border: "rgba(244, 114, 182, 0.34)"
+},
+{
+  accent: "#fb923c",
+  lightAccent: "#c2410c",
+  bg: "rgba(251, 146, 60, 0.16)",
+  border: "rgba(251, 146, 60, 0.34)"
+},
+{
+  accent: "#facc15",
+  lightAccent: "#a16207",
+  bg: "rgba(250, 204, 21, 0.16)",
+  border: "rgba(250, 204, 21, 0.34)"
+},
+{
+  accent: "#4ade80",
+  lightAccent: "#047857",
+  bg: "rgba(74, 222, 128, 0.16)",
+  border: "rgba(74, 222, 128, 0.34)"
+},
+{
+  accent: "#22d3ee",
+  lightAccent: "#0e7490",
+  bg: "rgba(34, 211, 238, 0.16)",
+  border: "rgba(34, 211, 238, 0.34)"
+},
+{
+  accent: "#60a5fa",
+  lightAccent: "#1d4ed8",
+  bg: "rgba(96, 165, 250, 0.16)",
+  border: "rgba(96, 165, 250, 0.34)"
+},
+{
+  accent: "#c084fc",
+  lightAccent: "#7e22ce",
+  bg: "rgba(192, 132, 252, 0.16)",
+  border: "rgba(192, 132, 252, 0.34)"
+}];
+
 
 function getDateColor(dateKey, quickDates) {
   const quickDateIndex = quickDates.indexOf(dateKey);
@@ -119,7 +119,7 @@ function getDateColor(dateKey, quickDates) {
 
   const seed = Array.from(dateKey).reduce(
     (total, character) => total + character.charCodeAt(0),
-    0,
+    0
   );
   return quickDateColors[seed % quickDateColors.length];
 }
@@ -141,11 +141,11 @@ export default function JournalPage() {
   const quickDates = useMemo(() => getPreviousDates(7), []);
   const selectedDateColor = useMemo(
     () => getDateColor(selectedDate, quickDates),
-    [quickDates, selectedDate],
+    [quickDates, selectedDate]
   );
-  const selectedDateSurface = isLightMode
-    ? selectedDateColor.bg.replace("0.16", "0.12")
-    : selectedDateColor.bg;
+  const selectedDateSurface = isLightMode ?
+  selectedDateColor.bg.replace("0.16", "0.12") :
+  selectedDateColor.bg;
 
   const handleDateChange = (nextDate) => {
     if (!nextDate) return;
@@ -186,9 +186,9 @@ export default function JournalPage() {
         }
 
         const message =
-          err?.response?.status === 401
-            ? "Your session expired. Please log in again."
-            : getApiErrorMessage(err, "Failed to load diary entry.");
+        err?.response?.status === 401 ?
+        "Your session expired. Please log in again." :
+        getApiErrorMessage(err, "Failed to load diary entry.");
 
         if (!ignore) {
           setDraft("");
@@ -226,7 +226,7 @@ export default function JournalPage() {
       const { data } = await api.post("/diary", {
         date: selectedDate,
         text: draft,
-        tags: tags,
+        tags: tags
       });
 
       setDraft(data.entry?.text || "");
@@ -234,18 +234,18 @@ export default function JournalPage() {
       setSavedAt(
         new Date().toLocaleTimeString("en-US", {
           hour: "numeric",
-          minute: "2-digit",
-        }),
+          minute: "2-digit"
+        })
       );
       showSaveAlert({
         title: "Daily Matrix",
-        message: "Your note was saved successfully.",
+        message: "Your note was saved successfully."
       });
     } catch (err) {
       const message =
-        err?.response?.status === 401
-          ? "Your session expired. Please log in again."
-          : getApiErrorMessage(err, "Failed to save diary entry.");
+      err?.response?.status === 401 ?
+      "Your session expired. Please log in again." :
+      getApiErrorMessage(err, "Failed to save diary entry.");
       setError(message);
       if (String(message).toLowerCase().includes("log in again")) {
         navigate("/login");
@@ -274,38 +274,38 @@ export default function JournalPage() {
     try {
       const doc = new jsPDF();
       const dateLabel = formatDateLabel(selectedDate);
-      
-      // Theme colors
-      const accentColor = [190, 24, 93]; // Pink-700 approx
-      
-      // Header
+
+
+      const accentColor = [190, 24, 93];
+
+
       doc.setFontSize(22);
       doc.setTextColor(accentColor[0], accentColor[1], accentColor[2]);
       doc.text("ManologAI Journal", 20, 20);
-      
+
       doc.setFontSize(12);
       doc.setTextColor(100, 100, 100);
       doc.text(`Date: ${dateLabel}`, 20, 30);
-      
+
       doc.setDrawColor(220, 220, 220);
       doc.line(20, 35, 190, 35);
-      
-      // Content
+
+
       doc.setFontSize(14);
       doc.setTextColor(40, 40, 40);
-      
+
       const splitText = doc.splitTextToSize(draft || "No entry for this date.", 170);
       doc.text(splitText, 20, 45);
-      
-      // Tags
+
+
       if (tags.length > 0) {
-        const lastY = 45 + (splitText.length * 7);
+        const lastY = 45 + splitText.length * 7;
         doc.setFontSize(10);
         doc.setTextColor(150, 150, 150);
-        doc.text("Tags: " + tags.map(t => `#${t}`).join(", "), 20, lastY + 10);
+        doc.text("Tags: " + tags.map((t) => `#${t}`).join(", "), 20, lastY + 10);
       }
-      
-      // Footer
+
+
       const pageCount = doc.internal.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
@@ -313,7 +313,7 @@ export default function JournalPage() {
         doc.setTextColor(180, 180, 180);
         doc.text("Generated by ManologAI", 20, 285);
       }
-      
+
       doc.save(`Journal-${selectedDate}.pdf`);
     } catch (err) {
       console.error("PDF Export failed:", err);
@@ -323,8 +323,8 @@ export default function JournalPage() {
 
   return (
     <div className={`h-screen overflow-hidden relative transition-colors duration-500 ${
-      isLightMode ? "bg-slate-50 text-slate-900" : "bg-black text-slate-100"
-    }`}>
+    isLightMode ? "bg-slate-50 text-slate-900" : "bg-black text-slate-100"}`
+    }>
       <div className="absolute top-0 inset-x-0 h-[800px] pointer-events-none">
         <div className="absolute left-[-10%] top-8 h-80 w-80 rounded-full bg-pink-600/10 blur-[140px]" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-pink-600/20 blur-[120px] rounded-full" />
@@ -341,14 +341,14 @@ export default function JournalPage() {
               className="rounded-[28px] border p-6 shadow-2xl backdrop-blur-xl sm:p-8"
               style={{
                 borderColor: selectedDateColor.border,
-                backgroundImage: isLightMode
-                  ? `linear-gradient(160deg, ${selectedDateSurface}, rgba(255, 255, 255, 0.94))`
-                  : `linear-gradient(160deg, ${selectedDateColor.bg}, rgba(15, 23, 42, 0.72))`,
-                boxShadow: isLightMode
-                  ? `0 18px 50px -34px ${selectedDateColor.accent}, 0 0 0 1px ${selectedDateColor.border} inset`
-                  : `0 0 0 1px ${selectedDateColor.border} inset`,
-              }}
-            >
+                backgroundImage: isLightMode ?
+                `linear-gradient(160deg, ${selectedDateSurface}, rgba(255, 255, 255, 0.94))` :
+                `linear-gradient(160deg, ${selectedDateColor.bg}, rgba(15, 23, 42, 0.72))`,
+                boxShadow: isLightMode ?
+                `0 18px 50px -34px ${selectedDateColor.accent}, 0 0 0 1px ${selectedDateColor.border} inset` :
+                `0 0 0 1px ${selectedDateColor.border} inset`
+              }}>
+              
               <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                 <div className="space-y-3">
                   <p className="inline-flex items-center gap-2 rounded-full border border-pink-500/20 bg-pink-500/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.24em] text-pink-300">
@@ -357,13 +357,13 @@ export default function JournalPage() {
                   </p>
                   <div>
                     <h1 className={`text-3xl font-black tracking-tight sm:text-4xl ${
-                      isLightMode ? "text-slate-900" : "text-white"
-                    }`}>
+                    isLightMode ? "text-slate-900" : "text-white"}`
+                    }>
                       Write for the day you actually had.
                     </h1>
                     <p className={`mt-2 max-w-2xl text-sm leading-7 sm:text-base ${
-                      isLightMode ? "text-slate-600" : "text-slate-400"
-                    }`}>
+                    isLightMode ? "text-slate-600" : "text-slate-400"}`
+                    }>
                       Jump across recent dates, open any custom day, and keep
                       one note saved for each date.
                     </p>
@@ -372,28 +372,28 @@ export default function JournalPage() {
 
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                     <Button
-                      onClick={handleExportPDF}
-                      variant="ghost"
-                      className="text-slate-400 hover:text-white border-white/10 hover:bg-white/5"
-                    >
+                    onClick={handleExportPDF}
+                    variant="ghost"
+                    className="text-slate-400 hover:text-white border-white/10 hover:bg-white/5">
+                    
                       <FileDown className="mr-2 h-4 w-4" />
                       Export PDF
                     </Button>
                     <Input
-                      type="date"
-                      value={selectedDate}
-                      max={todayDateKey}
-                      onChange={(event) => handleDateChange(event.target.value)}
-                      className={isLightMode 
-                        ? "border-slate-200 bg-white text-slate-900 focus:ring-pink-500/20" 
-                        : "border-white/10 bg-white/5 text-slate-200"
-                      }
-                    />
+                    type="date"
+                    value={selectedDate}
+                    max={todayDateKey}
+                    onChange={(event) => handleDateChange(event.target.value)}
+                    className={isLightMode ?
+                    "border-slate-200 bg-white text-slate-900 focus:ring-pink-500/20" :
+                    "border-white/10 bg-white/5 text-slate-200"
+                    } />
+                  
                     <Button
-                      onClick={handleSave}
-                      disabled={saving}
-                      className="bg-pink-600 text-white hover:bg-pink-500"
-                    >
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="bg-pink-600 text-white hover:bg-pink-500">
+                    
                       <Save className="mr-2 h-4 w-4" />
                       {saving ? "Saving..." : "Save note"}
                     </Button>
@@ -405,15 +405,15 @@ export default function JournalPage() {
               <Card
                 className="border-white/10 bg-slate-900/50 backdrop-blur-xl"
                 style={
-                  isLightMode
-                    ? {
-                        backgroundColor: "rgba(255, 255, 255, 0.96)",
-                        borderColor: "rgba(15, 23, 42, 0.1)",
-                        boxShadow: "0 18px 48px -36px rgba(15, 23, 42, 0.35)",
-                      }
-                    : undefined
-                }
-              >
+                isLightMode ?
+                {
+                  backgroundColor: "rgba(255, 255, 255, 0.96)",
+                  borderColor: "rgba(15, 23, 42, 0.1)",
+                  boxShadow: "0 18px 48px -36px rgba(15, 23, 42, 0.35)"
+                } :
+                undefined
+                }>
+                
                 <CardHeader>
                   <CardTitle className={isLightMode ? "text-slate-900" : "text-white"}>Jump to date</CardTitle>
                   <CardDescription>
@@ -427,8 +427,8 @@ export default function JournalPage() {
                         "en-US",
                         {
                           month: "long",
-                          year: "numeric",
-                        },
+                          year: "numeric"
+                        }
                       )}
                     </p>
                   </div>
@@ -437,60 +437,60 @@ export default function JournalPage() {
                       const isActive = dateKey === selectedDate;
                       const isToday = dateKey === formatDateKey(new Date());
                       const dateColor =
-                        quickDateColors[index % quickDateColors.length];
+                      quickDateColors[index % quickDateColors.length];
                       return (
                         <button
                           key={dateKey}
                           type="button"
                           onClick={() => setSelectedDate(dateKey)}
                           className={`flex flex-col items-center justify-center gap-1 overflow-hidden rounded-xl border px-4 py-3 text-left transition-all ${
-                            isActive
-                              ? "text-white"
-                              : "bg-white/5 text-slate-300 hover:bg-white/10"
-                          }`}
+                          isActive ?
+                          "text-white" :
+                          "bg-white/5 text-slate-300 hover:bg-white/10"}`
+                          }
                           style={{
-                            borderColor: isActive
-                              ? dateColor.border
-                              : isLightMode
-                                ? "rgba(15, 23, 42, 0.12)"
-                                : "rgba(255, 255, 255, 0.10)",
-                            backgroundColor: isActive
-                              ? dateColor.bg
-                              : isLightMode
-                                ? "rgba(255, 255, 255, 0.78)"
-                                : undefined,
-                          }}
-                        >
+                            borderColor: isActive ?
+                            dateColor.border :
+                            isLightMode ?
+                            "rgba(15, 23, 42, 0.12)" :
+                            "rgba(255, 255, 255, 0.10)",
+                            backgroundColor: isActive ?
+                            dateColor.bg :
+                            isLightMode ?
+                            "rgba(255, 255, 255, 0.78)" :
+                            undefined
+                          }}>
+                          
                           <span
                             className="shrink-0 whitespace-nowrap text-sm font-medium"
                             style={{
-                              color: isActive
-                                ? isLightMode
-                                  ? dateColor.lightAccent
-                                  : dateColor.accent
-                                : isLightMode
-                                  ? dateColor.lightAccent
-                                  : `${dateColor.accent}CC`,
-                            }}
-                          >
+                              color: isActive ?
+                              isLightMode ?
+                              dateColor.lightAccent :
+                              dateColor.accent :
+                              isLightMode ?
+                              dateColor.lightAccent :
+                              `${dateColor.accent}CC`
+                            }}>
+                            
                             {parseInt(dateKey.split("-")[2])}
                           </span>
-                          {isToday && (
-                            <span
-                              className="h-1.5 w-1.5 rounded-full"
-                              style={{
-                                backgroundColor: isActive
-                                  ? isLightMode
-                                    ? dateColor.lightAccent
-                                    : dateColor.accent
-                                  : isLightMode
-                                    ? dateColor.lightAccent
-                                    : `${dateColor.accent}66`,
-                              }}
-                            />
-                          )}
-                        </button>
-                      );
+                          {isToday &&
+                          <span
+                            className="h-1.5 w-1.5 rounded-full"
+                            style={{
+                              backgroundColor: isActive ?
+                              isLightMode ?
+                              dateColor.lightAccent :
+                              dateColor.accent :
+                              isLightMode ?
+                              dateColor.lightAccent :
+                              `${dateColor.accent}66`
+                            }} />
+
+                          }
+                        </button>);
+
                     })}
                   </div>
                 </CardContent>
@@ -500,14 +500,14 @@ export default function JournalPage() {
                 className="backdrop-blur-xl"
                 style={{
                   borderColor: selectedDateColor.border,
-                  backgroundColor: isLightMode
-                    ? "rgba(255, 255, 255, 0.9)"
-                    : "rgba(15, 23, 42, 0.5)",
-                  boxShadow: isLightMode
-                    ? `0 18px 54px -36px ${selectedDateColor.accent}, 0 0 0 1px ${selectedDateColor.border} inset`
-                    : `0 0 0 1px ${selectedDateColor.border} inset`,
-                }}
-              >
+                  backgroundColor: isLightMode ?
+                  "rgba(255, 255, 255, 0.9)" :
+                  "rgba(15, 23, 42, 0.5)",
+                  boxShadow: isLightMode ?
+                  `0 18px 54px -36px ${selectedDateColor.accent}, 0 0 0 1px ${selectedDateColor.border} inset` :
+                  `0 0 0 1px ${selectedDateColor.border} inset`
+                }}>
+                
                 <CardHeader>
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
@@ -515,19 +515,19 @@ export default function JournalPage() {
                         {formatDateLabel(selectedDate)}
                       </CardTitle>
                       <CardDescription
-                        style={{ color: isLightMode ? `${selectedDateColor.lightAccent}CC` : `${selectedDateColor.accent}CC` }}
-                      >
+                        style={{ color: isLightMode ? `${selectedDateColor.lightAccent}CC` : `${selectedDateColor.accent}CC` }}>
+                        
                         Your note for {selectedDate}
                       </CardDescription>
                     </div>
-                    {savedAt ? (
-                      <span
-                        className="text-sm"
-                        style={{ color: isLightMode ? selectedDateColor.lightAccent : selectedDateColor.accent }}
-                      >
+                    {savedAt ?
+                    <span
+                      className="text-sm"
+                      style={{ color: isLightMode ? selectedDateColor.lightAccent : selectedDateColor.accent }}>
+                      
                         Saved at {savedAt}
-                      </span>
-                    ) : null}
+                      </span> :
+                    null}
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -537,92 +537,92 @@ export default function JournalPage() {
                         "en-US",
                         {
                           month: "long",
-                          year: "numeric",
-                        },
+                          year: "numeric"
+                        }
                       )}
                     </p>
                   </div>
-                  {error ? (
-                    <div className="mb-4 rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
+                  {error ?
+                  <div className="mb-4 rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
                       {error}
-                    </div>
-                  ) : null}
+                    </div> :
+                  null}
                   <div
                     className="rounded-2xl border p-4"
                     style={{
                       borderColor: selectedDateColor.border,
-                      backgroundImage: isLightMode
-                        ? `linear-gradient(180deg, ${selectedDateSurface}, rgba(255,255,255,0.88))`
-                        : `linear-gradient(180deg, ${selectedDateColor.bg}, rgba(255,255,255,0.02))`,
-                      boxShadow: isLightMode
-                        ? `0 16px 42px -34px ${selectedDateColor.accent}`
-                        : `0 18px 40px -28px ${selectedDateColor.accent}`,
-                    }}
-                  >
-                      {loading ? (
-                        <div className="min-h-[460px] py-2">
+                      backgroundImage: isLightMode ?
+                      `linear-gradient(180deg, ${selectedDateSurface}, rgba(255,255,255,0.88))` :
+                      `linear-gradient(180deg, ${selectedDateColor.bg}, rgba(255,255,255,0.02))`,
+                      boxShadow: isLightMode ?
+                      `0 16px 42px -34px ${selectedDateColor.accent}` :
+                      `0 18px 40px -28px ${selectedDateColor.accent}`
+                    }}>
+                    
+                      {loading ?
+                    <div className="min-h-[460px] py-2">
                           <TextSkeleton lines={12} className="max-w-4xl" />
-                        </div>
-                      ) : (
-                        <textarea
-                          value={draft}
-                          onChange={(event) => setDraft(event.target.value)}
-                          placeholder="Write freely about what happened, what you felt, what you learned, and what you want to carry forward."
-                          className={`min-h-[460px] w-full resize-none bg-transparent text-base leading-8 outline-none ${
-                            isLightMode ? "text-slate-800 placeholder:text-slate-400" : "text-slate-200 placeholder:text-slate-500"
-                          }`}
-                        />
-                      )}
+                        </div> :
+
+                    <textarea
+                      value={draft}
+                      onChange={(event) => setDraft(event.target.value)}
+                      placeholder="Write freely about what happened, what you felt, what you learned, and what you want to carry forward."
+                      className={`min-h-[460px] w-full resize-none bg-transparent text-base leading-8 outline-none ${
+                      isLightMode ? "text-slate-800 placeholder:text-slate-400" : "text-slate-200 placeholder:text-slate-500"}`
+                      } />
+
+                    }
 
                       <div className={`mt-4 border-t pt-4 ${isLightMode ? "border-slate-100" : "border-white/5"}`}>
                         <div className="flex flex-wrap gap-2 mb-3">
-                          {tags.map((tag) => (
-                            <span
-                              key={tag}
-                              className={`group flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium border ${
-                                isLightMode 
-                                  ? "bg-slate-100 text-slate-700 border-slate-200" 
-                                  : "bg-slate-800/80 text-slate-300 border-white/5"
-                              }`}
-                            >
+                          {tags.map((tag) =>
+                        <span
+                          key={tag}
+                          className={`group flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium border ${
+                          isLightMode ?
+                          "bg-slate-100 text-slate-700 border-slate-200" :
+                          "bg-slate-800/80 text-slate-300 border-white/5"}`
+                          }>
+                          
                               #{tag}
                               <button
-                                onClick={() => handleRemoveTag(tag)}
-                                className="text-slate-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
+                            onClick={() => handleRemoveTag(tag)}
+                            className="text-slate-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                            
                                 <X className="h-3 w-3" />
                               </button>
                             </span>
-                          ))}
-                          {tags.length === 0 && (
-                            <p className="text-[10px] text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                        )}
+                          {tags.length === 0 &&
+                        <p className="text-[10px] text-slate-500 uppercase tracking-widest flex items-center gap-2">
                               <Tags className="h-3 w-3" /> No tags added
                             </p>
-                          )}
+                        }
                         </div>
                         <form
-                          onSubmit={handleAddTag}
-                          className="flex items-center gap-2 max-w-xs"
-                        >
+                        onSubmit={handleAddTag}
+                        className="flex items-center gap-2 max-w-xs">
+                        
                           <div className="relative flex-1">
                             <Plus className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
                             <input
-                              type="text"
-                              value={tagInput}
-                              onChange={(e) => setTagInput(e.target.value)}
-                              placeholder="Add tag..."
-                              className={`w-full rounded-lg px-8 py-1.5 text-xs outline-none transition-colors ${
-                                isLightMode 
-                                  ? "bg-white border-slate-200 text-slate-800 focus:border-pink-500/50" 
-                                  : "bg-black/40 border-white/10 text-white focus:border-pink-500/50"
-                              }`}
-                            />
+                            type="text"
+                            value={tagInput}
+                            onChange={(e) => setTagInput(e.target.value)}
+                            placeholder="Add tag..."
+                            className={`w-full rounded-lg px-8 py-1.5 text-xs outline-none transition-colors ${
+                            isLightMode ?
+                            "bg-white border-slate-200 text-slate-800 focus:border-pink-500/50" :
+                            "bg-black/40 border-white/10 text-white focus:border-pink-500/50"}`
+                            } />
+                          
                           </div>
                           <Button
-                            type="submit"
-                            variant="ghost"
-                            className="h-8 w-8 p-0 rounded-lg hover:bg-pink-500/10 text-slate-400 hover:text-pink-400"
-                          >
+                          type="submit"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 rounded-lg hover:bg-pink-500/10 text-slate-400 hover:text-pink-400">
+                          
                             <Plus className="h-4 w-4" />
                           </Button>
                         </form>
@@ -634,6 +634,6 @@ export default function JournalPage() {
           </div>
         </main>
       </div>
-    </div>
-  );
+    </div>);
+
 }

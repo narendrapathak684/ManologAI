@@ -6,17 +6,17 @@ const Pad = require("../models/pad");
 const router = express.Router();
 
 const DEFAULT_PADS = [
-  { padType: "goals", title: "Goals" },
-  { padType: "books", title: "Books to Read" },
-  { padType: "to-learn", title: "To Learn" },
-  { padType: "to-do", title: "To Do" },
-  { padType: "to-buy", title: "To Buy" },
-  { padType: "ideas", title: "Ideas" },
-];
+{ padType: "goals", title: "Goals" },
+{ padType: "books", title: "Books to Read" },
+{ padType: "to-learn", title: "To Learn" },
+{ padType: "to-do", title: "To Do" },
+{ padType: "to-buy", title: "To Buy" },
+{ padType: "ideas", title: "Ideas" }];
 
-// ─── Helper ──────────────────────────────────────────────────────────────────
 
-// Seed default pads for a user if they don't exist yet.
+
+
+
 async function seedDefaultPads(userId) {
   for (const def of DEFAULT_PADS) {
     const exists = await Pad.findOne({ user: userId, padType: def.padType });
@@ -25,15 +25,15 @@ async function seedDefaultPads(userId) {
         user: userId,
         padType: def.padType,
         title: def.title,
-        items: [],
+        items: []
       });
     }
   }
 }
 
-// ─── Pad Routes ───────────────────────────────────────────────────────────────
 
-// GET /pads - get all pads for logged-in user (seeds defaults on first access)
+
+
 router.get("/", auth, async (req, res) => {
   try {
     const userId = req.user._id;
@@ -48,7 +48,7 @@ router.get("/", auth, async (req, res) => {
   }
 });
 
-// POST /pads - create a new custom pad
+
 router.post("/", auth, async (req, res) => {
   try {
     const userId = req.user._id;
@@ -62,7 +62,7 @@ router.post("/", auth, async (req, res) => {
       user: userId,
       padType: "custom",
       title: title.trim(),
-      items: [],
+      items: []
     });
 
     return res.status(201).json({ pad });
@@ -72,7 +72,7 @@ router.post("/", auth, async (req, res) => {
   }
 });
 
-// PATCH /pads/:padId - rename a pad
+
 router.patch("/:padId", auth, async (req, res) => {
   try {
     const userId = req.user._id;
@@ -97,7 +97,7 @@ router.patch("/:padId", auth, async (req, res) => {
   }
 });
 
-// DELETE /pads/:padId - delete a pad and all its items
+
 router.delete("/:padId", auth, async (req, res) => {
   try {
     const userId = req.user._id;
@@ -115,9 +115,9 @@ router.delete("/:padId", auth, async (req, res) => {
   }
 });
 
-// ─── Pad Item Routes ──────────────────────────────────────────────────────────
 
-// GET /pads/:padId/items - get all items in a pad
+
+
 router.get("/:padId/items", auth, async (req, res) => {
   try {
     const userId = req.user._id;
@@ -133,7 +133,7 @@ router.get("/:padId/items", auth, async (req, res) => {
   }
 });
 
-// POST /pads/:padId/items - add a new item to a pad
+
 router.post("/:padId/items", auth, async (req, res) => {
   try {
     const userId = req.user._id;
@@ -165,7 +165,7 @@ router.post("/:padId/items", auth, async (req, res) => {
       endDate: parsedEndDate,
       done: false,
       createdAt: new Date(),
-      updatedAt: new Date(),
+      updatedAt: new Date()
     };
 
     pad.items.push(newItem);
@@ -180,7 +180,7 @@ router.post("/:padId/items", auth, async (req, res) => {
   }
 });
 
-// PATCH /pads/:padId/items/:itemId - edit item title and/or note
+
 router.patch("/:padId/items/:itemId", auth, async (req, res) => {
   try {
     const userId = req.user._id;
@@ -226,7 +226,7 @@ router.patch("/:padId/items/:itemId", auth, async (req, res) => {
   }
 });
 
-// PATCH /pads/:padId/items/:itemId/toggle - toggle completion (done) status
+
 router.patch("/:padId/items/:itemId/toggle", auth, async (req, res) => {
   try {
     const userId = req.user._id;
@@ -250,7 +250,7 @@ router.patch("/:padId/items/:itemId/toggle", auth, async (req, res) => {
   }
 });
 
-// DELETE /pads/:padId/items/:itemId - delete a single item from a pad
+
 router.delete("/:padId/items/:itemId", auth, async (req, res) => {
   try {
     const userId = req.user._id;

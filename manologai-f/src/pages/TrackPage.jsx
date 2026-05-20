@@ -26,8 +26,8 @@ import {
   Trash2,
   TrendingDown,
   Settings2,
-  X,
-} from "lucide-react";
+  X } from
+"lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 import { Button } from "@/components/ui/button";
@@ -37,21 +37,21 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  CardTitle } from
+"@/components/ui/card";
 import { useSaveAlert } from "../context/SaveAlertContext";
 import { useTheme } from "../context/ThemeContext";
 import { api, getApiErrorMessage } from "../lib/api";
 import { ListSkeleton } from "@/components/SkeletonBoneyard";
 
 const navItems = [
-  { label: "Today", icon: LayoutDashboard, to: "/dashboard" },
-  { label: "Journal", icon: BookOpenText, to: "/journal" },
-  { label: "Track", icon: CheckCircle2, to: "/track", active: true },
-  { label: "Analytics", icon: ChartColumnBig, to: "/analytics" },
-  { label: "Organise", icon: FolderKanban, to: "/organise" },
-  { label: "Profile", icon: User, to: "/profile" },
-];
+{ label: "Today", icon: LayoutDashboard, to: "/dashboard" },
+{ label: "Journal", icon: BookOpenText, to: "/journal" },
+{ label: "Track", icon: CheckCircle2, to: "/track", active: true },
+{ label: "Analytics", icon: ChartColumnBig, to: "/analytics" },
+{ label: "Organise", icon: FolderKanban, to: "/organise" },
+{ label: "Profile", icon: User, to: "/profile" }];
+
 
 const defaultLifeRatings = {
   partner: 5,
@@ -61,148 +61,148 @@ const defaultLifeRatings = {
   career: 5,
   physicalEnvironment: 5,
   funRecreation: 5,
-  personalGrowth: 5,
+  personalGrowth: 5
 };
 
 const MAX_HABIT_NAME_LENGTH = 60;
 const STREAK_MILESTONES = [7, 30, 100, 365];
 
 const emotionOptions = [
-  {
-    value: "happy",
-    label: "Happy",
-    emoji: "😄",
-    accent: "border-emerald-500/30 bg-emerald-500/10 text-emerald-200",
-    idle: "border-emerald-500/20 bg-emerald-500/5 text-emerald-100/90 hover:bg-emerald-500/10",
-    glow: "shadow-[0_0_24px_-14px_rgba(16,185,129,0.8)]",
-    lightAccent: "border-emerald-700/60 bg-emerald-200 text-emerald-950",
-    lightIdle:
-      "border-emerald-700/35 bg-emerald-100/80 text-emerald-900 hover:bg-emerald-200",
-  },
-  {
-    value: "calm",
-    label: "Calm",
-    emoji: "😌",
-    accent: "border-sky-500/30 bg-sky-500/10 text-sky-200",
-    idle: "border-sky-500/20 bg-sky-500/5 text-sky-100/90 hover:bg-sky-500/10",
-    glow: "shadow-[0_0_24px_-14px_rgba(14,165,233,0.8)]",
-    lightAccent: "border-sky-700/60 bg-sky-200 text-sky-950",
-    lightIdle:
-      "border-sky-700/35 bg-sky-100/80 text-sky-900 hover:bg-sky-200",
-  },
-  {
-    value: "neutral",
-    label: "Neutral",
-    emoji: "🙂",
-    accent: "border-slate-500/30 bg-slate-500/10 text-slate-200",
-    idle: "border-slate-500/20 bg-slate-500/5 text-slate-100/90 hover:bg-slate-500/10",
-    glow: "shadow-[0_0_24px_-14px_rgba(100,116,139,0.8)]",
-    lightAccent: "border-slate-700/60 bg-slate-200 text-slate-950",
-    lightIdle:
-      "border-slate-700/35 bg-slate-100/90 text-slate-900 hover:bg-slate-200",
-  },
-  {
-    value: "sad",
-    label: "Sad",
-    emoji: "😔",
-    accent: "border-blue-500/30 bg-blue-500/10 text-blue-200",
-    idle: "border-blue-500/20 bg-blue-500/5 text-blue-100/90 hover:bg-blue-500/10",
-    glow: "shadow-[0_0_24px_-14px_rgba(59,130,246,0.8)]",
-    lightAccent: "border-blue-800/60 bg-blue-200 text-blue-950",
-    lightIdle:
-      "border-blue-800/35 bg-blue-100/80 text-blue-900 hover:bg-blue-200",
-  },
-  {
-    value: "stressed",
-    label: "Stressed",
-    emoji: "😣",
-    accent: "border-amber-500/30 bg-amber-500/10 text-amber-200",
-    idle: "border-amber-500/20 bg-amber-500/5 text-amber-100/90 hover:bg-amber-500/10",
-    glow: "shadow-[0_0_24px_-14px_rgba(245,158,11,0.8)]",
-    lightAccent: "border-amber-800/60 bg-amber-200 text-amber-950",
-    lightIdle:
-      "border-amber-800/35 bg-amber-100/80 text-amber-900 hover:bg-amber-200",
-  },
-  {
-    value: "angry",
-    label: "Angry",
-    emoji: "😠",
-    accent: "border-rose-500/30 bg-rose-500/10 text-rose-200",
-    idle: "border-rose-500/20 bg-rose-500/5 text-rose-100/90 hover:bg-rose-500/10",
-    glow: "shadow-[0_0_24px_-14px_rgba(244,63,94,0.8)]",
-    lightAccent: "border-rose-800/60 bg-rose-200 text-rose-950",
-    lightIdle:
-      "border-rose-800/35 bg-rose-100/80 text-rose-900 hover:bg-rose-200",
-  },
-  {
-    value: "tired",
-    label: "Tired",
-    emoji: "😴",
-    accent: "border-violet-500/30 bg-violet-500/10 text-violet-200",
-    idle: "border-violet-500/20 bg-violet-500/5 text-violet-100/90 hover:bg-violet-500/10",
-    glow: "shadow-[0_0_24px_-14px_rgba(139,92,246,0.8)]",
-    lightAccent: "border-violet-800/60 bg-violet-200 text-violet-950",
-    lightIdle:
-      "border-violet-800/35 bg-violet-100/80 text-violet-900 hover:bg-violet-200",
-  },
-  {
-    value: "excited",
-    label: "Excited",
-    emoji: "🤩",
-    accent: "border-pink-500/30 bg-pink-500/10 text-pink-200",
-    idle: "border-pink-500/20 bg-pink-500/5 text-pink-100/90 hover:bg-pink-500/10",
-    glow: "shadow-[0_0_24px_-14px_rgba(236,72,153,0.8)]",
-    lightAccent: "border-pink-800/60 bg-pink-200 text-pink-950",
-    lightIdle:
-      "border-pink-800/35 bg-pink-100/80 text-pink-900 hover:bg-pink-200",
-  },
-];
+{
+  value: "happy",
+  label: "Happy",
+  emoji: "😄",
+  accent: "border-emerald-500/30 bg-emerald-500/10 text-emerald-200",
+  idle: "border-emerald-500/20 bg-emerald-500/5 text-emerald-100/90 hover:bg-emerald-500/10",
+  glow: "shadow-[0_0_24px_-14px_rgba(16,185,129,0.8)]",
+  lightAccent: "border-emerald-700/60 bg-emerald-200 text-emerald-950",
+  lightIdle:
+  "border-emerald-700/35 bg-emerald-100/80 text-emerald-900 hover:bg-emerald-200"
+},
+{
+  value: "calm",
+  label: "Calm",
+  emoji: "😌",
+  accent: "border-sky-500/30 bg-sky-500/10 text-sky-200",
+  idle: "border-sky-500/20 bg-sky-500/5 text-sky-100/90 hover:bg-sky-500/10",
+  glow: "shadow-[0_0_24px_-14px_rgba(14,165,233,0.8)]",
+  lightAccent: "border-sky-700/60 bg-sky-200 text-sky-950",
+  lightIdle:
+  "border-sky-700/35 bg-sky-100/80 text-sky-900 hover:bg-sky-200"
+},
+{
+  value: "neutral",
+  label: "Neutral",
+  emoji: "🙂",
+  accent: "border-slate-500/30 bg-slate-500/10 text-slate-200",
+  idle: "border-slate-500/20 bg-slate-500/5 text-slate-100/90 hover:bg-slate-500/10",
+  glow: "shadow-[0_0_24px_-14px_rgba(100,116,139,0.8)]",
+  lightAccent: "border-slate-700/60 bg-slate-200 text-slate-950",
+  lightIdle:
+  "border-slate-700/35 bg-slate-100/90 text-slate-900 hover:bg-slate-200"
+},
+{
+  value: "sad",
+  label: "Sad",
+  emoji: "😔",
+  accent: "border-blue-500/30 bg-blue-500/10 text-blue-200",
+  idle: "border-blue-500/20 bg-blue-500/5 text-blue-100/90 hover:bg-blue-500/10",
+  glow: "shadow-[0_0_24px_-14px_rgba(59,130,246,0.8)]",
+  lightAccent: "border-blue-800/60 bg-blue-200 text-blue-950",
+  lightIdle:
+  "border-blue-800/35 bg-blue-100/80 text-blue-900 hover:bg-blue-200"
+},
+{
+  value: "stressed",
+  label: "Stressed",
+  emoji: "😣",
+  accent: "border-amber-500/30 bg-amber-500/10 text-amber-200",
+  idle: "border-amber-500/20 bg-amber-500/5 text-amber-100/90 hover:bg-amber-500/10",
+  glow: "shadow-[0_0_24px_-14px_rgba(245,158,11,0.8)]",
+  lightAccent: "border-amber-800/60 bg-amber-200 text-amber-950",
+  lightIdle:
+  "border-amber-800/35 bg-amber-100/80 text-amber-900 hover:bg-amber-200"
+},
+{
+  value: "angry",
+  label: "Angry",
+  emoji: "😠",
+  accent: "border-rose-500/30 bg-rose-500/10 text-rose-200",
+  idle: "border-rose-500/20 bg-rose-500/5 text-rose-100/90 hover:bg-rose-500/10",
+  glow: "shadow-[0_0_24px_-14px_rgba(244,63,94,0.8)]",
+  lightAccent: "border-rose-800/60 bg-rose-200 text-rose-950",
+  lightIdle:
+  "border-rose-800/35 bg-rose-100/80 text-rose-900 hover:bg-rose-200"
+},
+{
+  value: "tired",
+  label: "Tired",
+  emoji: "😴",
+  accent: "border-violet-500/30 bg-violet-500/10 text-violet-200",
+  idle: "border-violet-500/20 bg-violet-500/5 text-violet-100/90 hover:bg-violet-500/10",
+  glow: "shadow-[0_0_24px_-14px_rgba(139,92,246,0.8)]",
+  lightAccent: "border-violet-800/60 bg-violet-200 text-violet-950",
+  lightIdle:
+  "border-violet-800/35 bg-violet-100/80 text-violet-900 hover:bg-violet-200"
+},
+{
+  value: "excited",
+  label: "Excited",
+  emoji: "🤩",
+  accent: "border-pink-500/30 bg-pink-500/10 text-pink-200",
+  idle: "border-pink-500/20 bg-pink-500/5 text-pink-100/90 hover:bg-pink-500/10",
+  glow: "shadow-[0_0_24px_-14px_rgba(236,72,153,0.8)]",
+  lightAccent: "border-pink-800/60 bg-pink-200 text-pink-950",
+  lightIdle:
+  "border-pink-800/35 bg-pink-100/80 text-pink-900 hover:bg-pink-200"
+}];
+
 
 const lifeRatingCategories = [
-  { key: "health", label: "Health", icon: Activity, color: "text-emerald-400" },
-  { key: "career", label: "Career", icon: Briefcase, color: "text-blue-400" },
-  { key: "finances", label: "Finances", icon: Wallet, color: "text-amber-400" },
-  { key: "partner", label: "Partner", icon: Heart, color: "text-rose-400" },
-  {
-    key: "familyFriends",
-    label: "Family & Friends",
-    icon: Users,
-    color: "text-indigo-400",
-  },
-  {
-    key: "physicalEnvironment",
-    label: "Environment",
-    icon: Home,
-    color: "text-orange-400",
-  },
-  {
-    key: "funRecreation",
-    label: "Fun",
-    icon: Palmtree,
-    color: "text-cyan-400",
-  },
-  {
-    key: "personalGrowth",
-    label: "Growth",
-    icon: TrendingUp,
-    color: "text-pink-400",
-  },
-];
+{ key: "health", label: "Health", icon: Activity, color: "text-emerald-400" },
+{ key: "career", label: "Career", icon: Briefcase, color: "text-blue-400" },
+{ key: "finances", label: "Finances", icon: Wallet, color: "text-amber-400" },
+{ key: "partner", label: "Partner", icon: Heart, color: "text-rose-400" },
+{
+  key: "familyFriends",
+  label: "Family & Friends",
+  icon: Users,
+  color: "text-indigo-400"
+},
+{
+  key: "physicalEnvironment",
+  label: "Environment",
+  icon: Home,
+  color: "text-orange-400"
+},
+{
+  key: "funRecreation",
+  label: "Fun",
+  icon: Palmtree,
+  color: "text-cyan-400"
+},
+{
+  key: "personalGrowth",
+  label: "Growth",
+  icon: TrendingUp,
+  color: "text-pink-400"
+}];
+
 
 const mapEntryToLifeRatings = (entry) => ({
   partner: entry?.ratings?.partner ?? defaultLifeRatings.partner,
   familyFriends:
-    entry?.ratings?.familyFriends ?? defaultLifeRatings.familyFriends,
+  entry?.ratings?.familyFriends ?? defaultLifeRatings.familyFriends,
   health: entry?.ratings?.health ?? defaultLifeRatings.health,
   finances: entry?.ratings?.finances ?? defaultLifeRatings.finances,
   career: entry?.ratings?.career ?? defaultLifeRatings.career,
   physicalEnvironment:
-    entry?.ratings?.physicalEnvironment ??
-    defaultLifeRatings.physicalEnvironment,
+  entry?.ratings?.physicalEnvironment ??
+  defaultLifeRatings.physicalEnvironment,
   funRecreation:
-    entry?.ratings?.funRecreation ?? defaultLifeRatings.funRecreation,
+  entry?.ratings?.funRecreation ?? defaultLifeRatings.funRecreation,
   personalGrowth:
-    entry?.ratings?.personalGrowth ?? defaultLifeRatings.personalGrowth,
+  entry?.ratings?.personalGrowth ?? defaultLifeRatings.personalGrowth
 });
 
 const getLocalDateKey = () => {
@@ -235,7 +235,7 @@ const formatShortDate = (dateKey) => {
   const date = new Date(`${dateKey}T00:00:00`);
   return date.toLocaleDateString(undefined, {
     month: "short",
-    day: "numeric",
+    day: "numeric"
   });
 };
 
@@ -256,7 +256,7 @@ const splitHoursAndMinutes = (value) => {
   const minutes = totalMinutes % 60;
   return {
     hours: String(hours),
-    minutes: String(minutes),
+    minutes: String(minutes)
   };
 };
 
@@ -274,7 +274,7 @@ const resolveTimeValue = (hoursValue, minutesValue) => {
 };
 
 const getStreakMilestones = (currentStreak) =>
-  STREAK_MILESTONES.filter((milestone) => currentStreak >= milestone);
+STREAK_MILESTONES.filter((milestone) => currentStreak >= milestone);
 
 export default function TrackPage() {
   const [habits, setHabits] = useState([]);
@@ -285,7 +285,7 @@ export default function TrackPage() {
     screenMinutes: "",
     workStudyHours: "",
     workStudyMinutes: "",
-    expense: "",
+    expense: ""
   });
   const [metricsSubmitted, setMetricsSubmitted] = useState(false);
   const [lifeRatings, setLifeRatings] = useState(defaultLifeRatings);
@@ -309,13 +309,13 @@ export default function TrackPage() {
   const { theme } = useTheme();
   const isLightMode = theme === "light";
   const { user, setUser } = useAuth();
-  
+
   const [isGoalsModalOpen, setIsGoalsModalOpen] = useState(false);
   const [localGoals, setLocalGoals] = useState({
     sleep: user?.goals?.sleep ?? 8,
     screenTime: user?.goals?.screenTime ?? 3,
     work: user?.goals?.work ?? 6,
-    expenses: user?.goals?.expenses ?? 50,
+    expenses: user?.goals?.expenses ?? 50
   });
 
   useEffect(() => {
@@ -324,7 +324,7 @@ export default function TrackPage() {
         sleep: user.goals.sleep ?? 8,
         screenTime: user.goals.screenTime ?? 3,
         work: user.goals.work ?? 6,
-        expenses: user.goals.expenses ?? 50,
+        expenses: user.goals.expenses ?? 50
       });
     }
   }, [user]);
@@ -334,25 +334,25 @@ export default function TrackPage() {
   const yesterdayKey = getRelativeDateKey(1);
   const twoDaysAgoKey = getRelativeDateKey(2);
   const dateOptions = [
-    { key: today, label: "Today", short: formatShortDate(today) },
-    {
-      key: yesterdayKey,
-      label: "Yesterday",
-      short: formatShortDate(yesterdayKey),
-    },
-    {
-      key: twoDaysAgoKey,
-      label: "2 Days Ago",
-      short: formatShortDate(twoDaysAgoKey),
-    },
-  ];
+  { key: today, label: "Today", short: formatShortDate(today) },
+  {
+    key: yesterdayKey,
+    label: "Yesterday",
+    short: formatShortDate(yesterdayKey)
+  },
+  {
+    key: twoDaysAgoKey,
+    label: "2 Days Ago",
+    short: formatShortDate(twoDaysAgoKey)
+  }];
+
   const { selectedDateLabel, dateBadge } = (() => {
     const label = selectedDateKey === today ? "Today" : formatShortDate(selectedDateKey);
-    const badge = (
-      <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-300">
+    const badge =
+    <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-300">
         {label}
-      </span>
-    );
+      </span>;
+
     return { selectedDateLabel: label, dateBadge: badge };
   })();
 
@@ -362,7 +362,7 @@ export default function TrackPage() {
       const parts = new Intl.NumberFormat(undefined, {
         style: "currency",
         currency: expenseCurrency,
-        currencyDisplay: "narrowSymbol",
+        currencyDisplay: "narrowSymbol"
       }).formatToParts(0);
       const symbolPart = parts.find((part) => part.type === "currency");
       return symbolPart?.value || expenseCurrency;
@@ -397,17 +397,17 @@ export default function TrackPage() {
 
       const isToday = dateKey === today;
 
-      // Fetch metrics for selected day
+
       try {
-        const { data: metricsData } = isToday
-          ? await api.get("/time-tracker/today")
-          : await api.get(`/time-tracker/${dateKey}`);
-        
+        const { data: metricsData } = isToday ?
+        await api.get("/time-tracker/today") :
+        await api.get(`/time-tracker/${dateKey}`);
+
         if (metricsData.entry) {
           const sleepParts = splitHoursAndMinutes(metricsData.entry.sleep);
           const screenParts = splitHoursAndMinutes(metricsData.entry.screen);
           const workStudyParts = splitHoursAndMinutes(
-            metricsData.entry.workStudy,
+            metricsData.entry.workStudy
           );
           setMetrics({
             sleepHours: sleepParts.hours,
@@ -416,7 +416,7 @@ export default function TrackPage() {
             screenMinutes: screenParts.minutes,
             workStudyHours: workStudyParts.hours,
             workStudyMinutes: workStudyParts.minutes,
-            expense: metricsData.entry.expense || "",
+            expense: metricsData.entry.expense || ""
           });
           setMetricsSubmitted(Boolean(metricsData?.alreadySubmitted ?? true));
         } else {
@@ -427,7 +427,7 @@ export default function TrackPage() {
             screenMinutes: "",
             workStudyHours: "",
             workStudyMinutes: "",
-            expense: "",
+            expense: ""
           });
           setMetricsSubmitted(false);
         }
@@ -435,17 +435,17 @@ export default function TrackPage() {
         console.error("Failed to fetch metrics:", err);
       }
 
-      // Fetch life ratings for selected day
+
       try {
         const { data: lifeRatingsData } = await api.get("/life-ratings/day", {
-          params: isToday ? {} : { date: dateKey },
+          params: isToday ? {} : { date: dateKey }
         });
         if (lifeRatingsData.entry) {
           setLifeRatings(mapEntryToLifeRatings(lifeRatingsData.entry));
           setLifeRatingsLocked(Boolean(lifeRatingsData.locked));
           setLifeRatingsLoaded(true);
           setLifeRatingsSubmitted(
-            Boolean(lifeRatingsData?.alreadySubmitted ?? true),
+            Boolean(lifeRatingsData?.alreadySubmitted ?? true)
           );
         } else {
           setLifeRatings(defaultLifeRatings);
@@ -457,12 +457,12 @@ export default function TrackPage() {
         console.error("Failed to fetch life ratings:", err);
       }
 
-      // Fetch emotion for selected day
+
       try {
-        const { data: emotionData } = isToday
-          ? await api.get("/emotions/today")
-          : await api.get(`/emotions/${dateKey}`);
-          
+        const { data: emotionData } = isToday ?
+        await api.get("/emotions/today") :
+        await api.get(`/emotions/${dateKey}`);
+
         if (emotionData?.emotion) {
           setSelectedEmotion(emotionData.emotion);
           setEmotionLocked(Boolean(emotionData.locked));
@@ -482,8 +482,8 @@ export default function TrackPage() {
       setError(
         getApiErrorMessage(
           err,
-          "Failed to load tracking data. Please try again.",
-        ),
+          "Failed to load tracking data. Please try again."
+        )
       );
     } finally {
       setLoading(false);
@@ -504,9 +504,9 @@ export default function TrackPage() {
       await refreshHabits();
       showSaveAlert({
         title: "Daily Habits",
-        message: isCompleted
-          ? `Habit completion was removed for ${selectedDateLabel}.`
-          : `Habit marked complete for ${selectedDateLabel}.`,
+        message: isCompleted ?
+        `Habit completion was removed for ${selectedDateLabel}.` :
+        `Habit marked complete for ${selectedDateLabel}.`
       });
     } catch (err) {
       console.error("Failed to toggle habit:", err);
@@ -522,7 +522,7 @@ export default function TrackPage() {
     if (!trimmedName) return;
     if (trimmedName.length > MAX_HABIT_NAME_LENGTH) {
       setError(
-        `Habit name must be ${MAX_HABIT_NAME_LENGTH} characters or fewer.`,
+        `Habit name must be ${MAX_HABIT_NAME_LENGTH} characters or fewer.`
       );
       return;
     }
@@ -533,7 +533,7 @@ export default function TrackPage() {
     try {
       const { data } = await api.post("/habits", {
         name: trimmedName,
-        frequency: "daily",
+        frequency: "daily"
       });
 
       if (data?.habit) {
@@ -542,7 +542,7 @@ export default function TrackPage() {
       setNewHabitName("");
       showSaveAlert({
         title: "Daily Habits",
-        message: `"${data.habit?.name || "Habit"}" was added successfully.`,
+        message: `"${data.habit?.name || "Habit"}" was added successfully.`
       });
     } catch (err) {
       console.error("Failed to add habit:", err);
@@ -555,7 +555,7 @@ export default function TrackPage() {
   const handleDeleteHabit = async (habitId, habitName) => {
     if (!habitId || deletingHabitId) return;
     const confirmed = window.confirm(
-      `Delete "${habitName || "this habit"}"? This cannot be undone.`,
+      `Delete "${habitName || "this habit"}"? This cannot be undone.`
     );
     if (!confirmed) return;
 
@@ -567,7 +567,7 @@ export default function TrackPage() {
       setHabits((current) => current.filter((habit) => habit._id !== habitId));
       showSaveAlert({
         title: "Daily Habits",
-        message: "Habit deleted successfully.",
+        message: "Habit deleted successfully."
       });
     } catch (err) {
       console.error("Failed to delete habit:", err);
@@ -583,15 +583,15 @@ export default function TrackPage() {
 
     const sleepHours = toDecimalHours(
       metrics.sleepHours || 0,
-      metrics.sleepMinutes || 0,
+      metrics.sleepMinutes || 0
     );
     const screenHours = toDecimalHours(
       metrics.screenHours || 0,
-      metrics.screenMinutes || 0,
+      metrics.screenMinutes || 0
     );
     const workStudyHours = toDecimalHours(
       metrics.workStudyHours || 0,
-      metrics.workStudyMinutes || 0,
+      metrics.workStudyMinutes || 0
     );
     const totalHours = sleepHours + screenHours + workStudyHours;
 
@@ -607,18 +607,18 @@ export default function TrackPage() {
         screen: resolveTimeValue(metrics.screenHours, metrics.screenMinutes),
         workStudy: resolveTimeValue(
           metrics.workStudyHours,
-          metrics.workStudyMinutes,
+          metrics.workStudyMinutes
         ),
-        expense: metrics.expense,
+        expense: metrics.expense
       };
       const { data } =
-        selectedDateKey === today
-          ? await api.post("/time-tracker", payload)
-          : await api.post(`/time-tracker/${selectedDateKey}`, payload);
+      selectedDateKey === today ?
+      await api.post("/time-tracker", payload) :
+      await api.post(`/time-tracker/${selectedDateKey}`, payload);
       setMetricsSubmitted(Boolean(data?.alreadySubmitted ?? true));
       showSaveAlert({
         title: "Daily Metrics",
-        message: `Metrics for ${selectedDateLabel} were saved successfully.`,
+        message: `Metrics for ${selectedDateLabel} were saved successfully.`
       });
     } catch (err) {
       console.error("Failed to save metrics:", err);
@@ -636,9 +636,9 @@ export default function TrackPage() {
     setError("");
     try {
       const endpoint =
-        selectedDateKey === today
-          ? "/life-ratings"
-          : `/life-ratings/${selectedDateKey}`;
+      selectedDateKey === today ?
+      "/life-ratings" :
+      `/life-ratings/${selectedDateKey}`;
       const { data } = await api.post(endpoint, lifeRatings);
       if (data.entry) {
         setLifeRatings(mapEntryToLifeRatings(data.entry));
@@ -649,7 +649,7 @@ export default function TrackPage() {
 
       showSaveAlert({
         title: "Life Ratings",
-        message: `Life ratings for ${selectedDateLabel} were saved successfully.`,
+        message: `Life ratings for ${selectedDateLabel} were saved successfully.`
       });
     } catch (err) {
       console.error("Failed to save life ratings:", err);
@@ -667,11 +667,11 @@ export default function TrackPage() {
     setError("");
     try {
       const endpoint =
-        selectedDateKey === today
-          ? "/emotions"
-          : `/emotions/${selectedDateKey}`;
+      selectedDateKey === today ?
+      "/emotions" :
+      `/emotions/${selectedDateKey}`;
       const { data } = await api.post(endpoint, {
-        emotion: selectedEmotion,
+        emotion: selectedEmotion
       });
       setSelectedEmotion(data?.emotion || selectedEmotion);
       setEmotionLocked(Boolean(data?.locked));
@@ -680,7 +680,7 @@ export default function TrackPage() {
 
       showSaveAlert({
         title: "Daily Emotion",
-        message: `Emotion for ${selectedDateLabel} was saved successfully.`,
+        message: `Emotion for ${selectedDateLabel} was saved successfully.`
       });
     } catch (err) {
       console.error("Failed to save emotion:", err);
@@ -712,7 +712,7 @@ export default function TrackPage() {
       setIsGoalsModalOpen(false);
       showSaveAlert({
         title: "Daily Goals",
-        message: "Your performance targets have been updated successfully.",
+        message: "Your performance targets have been updated successfully."
       });
     } catch (err) {
       console.error("Failed to save goals:", err);
@@ -733,12 +733,12 @@ export default function TrackPage() {
 
     return (
       <div
-        className={`flex items-center gap-1.5 rounded-full border ${border} ${bg} px-2 py-0.5 text-[10px] font-bold ${color}`}
-      >
+        className={`flex items-center gap-1.5 rounded-full border ${border} ${bg} px-2 py-0.5 text-[10px] font-bold ${color}`}>
+        
         <Icon className="h-3 w-3" />
         {isSuccess ? "Goal Met" : `Goal: ${goal}`}
-      </div>
-    );
+      </div>);
+
   };
 
   return (
@@ -756,8 +756,8 @@ export default function TrackPage() {
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="rounded-[28px] border border-white/10 bg-white/[0.03] p-6 shadow-2xl backdrop-blur-xl sm:p-8"
-            >
+              className="rounded-[28px] border border-white/10 bg-white/[0.03] p-6 shadow-2xl backdrop-blur-xl sm:p-8">
+              
               <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                 <div className="space-y-3">
                   <p className="inline-flex items-center gap-2 rounded-full border border-pink-500/20 bg-pink-500/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.24em] text-pink-300">
@@ -782,17 +782,17 @@ export default function TrackPage() {
                           type="button"
                           onClick={() => setSelectedDateKey(option.key)}
                           className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-all ${
-                            isActive
-                              ? "border-pink-400/60 bg-pink-500/20 text-pink-100"
-                              : "border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:text-white"
-                          }`}
-                        >
+                          isActive ?
+                          "border-pink-400/60 bg-pink-500/20 text-pink-100" :
+                          "border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:text-white"}`
+                          }>
+                          
                           {option.label}
                           <span className="ml-1 text-[10px] text-slate-400">
                             {option.short}
                           </span>
-                        </button>
-                      );
+                        </button>);
+
                     })}
                   </div>
                   <p className="text-xs text-slate-500">
@@ -802,14 +802,14 @@ export default function TrackPage() {
               </div>
             </motion.section>
 
-            {error && (
-              <div className="mt-4 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+            {error &&
+            <div className="mt-4 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
                 {error}
               </div>
-            )}
+            }
 
             <div className="mt-6 grid items-stretch gap-6 xl:grid-cols-3">
-              {/* Habits Section */}
+              {}
               <Card className="flex h-full flex-col border-pink-500/25 bg-gradient-to-br from-pink-500/6 via-slate-900/70 to-slate-950/95 backdrop-blur-xl">
                 <CardHeader className="space-y-3">
                   <div className="flex items-center justify-between gap-3">
@@ -830,48 +830,48 @@ export default function TrackPage() {
                 <CardContent className="flex flex-1 flex-col space-y-4">
                   <form
                     onSubmit={handleAddHabit}
-                    className="mb-6 flex flex-col gap-2 sm:flex-row"
-                  >
+                    className="mb-6 flex flex-col gap-2 sm:flex-row">
+                    
                     <Input
                       placeholder="New habit name..."
                       value={newHabitName}
                       onChange={(e) => setNewHabitName(e.target.value)}
                       maxLength={MAX_HABIT_NAME_LENGTH}
                       disabled={addingHabit}
-                      className="bg-black/20 border-white/10 text-white placeholder:text-slate-600 focus-visible:ring-pink-500"
-                    />
+                      className="bg-black/20 border-white/10 text-white placeholder:text-slate-600 focus-visible:ring-pink-500" />
+                    
                     <Button
                       type="submit"
                       disabled={addingHabit}
-                      className="bg-pink-600 hover:bg-pink-500 text-white shrink-0 sm:w-auto"
-                    >
+                      className="bg-pink-600 hover:bg-pink-500 text-white shrink-0 sm:w-auto">
+                      
                       <Plus className="h-4 w-4 mr-2" />
                       {addingHabit ? "Adding..." : "Add"}
                     </Button>
                   </form>
 
-                  {loading ? (
-                    <ListSkeleton rows={3} />
-                  ) : habits.length === 0 ? (
-                    <p className="text-slate-500 text-sm italic">
+                  {loading ?
+                  <ListSkeleton rows={3} /> :
+                  habits.length === 0 ?
+                  <p className="text-slate-500 text-sm italic">
                       No habits added yet.
-                    </p>
-                  ) : (
-                    <div className="space-y-4">
+                    </p> :
+
+                  <div className="space-y-4">
                       <div className="max-h-[260px] space-y-3 overflow-y-auto pr-1">
                         {habits.map((habit) => {
-                          const done = isHabitDoneOnDate(
-                            habit,
-                            selectedDateKey,
-                          );
-                          const earnedMilestones = getStreakMilestones(
-                            habit.currentStreak,
-                          );
-                          return (
-                            <div
-                              key={habit._id}
-                              className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 sm:flex-row sm:items-start sm:justify-between"
-                            >
+                        const done = isHabitDoneOnDate(
+                          habit,
+                          selectedDateKey
+                        );
+                        const earnedMilestones = getStreakMilestones(
+                          habit.currentStreak
+                        );
+                        return (
+                          <div
+                            key={habit._id}
+                            className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 sm:flex-row sm:items-start sm:justify-between">
+                            
                               <div className="min-w-0 flex-1">
                                 <div className="overflow-x-auto pr-2">
                                   <p className="font-medium text-slate-200 whitespace-nowrap">
@@ -885,60 +885,60 @@ export default function TrackPage() {
                                   </span>{" "}
                                   (Best: {habit.longestStreak})
                                 </p>
-                                {earnedMilestones.length > 0 && (
-                                  <div className="mt-2 flex flex-wrap gap-2">
-                                    {earnedMilestones.map((milestone) => (
-                                      <span
-                                        key={milestone}
-                                        className="inline-flex items-center rounded-full border border-pink-500/30 bg-pink-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-pink-200"
-                                      >
+                                {earnedMilestones.length > 0 &&
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                    {earnedMilestones.map((milestone) =>
+                                <span
+                                  key={milestone}
+                                  className="inline-flex items-center rounded-full border border-pink-500/30 bg-pink-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-pink-200">
+                                  
                                         {milestone}d badge
                                       </span>
-                                    ))}
-                                  </div>
                                 )}
+                                  </div>
+                              }
                               </div>
                               <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3">
                                 <Button
-                                  onClick={() =>
-                                    handleToggleHabit(habit._id, done)
-                                  }
-                                  disabled={habitActionId === habit._id}
-                                  variant={done ? "default" : "outline"}
-                                  className={
-                                    done
-                                      ? "w-full border border-pink-500/30 bg-pink-500/20 text-pink-100 hover:bg-pink-500/30 sm:w-auto"
-                                      : "w-full border border-pink-500/20 bg-pink-500/10 text-pink-100 hover:bg-pink-500/20 sm:w-auto"
-                                  }
-                                >
-                                  {habitActionId === habit._id
-                                    ? "Saving..."
-                                    : done
-                                      ? "Undo"
-                                      : "Mark Done"}
+                                onClick={() =>
+                                handleToggleHabit(habit._id, done)
+                                }
+                                disabled={habitActionId === habit._id}
+                                variant={done ? "default" : "outline"}
+                                className={
+                                done ?
+                                "w-full border border-pink-500/30 bg-pink-500/20 text-pink-100 hover:bg-pink-500/30 sm:w-auto" :
+                                "w-full border border-pink-500/20 bg-pink-500/10 text-pink-100 hover:bg-pink-500/20 sm:w-auto"
+                                }>
+                                
+                                  {habitActionId === habit._id ?
+                                "Saving..." :
+                                done ?
+                                "Undo" :
+                                "Mark Done"}
                                 </Button>
                                 <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleDeleteHabit(habit._id, habit.name)
-                                  }
-                                  disabled={deletingHabitId === habit._id}
-                                  className="inline-flex w-full items-center justify-center rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-rose-200 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-                                  aria-label="Delete habit"
-                                >
+                                type="button"
+                                onClick={() =>
+                                handleDeleteHabit(habit._id, habit.name)
+                                }
+                                disabled={deletingHabitId === habit._id}
+                                className="inline-flex w-full items-center justify-center rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-rose-200 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                                aria-label="Delete habit">
+                                
                                   <Trash2 className="h-4 w-4" />
                                 </button>
                               </div>
-                            </div>
-                          );
-                        })}
+                            </div>);
+
+                      })}
                       </div>
                     </div>
-                  )}
+                  }
                 </CardContent>
               </Card>
 
-              {/* Metrics Section */}
+              {}
               <Card className="flex h-full flex-col border-emerald-500/25 bg-gradient-to-br from-emerald-500/6 via-slate-900/70 to-slate-950/95 backdrop-blur-xl">
                 <CardHeader className="space-y-3">
                   <div className="flex items-center justify-between gap-3">
@@ -951,18 +951,18 @@ export default function TrackPage() {
                         onClick={() => setIsGoalsModalOpen(true)}
                         variant="ghost"
                         className="h-8 w-8 p-0 text-slate-500 hover:text-emerald-400 hover:bg-emerald-400/10"
-                        title="Edit Goals"
-                      >
+                        title="Edit Goals">
+                        
                         <Settings2 className="h-4 w-4" />
                       </Button>
                       {dateBadge}
                     </div>
                   </div>
-                  {metricsSubmitted && (
-                    <span className="inline-flex w-fit rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-200">
+                  {metricsSubmitted &&
+                  <span className="inline-flex w-fit rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-200">
                       Submitted
                     </span>
-                  )}
+                  }
                   <CardDescription>
                     Quantify your day to understand your baseline.
                   </CardDescription>
@@ -977,8 +977,8 @@ export default function TrackPage() {
                         <GoalIndicator
                           current={toDecimalHours(metrics.sleepHours, metrics.sleepMinutes)}
                           goal={user?.goals?.sleep}
-                          type="min"
-                        />
+                          type="min" />
+                        
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <Input
@@ -989,17 +989,17 @@ export default function TrackPage() {
                           step={1}
                           value={metrics.sleepHours}
                           onChange={(e) =>
-                            setMetrics({
-                              ...metrics,
-                              sleepHours: clampNumberInput(
-                                e.target.value,
-                                0,
-                                24,
-                              ),
-                            })
+                          setMetrics({
+                            ...metrics,
+                            sleepHours: clampNumberInput(
+                              e.target.value,
+                              0,
+                              24
+                            )
+                          })
                           }
-                          className="bg-black/20 border-white/10 text-white focus-visible:ring-emerald-500"
-                        />
+                          className="bg-black/20 border-white/10 text-white focus-visible:ring-emerald-500" />
+                        
                         <Input
                           type="number"
                           placeholder="Minutes"
@@ -1008,17 +1008,17 @@ export default function TrackPage() {
                           step={1}
                           value={metrics.sleepMinutes}
                           onChange={(e) =>
-                            setMetrics({
-                              ...metrics,
-                              sleepMinutes: clampNumberInput(
-                                e.target.value,
-                                0,
-                                59,
-                              ),
-                            })
+                          setMetrics({
+                            ...metrics,
+                            sleepMinutes: clampNumberInput(
+                              e.target.value,
+                              0,
+                              59
+                            )
+                          })
                           }
-                          className="bg-black/20 border-white/10 text-white focus-visible:ring-emerald-500"
-                        />
+                          className="bg-black/20 border-white/10 text-white focus-visible:ring-emerald-500" />
+                        
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -1029,8 +1029,8 @@ export default function TrackPage() {
                         <GoalIndicator
                           current={toDecimalHours(metrics.screenHours, metrics.screenMinutes)}
                           goal={user?.goals?.screenTime}
-                          type="max"
-                        />
+                          type="max" />
+                        
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <Input
@@ -1041,17 +1041,17 @@ export default function TrackPage() {
                           step={1}
                           value={metrics.screenHours}
                           onChange={(e) =>
-                            setMetrics({
-                              ...metrics,
-                              screenHours: clampNumberInput(
-                                e.target.value,
-                                0,
-                                24,
-                              ),
-                            })
+                          setMetrics({
+                            ...metrics,
+                            screenHours: clampNumberInput(
+                              e.target.value,
+                              0,
+                              24
+                            )
+                          })
                           }
-                          className="bg-black/20 border-white/10 text-white focus-visible:ring-emerald-500"
-                        />
+                          className="bg-black/20 border-white/10 text-white focus-visible:ring-emerald-500" />
+                        
                         <Input
                           type="number"
                           placeholder="Minutes"
@@ -1060,17 +1060,17 @@ export default function TrackPage() {
                           step={1}
                           value={metrics.screenMinutes}
                           onChange={(e) =>
-                            setMetrics({
-                              ...metrics,
-                              screenMinutes: clampNumberInput(
-                                e.target.value,
-                                0,
-                                59,
-                              ),
-                            })
+                          setMetrics({
+                            ...metrics,
+                            screenMinutes: clampNumberInput(
+                              e.target.value,
+                              0,
+                              59
+                            )
+                          })
                           }
-                          className="bg-black/20 border-white/10 text-white focus-visible:ring-emerald-500"
-                        />
+                          className="bg-black/20 border-white/10 text-white focus-visible:ring-emerald-500" />
+                        
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -1081,8 +1081,8 @@ export default function TrackPage() {
                         <GoalIndicator
                           current={toDecimalHours(metrics.workStudyHours, metrics.workStudyMinutes)}
                           goal={user?.goals?.work}
-                          type="min"
-                        />
+                          type="min" />
+                        
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <Input
@@ -1093,17 +1093,17 @@ export default function TrackPage() {
                           step={1}
                           value={metrics.workStudyHours}
                           onChange={(e) =>
-                            setMetrics({
-                              ...metrics,
-                              workStudyHours: clampNumberInput(
-                                e.target.value,
-                                0,
-                                24,
-                              ),
-                            })
+                          setMetrics({
+                            ...metrics,
+                            workStudyHours: clampNumberInput(
+                              e.target.value,
+                              0,
+                              24
+                            )
+                          })
                           }
-                          className="bg-black/20 border-white/10 text-white focus-visible:ring-emerald-500"
-                        />
+                          className="bg-black/20 border-white/10 text-white focus-visible:ring-emerald-500" />
+                        
                         <Input
                           type="number"
                           placeholder="Minutes"
@@ -1112,17 +1112,17 @@ export default function TrackPage() {
                           step={1}
                           value={metrics.workStudyMinutes}
                           onChange={(e) =>
-                            setMetrics({
-                              ...metrics,
-                              workStudyMinutes: clampNumberInput(
-                                e.target.value,
-                                0,
-                                59,
-                              ),
-                            })
+                          setMetrics({
+                            ...metrics,
+                            workStudyMinutes: clampNumberInput(
+                              e.target.value,
+                              0,
+                              59
+                            )
+                          })
                           }
-                          className="bg-black/20 border-white/10 text-white focus-visible:ring-emerald-500"
-                        />
+                          className="bg-black/20 border-white/10 text-white focus-visible:ring-emerald-500" />
+                        
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -1134,32 +1134,32 @@ export default function TrackPage() {
                             Expenses ({expenseCurrency})
                           </label>
                           <GoalIndicator
-                            current={metrics.expense}
-                            goal={user?.goals?.expenses}
-                            type="max"
-                          />
+                          current={metrics.expense}
+                          goal={user?.goals?.expenses}
+                          type="max" />
+                        
                         </div>
                       <Input
                         type="number"
                         placeholder="0.0"
                         value={metrics.expense}
                         onChange={(e) =>
-                          setMetrics({ ...metrics, expense: e.target.value })
+                        setMetrics({ ...metrics, expense: e.target.value })
                         }
-                        className="bg-black/20 border-white/10 text-white focus-visible:ring-emerald-500"
-                      />
+                        className="bg-black/20 border-white/10 text-white focus-visible:ring-emerald-500" />
+                      
                     </div>
                   </div>
 
                   <Button
                     onClick={handleSaveMetrics}
                     disabled={savingMetrics}
-                    className="mt-auto w-full bg-pink-600 text-white hover:bg-pink-500"
-                  >
+                    className="mt-auto w-full bg-pink-600 text-white hover:bg-pink-500">
+                    
                     <Save className="h-4 w-4 mr-2" />
-                    {savingMetrics
-                      ? "Saving..."
-                      : `Save ${selectedDateLabel} Metrics`}
+                    {savingMetrics ?
+                    "Saving..." :
+                    `Save ${selectedDateLabel} Metrics`}
                   </Button>
                 </CardContent>
               </Card>
@@ -1174,35 +1174,35 @@ export default function TrackPage() {
                       </CardTitle>
                       {dateBadge}
                     </div>
-                    {emotionLoaded && emotionSubmitted && (
-                      <span className="inline-flex w-fit rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-200">
+                    {emotionLoaded && emotionSubmitted &&
+                    <span className="inline-flex w-fit rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-200">
                         Submitted
                       </span>
-                    )}
+                    }
                     <CardDescription>
                       Select how you feel for the selected day and save it to
                       your log.
                     </CardDescription>
-                    {emotionLoaded && (
-                      <p className="text-xs text-slate-500">
-                        {emotionLocked
-                          ? `The emotion entry for ${selectedDateLabel} is locked by the backend after 24 hours.`
-                          : ""}
+                    {emotionLoaded &&
+                    <p className="text-xs text-slate-500">
+                        {emotionLocked ?
+                      `The emotion entry for ${selectedDateLabel} is locked by the backend after 24 hours.` :
+                      ""}
                       </p>
-                    )}
+                    }
                   </div>
                 </CardHeader>
                 <CardContent className="flex flex-1 flex-col space-y-5">
                   <div className="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2">
                     {emotionOptions.map((option) => {
                       const isSelected = selectedEmotion === option.value;
-                      const emotionClasses = isLightMode
-                        ? isSelected
-                          ? `${option.lightAccent} scale-[1.02]`
-                          : option.lightIdle
-                        : isSelected
-                          ? `${option.accent} ${option.glow} scale-[1.02]`
-                          : option.idle;
+                      const emotionClasses = isLightMode ?
+                      isSelected ?
+                      `${option.lightAccent} scale-[1.02]` :
+                      option.lightIdle :
+                      isSelected ?
+                      `${option.accent} ${option.glow} scale-[1.02]` :
+                      option.idle;
                       return (
                         <button
                           key={option.value}
@@ -1210,9 +1210,9 @@ export default function TrackPage() {
                           disabled={emotionLocked}
                           onClick={() => setSelectedEmotion(option.value)}
                           className={`rounded-2xl border px-4 py-3 text-left text-sm font-medium transition-all ${
-                            emotionClasses
-                          } ${emotionLocked ? "cursor-not-allowed opacity-60" : ""}`}
-                        >
+                          emotionClasses} ${
+                          emotionLocked ? "cursor-not-allowed opacity-60" : ""}`}>
+                          
                           <div className="flex items-center gap-3">
                             <span className="text-lg leading-none">
                               {option.emoji}
@@ -1223,28 +1223,28 @@ export default function TrackPage() {
                               </span>
                             </span>
                           </div>
-                        </button>
-                      );
+                        </button>);
+
                     })}
                   </div>
 
                   <Button
                     onClick={handleSaveEmotion}
                     disabled={savingEmotion || emotionLocked}
-                    className="mt-auto w-full bg-pink-600 text-white hover:bg-pink-500"
-                  >
+                    className="mt-auto w-full bg-pink-600 text-white hover:bg-pink-500">
+                    
                     <Save className="h-4 w-4 mr-2" />
-                    {savingEmotion
-                      ? "Saving..."
-                      : emotionLocked
-                        ? "Emotion Locked"
-                        : `Save ${selectedDateLabel} Emotion`}
+                    {savingEmotion ?
+                    "Saving..." :
+                    emotionLocked ?
+                    "Emotion Locked" :
+                    `Save ${selectedDateLabel} Emotion`}
                   </Button>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Life Ratings Section */}
+            {}
             <Card className="mt-6 border-amber-500/25 bg-gradient-to-br from-amber-500/6 via-slate-900/70 to-slate-950/95 backdrop-blur-xl">
               <CardHeader>
                 <div>
@@ -1255,28 +1255,28 @@ export default function TrackPage() {
                     </CardTitle>
                     {dateBadge}
                   </div>
-                  {lifeRatingsLoaded && lifeRatingsSubmitted && (
-                    <span className="inline-flex w-fit rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-200">
+                  {lifeRatingsLoaded && lifeRatingsSubmitted &&
+                  <span className="inline-flex w-fit rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-200">
                       Submitted
                     </span>
-                  )}
+                  }
                   <CardDescription>
                     Rate your satisfaction across 8 key areas of your life
                     (0-10).
                   </CardDescription>
-                  {lifeRatingsLoaded && (
-                    <p className="mt-2 text-xs text-slate-500">
-                      {lifeRatingsLocked
-                        ? `The life rating entry for ${selectedDateLabel} is locked by the backend after 24 hours.`
-                        : `These 8 sliders are synced with the ${selectedDateLabel} backend life rating entry.`}
+                  {lifeRatingsLoaded &&
+                  <p className="mt-2 text-xs text-slate-500">
+                      {lifeRatingsLocked ?
+                    `The life rating entry for ${selectedDateLabel} is locked by the backend after 24 hours.` :
+                    `These 8 sliders are synced with the ${selectedDateLabel} backend life rating entry.`}
                     </p>
-                  )}
+                  }
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 py-4">
-                  {lifeRatingCategories.map((cat) => (
-                    <div key={cat.key} className="space-y-4">
+                  {lifeRatingCategories.map((cat) =>
+                  <div key={cat.key} className="space-y-4">
                       <div className="flex items-center justify-between">
                         <label className="text-xs font-semibold uppercase tracking-widest text-slate-400 flex items-center gap-2">
                           <cat.icon className={`h-3.5 w-3.5 ${cat.color}`} />{" "}
@@ -1288,45 +1288,45 @@ export default function TrackPage() {
                       </div>
                       <div className="relative group pt-2 px-1">
                         <input
-                          type="range"
-                          min="0"
-                          max="10"
-                          step="1"
-                          value={lifeRatings[cat.key]}
-                          disabled={lifeRatingsLocked}
-                          onChange={(e) =>
-                            setLifeRatings({
-                              ...lifeRatings,
-                              [cat.key]: parseInt(e.target.value, 10),
-                            })
-                          }
-                          className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-amber-500 group-hover:bg-white/20 transition-all"
-                        />
+                        type="range"
+                        min="0"
+                        max="10"
+                        step="1"
+                        value={lifeRatings[cat.key]}
+                        disabled={lifeRatingsLocked}
+                        onChange={(e) =>
+                        setLifeRatings({
+                          ...lifeRatings,
+                          [cat.key]: parseInt(e.target.value, 10)
+                        })
+                        }
+                        className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-amber-500 group-hover:bg-white/20 transition-all" />
+                      
                         <div className="flex justify-between mt-2 px-0.5">
-                          {[0, 2, 4, 6, 8, 10].map((tick) => (
-                            <span
-                              key={tick}
-                              className="text-[10px] text-slate-600 font-medium"
-                            >
+                          {[0, 2, 4, 6, 8, 10].map((tick) =>
+                        <span
+                          key={tick}
+                          className="text-[10px] text-slate-600 font-medium">
+                          
                               {tick}
                             </span>
-                          ))}
+                        )}
                         </div>
                       </div>
                     </div>
-                  ))}
+                  )}
                 </div>
                 <Button
                   onClick={handleSaveLifeRatings}
                   disabled={savingLifeRatings || lifeRatingsLocked}
-                  className="w-full bg-pink-600 text-white shadow-lg shadow-pink-900/20 hover:bg-pink-500"
-                >
+                  className="w-full bg-pink-600 text-white shadow-lg shadow-pink-900/20 hover:bg-pink-500">
+                  
                   <Save className="h-4 w-4 mr-2" />
-                  {savingLifeRatings
-                    ? "Saving..."
-                    : lifeRatingsLocked
-                      ? "Life Ratings Locked"
-                      : `Save ${selectedDateLabel} Ratings`}
+                  {savingLifeRatings ?
+                  "Saving..." :
+                  lifeRatingsLocked ?
+                  "Life Ratings Locked" :
+                  `Save ${selectedDateLabel} Ratings`}
                 </Button>
               </CardContent>
             </Card>
@@ -1335,21 +1335,21 @@ export default function TrackPage() {
       </div>
 
       <AnimatePresence>
-        {isGoalsModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        {isGoalsModalOpen &&
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsGoalsModalOpen(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-md"
-            />
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsGoalsModalOpen(false)}
+            className="absolute inset-0 bg-black/60 backdrop-blur-md" />
+          
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-lg overflow-hidden rounded-[32px] border border-white/10 bg-slate-900 shadow-2xl"
-            >
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            className="relative w-full max-w-lg overflow-hidden rounded-[32px] border border-white/10 bg-slate-900 shadow-2xl">
+            
               <div className="p-6 sm:p-8">
                 <div className="flex items-center justify-between mb-6">
                   <div>
@@ -1359,27 +1359,27 @@ export default function TrackPage() {
                     <p className="text-sm text-slate-400">Personalize your targets for daily metrics.</p>
                   </div>
                   <Button
-                    onClick={() => setIsGoalsModalOpen(false)}
-                    variant="ghost"
-                    className="h-10 w-10 p-0 text-slate-500 hover:text-white"
-                  >
+                  onClick={() => setIsGoalsModalOpen(false)}
+                  variant="ghost"
+                  className="h-10 w-10 p-0 text-slate-500 hover:text-white">
+                  
                     <X className="h-6 w-6" />
                   </Button>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4">
                   {[
-                    { key: "sleep", label: "Sleep Target", icon: Moon, unit: "hrs", min: 4, max: 12, step: 0.5 },
-                    { key: "screenTime", label: "Max Screen Time", icon: Monitor, unit: "hrs", min: 1, max: 24, step: 0.5 },
-                    { key: "work", label: "Work Hours", icon: Briefcase, unit: "hrs", min: 1, max: 16, step: 0.5 },
-                    { key: "expenses", label: "Spending Limit", icon: Wallet, unit: expenseCurrency, min: 0, max: 10000, step: 1 },
-                  ].map((goal) => {
-                    const Icon = goal.icon;
-                    return (
-                      <div
-                        key={goal.key}
-                        className="p-4 rounded-2xl bg-black/20 border border-white/5 space-y-3"
-                      >
+                { key: "sleep", label: "Sleep Target", icon: Moon, unit: "hrs", min: 4, max: 12, step: 0.5 },
+                { key: "screenTime", label: "Max Screen Time", icon: Monitor, unit: "hrs", min: 1, max: 24, step: 0.5 },
+                { key: "work", label: "Work Hours", icon: Briefcase, unit: "hrs", min: 1, max: 16, step: 0.5 },
+                { key: "expenses", label: "Spending Limit", icon: Wallet, unit: expenseCurrency, min: 0, max: 10000, step: 1 }].
+                map((goal) => {
+                  const Icon = goal.icon;
+                  return (
+                    <div
+                      key={goal.key}
+                      className="p-4 rounded-2xl bg-black/20 border border-white/5 space-y-3">
+                      
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <Icon className="h-4 w-4 text-pink-400" />
@@ -1392,34 +1392,34 @@ export default function TrackPage() {
                           </span>
                         </div>
                         <input
-                          type="range"
-                          min={goal.min}
-                          max={goal.max}
-                          step={goal.step}
-                          value={localGoals[goal.key]}
-                          onChange={(e) => handleLocalGoalChange(goal.key, e.target.value)}
-                          className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-pink-500"
-                        />
+                        type="range"
+                        min={goal.min}
+                        max={goal.max}
+                        step={goal.step}
+                        value={localGoals[goal.key]}
+                        onChange={(e) => handleLocalGoalChange(goal.key, e.target.value)}
+                        className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-pink-500" />
+                      
                         <div className="flex justify-between text-[10px] text-slate-500 font-mono">
                           <span>{goal.min}{goal.unit}</span>
                           <span>{goal.max}{goal.unit}</span>
                         </div>
-                      </div>
-                    );
-                  })}
+                      </div>);
+
+                })}
                 </div>
 
                 <Button
-                  onClick={handleSaveGoals}
-                  className="mt-8 w-full bg-pink-600 hover:bg-pink-500 text-white py-6 rounded-2xl font-bold transition-all shadow-lg shadow-pink-900/20"
-                >
+                onClick={handleSaveGoals}
+                className="mt-8 w-full bg-pink-600 hover:bg-pink-500 text-white py-6 rounded-2xl font-bold transition-all shadow-lg shadow-pink-900/20">
+                
                   Done
                 </Button>
               </div>
             </motion.div>
           </div>
-        )}
+        }
       </AnimatePresence>
-    </div>
-  );
+    </div>);
+
 }

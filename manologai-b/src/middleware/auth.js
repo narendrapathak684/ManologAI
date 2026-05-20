@@ -6,8 +6,8 @@ const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 const auth = async (req, res, next) => {
   try {
     const token =
-      req.cookies?.token ||
-      req.headers.authorization?.replace(/^Bearer\s+/i, "").trim();
+    req.cookies?.token ||
+    req.headers.authorization?.replace(/^Bearer\s+/i, "").trim();
 
     if (!token) {
       return res.status(401).json({ error: "Authentication required" });
@@ -22,7 +22,7 @@ const auth = async (req, res, next) => {
       return res.status(401).json({ error: "Invalid authentication token" });
     }
 
-    // Reject soft-deleted accounts from all protected endpoints.
+
     if (user.isDeleted) {
       return res.status(401).json({ error: "This account no longer exists." });
     }

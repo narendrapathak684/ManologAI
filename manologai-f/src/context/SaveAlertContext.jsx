@@ -22,19 +22,19 @@ export function SaveAlertProvider({ children }) {
         if (typeof options === "string") {
           setAlert({
             title: "Saved",
-            message: options,
+            message: options
           });
           return;
         }
 
         setAlert({
           title: options.title || "Saved",
-          message: options.message || "Saved successfully.",
+          message: options.message || "Saved successfully."
         });
       },
       clearSaveAlert() {
         setAlert(null);
-      },
+      }
     }),
     [alert]
   );
@@ -42,8 +42,8 @@ export function SaveAlertProvider({ children }) {
   return (
     <SaveAlertContext.Provider value={value}>
       {children}
-    </SaveAlertContext.Provider>
-  );
+    </SaveAlertContext.Provider>);
+
 }
 
 export function useSaveAlert() {

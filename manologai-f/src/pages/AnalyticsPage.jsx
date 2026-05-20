@@ -23,8 +23,8 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend,
-} from "recharts";
+  Legend } from
+"recharts";
 import {
   BookOpenText,
   CalendarDays,
@@ -41,8 +41,8 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   DollarSign,
-  User,
-} from "lucide-react";
+  User } from
+"lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 import { Button } from "@/components/ui/button";
@@ -51,19 +51,19 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  CardTitle } from
+"@/components/ui/card";
 import { ChartSkeleton, PageSkeleton } from "@/components/SkeletonBoneyard";
 import { api } from "../lib/api";
 
 const navItems = [
-  { label: "Today", icon: LayoutDashboard, to: "/dashboard" },
-  { label: "Journal", icon: BookOpenText, to: "/journal" },
-  { label: "Track", icon: CheckCircle2, to: "/track" },
-  { label: "Analytics", icon: ChartColumnBig, to: "/analytics", active: true },
-  { label: "Organise", icon: FolderKanban, to: "/organise" },
-  { label: "Profile", icon: User, to: "/profile" },
-];
+{ label: "Today", icon: LayoutDashboard, to: "/dashboard" },
+{ label: "Journal", icon: BookOpenText, to: "/journal" },
+{ label: "Track", icon: CheckCircle2, to: "/track" },
+{ label: "Analytics", icon: ChartColumnBig, to: "/analytics", active: true },
+{ label: "Organise", icon: FolderKanban, to: "/organise" },
+{ label: "Profile", icon: User, to: "/profile" }];
+
 
 const EMOTION_SCORES = {
   excited: 5,
@@ -73,7 +73,7 @@ const EMOTION_SCORES = {
   tired: 2.5,
   stressed: 2,
   sad: 1.5,
-  angry: 1,
+  angry: 1
 };
 
 const EMOTION_COLORS = {
@@ -84,7 +84,7 @@ const EMOTION_COLORS = {
   tired: "#a78bfa",
   stressed: "#f59e0b",
   sad: "#60a5fa",
-  angry: "#fb7185",
+  angry: "#fb7185"
 };
 
 const EMOTION_LABELS = Object.entries(EMOTION_SCORES).reduce(
@@ -92,19 +92,19 @@ const EMOTION_LABELS = Object.entries(EMOTION_SCORES).reduce(
     acc[score] = emotion;
     return acc;
   },
-  {},
+  {}
 );
 
 const LIFE_RATING_FIELDS = [
-  { key: "health", label: "Health" },
-  { key: "finances", label: "Finances" },
-  { key: "career", label: "Career" },
-  { key: "partner", label: "Partner" },
-  { key: "familyFriends", label: "Family" },
-  { key: "physicalEnvironment", label: "Environment" },
-  { key: "funRecreation", label: "Fun" },
-  { key: "personalGrowth", label: "Growth" },
-];
+{ key: "health", label: "Health" },
+{ key: "finances", label: "Finances" },
+{ key: "career", label: "Career" },
+{ key: "partner", label: "Partner" },
+{ key: "familyFriends", label: "Family" },
+{ key: "physicalEnvironment", label: "Environment" },
+{ key: "funRecreation", label: "Fun" },
+{ key: "personalGrowth", label: "Growth" }];
+
 
 const HABIT_IMPACT_THRESHOLD = 1;
 const HABIT_IMPACT_MIN_SAMPLES = 2;
@@ -118,9 +118,9 @@ const formatEmotionLabel = (value) => {
 
 const getNearestEmotionLabel = (score) => {
   if (!Number.isFinite(score)) return "Neutral";
-  const keys = Object.keys(EMOTION_LABELS)
-    .map((value) => Number(value))
-    .sort((a, b) => a - b);
+  const keys = Object.keys(EMOTION_LABELS).
+  map((value) => Number(value)).
+  sort((a, b) => a - b);
   let nearest = keys[0];
   let minDiff = Math.abs(score - keys[0]);
   for (const key of keys) {
@@ -134,7 +134,7 @@ const getNearestEmotionLabel = (score) => {
 };
 
 const getStreakMilestones = (currentStreak) =>
-  STREAK_MILESTONES.filter((milestone) => currentStreak >= milestone);
+STREAK_MILESTONES.filter((milestone) => currentStreak >= milestone);
 
 const formatEmotionName = (emotion) => {
   if (!emotion) return "Unknown";
@@ -157,7 +157,7 @@ const WEEKDAY_FULL = {
   Thu: "Thursday",
   Fri: "Friday",
   Sat: "Saturday",
-  Sun: "Sunday",
+  Sun: "Sunday"
 };
 
 const getRangeWindow = (range) => {
@@ -239,19 +239,19 @@ export default function AnalyticsPage() {
           moodBarRange,
           setMoodBarData,
           setMoodBarLoading,
-          true,
+          true
         );
         await fetchMoodData(
           moodLineRange,
           setMoodLineData,
           setMoodLineLoading,
-          true,
+          true
         );
         await fetchMoodData(
           moodPieRange,
           setMoodPieData,
           setMoodPieLoading,
-          true,
+          true
         );
         await fetchTimeData(timeRange, true);
         await fetchExpenseData(expenseRange, true);
@@ -314,19 +314,19 @@ export default function AnalyticsPage() {
   }, [habitImpactRange]);
 
   const buildLifeRadarData = (averages) => [
-    { subject: "Health", A: averages?.health ?? 0, fullMark: 10 },
-    { subject: "Finances", A: averages?.finances ?? 0, fullMark: 10 },
-    { subject: "Career", A: averages?.career ?? 0, fullMark: 10 },
-    { subject: "Partner", A: averages?.partner ?? 0, fullMark: 10 },
-    { subject: "Family", A: averages?.familyFriends ?? 0, fullMark: 10 },
-    {
-      subject: "Environment",
-      A: averages?.physicalEnvironment ?? 0,
-      fullMark: 10,
-    },
-    { subject: "Fun", A: averages?.funRecreation ?? 0, fullMark: 10 },
-    { subject: "Growth", A: averages?.personalGrowth ?? 0, fullMark: 10 },
-  ];
+  { subject: "Health", A: averages?.health ?? 0, fullMark: 10 },
+  { subject: "Finances", A: averages?.finances ?? 0, fullMark: 10 },
+  { subject: "Career", A: averages?.career ?? 0, fullMark: 10 },
+  { subject: "Partner", A: averages?.partner ?? 0, fullMark: 10 },
+  { subject: "Family", A: averages?.familyFriends ?? 0, fullMark: 10 },
+  {
+    subject: "Environment",
+    A: averages?.physicalEnvironment ?? 0,
+    fullMark: 10
+  },
+  { subject: "Fun", A: averages?.funRecreation ?? 0, fullMark: 10 },
+  { subject: "Growth", A: averages?.personalGrowth ?? 0, fullMark: 10 }];
+
 
   const fetchLifeData = async (range, isInitial = false) => {
     setLifeLoading(true);
@@ -335,7 +335,7 @@ export default function AnalyticsPage() {
     }
     try {
       const { data: lifeJson } = await api.get(
-        `/life-ratings/average/${range}`,
+        `/life-ratings/average/${range}`
       );
       if (lifeJson?.averages) {
         setLifeData(buildLifeRadarData(lifeJson.averages));
@@ -345,7 +345,7 @@ export default function AnalyticsPage() {
     } catch (err) {
       console.error("Analytics fetch failed:", err);
       setError(
-        "Unable to connect to the intelligence engine. Please check your connection.",
+        "Unable to connect to the intelligence engine. Please check your connection."
       );
     } finally {
       setLifeLoading(false);
@@ -353,11 +353,11 @@ export default function AnalyticsPage() {
   };
 
   const fetchMoodData = async (
-    range,
-    setData,
-    setLoading,
-    isInitial = false,
-  ) => {
+  range,
+  setData,
+  setLoading,
+  isInitial = false) =>
+  {
     setLoading(true);
     if (!isInitial) {
       setError("");
@@ -365,21 +365,21 @@ export default function AnalyticsPage() {
     try {
       const { data: emoJson } = await api.get(`/emotions/range/${range}`);
       const moodLabelOptions =
-        range === "week"
-          ? { weekday: "short" }
-          : { month: "short", day: "numeric" };
+      range === "week" ?
+      { weekday: "short" } :
+      { month: "short", day: "numeric" };
       const formattedMoods = emoJson.emotions.map((e) => ({
         date: new Date(e.date).toLocaleDateString(undefined, {
-          ...moodLabelOptions,
+          ...moodLabelOptions
         }),
         score: EMOTION_SCORES[e.emotion] || 3,
-        emotion: e.emotion,
+        emotion: e.emotion
       }));
       setData(formattedMoods);
     } catch (err) {
       console.error("Analytics fetch failed:", err);
       setError(
-        "Unable to connect to the intelligence engine. Please check your connection.",
+        "Unable to connect to the intelligence engine. Please check your connection."
       );
     } finally {
       setLoading(false);
@@ -394,25 +394,25 @@ export default function AnalyticsPage() {
     try {
       const timeLimit = range === "year" ? 365 : range === "month" ? 30 : 7;
       const timeLabelOptions =
-        range === "week"
-          ? { weekday: "short" }
-          : { month: "short", day: "numeric" };
+      range === "week" ?
+      { weekday: "short" } :
+      { month: "short", day: "numeric" };
       const { data: timeJson } = await api.get("/time-tracker", {
-        params: { limit: timeLimit },
+        params: { limit: timeLimit }
       });
       const formattedTime = timeJson.entries.map((e) => ({
         name: new Date(e.date).toLocaleDateString(undefined, {
-          ...timeLabelOptions,
+          ...timeLabelOptions
         }),
         Sleep: e.sleep || 0,
         Work: e.workStudy || 0,
-        Screen: e.screen || 0,
+        Screen: e.screen || 0
       }));
       setTimeData(formattedTime);
     } catch (err) {
       console.error("Analytics fetch failed:", err);
       setError(
-        "Unable to connect to the intelligence engine. Please check your connection.",
+        "Unable to connect to the intelligence engine. Please check your connection."
       );
     } finally {
       setTimeLoading(false);
@@ -427,19 +427,19 @@ export default function AnalyticsPage() {
     try {
       const timeLimit = range === "year" ? 365 : range === "month" ? 30 : 7;
       const labelOptions =
-        range === "week"
-          ? { weekday: "short" }
-          : { month: "short", day: "numeric" };
+      range === "week" ?
+      { weekday: "short" } :
+      { month: "short", day: "numeric" };
       const { data: timeJson } = await api.get("/time-tracker", {
-        params: { limit: timeLimit },
+        params: { limit: timeLimit }
       });
       const { data: emotionJson } = await api.get(`/emotions/range/${range}`);
 
       const emotionMap = new Map(
         (emotionJson.emotions || []).map((entry) => [
-          toDateKey(entry.date),
-          entry.emotion,
-        ]),
+        toDateKey(entry.date),
+        entry.emotion]
+        )
       );
 
       const merged = (timeJson.entries || []).reduce((acc, entry) => {
@@ -457,8 +457,8 @@ export default function AnalyticsPage() {
           emotionScore: EMOTION_SCORES[emotion] || 3,
           emotion,
           label: new Date(entry.date).toLocaleDateString(undefined, {
-            ...labelOptions,
-          }),
+            ...labelOptions
+          })
         });
         return acc;
       }, []);
@@ -467,7 +467,7 @@ export default function AnalyticsPage() {
     } catch (err) {
       console.error("Analytics fetch failed:", err);
       setError(
-        "Unable to connect to the intelligence engine. Please check your connection.",
+        "Unable to connect to the intelligence engine. Please check your connection."
       );
       setSleepEmotionData([]);
     } finally {
@@ -483,12 +483,12 @@ export default function AnalyticsPage() {
     try {
       const { data: emotionJson } = await api.get(`/emotions/range/${range}`);
       const buckets = new Map(
-        WEEKDAY_ORDER.map((day) => [day, { counts: {}, total: 0 }]),
+        WEEKDAY_ORDER.map((day) => [day, { counts: {}, total: 0 }])
       );
 
       (emotionJson.emotions || []).forEach((entry) => {
         const dayKey = new Date(entry.date).toLocaleDateString("en-US", {
-          weekday: "short",
+          weekday: "short"
         });
         if (!buckets.has(dayKey)) return;
         const bucket = buckets.get(dayKey);
@@ -505,23 +505,23 @@ export default function AnalyticsPage() {
             emotionLabel: "No data",
             score: 0,
             count: 0,
-            total: 0,
+            total: 0
           };
         }
 
         const counts = bucket.counts;
         const maxCount = Math.max(...Object.values(counts));
         const topEmotions = Object.keys(counts).filter(
-          (emotion) => counts[emotion] === maxCount,
+          (emotion) => counts[emotion] === maxCount
         );
         const isMixed = topEmotions.length > 1;
         const emotion = isMixed ? "mixed" : topEmotions[0];
-        const score = isMixed
-          ? topEmotions.reduce(
-              (sum, emo) => sum + (EMOTION_SCORES[emo] || 3),
-              0,
-            ) / topEmotions.length
-          : EMOTION_SCORES[emotion] || 3;
+        const score = isMixed ?
+        topEmotions.reduce(
+          (sum, emo) => sum + (EMOTION_SCORES[emo] || 3),
+          0
+        ) / topEmotions.length :
+        EMOTION_SCORES[emotion] || 3;
         const emotionLabel = isMixed ? "Mixed" : formatEmotionName(emotion);
 
         return {
@@ -530,7 +530,7 @@ export default function AnalyticsPage() {
           emotionLabel,
           score,
           count: maxCount,
-          total: bucket.total,
+          total: bucket.total
         };
       });
 
@@ -538,7 +538,7 @@ export default function AnalyticsPage() {
     } catch (err) {
       console.error("Analytics fetch failed:", err);
       setError(
-        "Unable to connect to the intelligence engine. Please check your connection.",
+        "Unable to connect to the intelligence engine. Please check your connection."
       );
       setDayEmotionData([]);
     } finally {
@@ -556,7 +556,7 @@ export default function AnalyticsPage() {
       const fromKey = toDateKey(from);
       const toKey = toDateKey(to);
       const { data: ratingsJson } = await api.get(
-        `/life-ratings/range?from=${fromKey}&to=${toKey}&limit=${days}`,
+        `/life-ratings/range?from=${fromKey}&to=${toKey}&limit=${days}`
       );
       const { data: habitsJson } = await api.get("/habits");
 
@@ -573,21 +573,21 @@ export default function AnalyticsPage() {
       });
 
       const baseline = LIFE_RATING_FIELDS.reduce((acc, field) => {
-        const values = entries
-          .map((entry) => entry.ratings?.[field.key])
-          .filter((value) => Number.isFinite(value));
-        acc[field.key] = values.length
-          ? values.reduce((sum, v) => sum + v, 0) / values.length
-          : null;
+        const values = entries.
+        map((entry) => entry.ratings?.[field.key]).
+        filter((value) => Number.isFinite(value));
+        acc[field.key] = values.length ?
+        values.reduce((sum, v) => sum + v, 0) / values.length :
+        null;
         return acc;
       }, {});
 
       const impacts = [];
       habitsList.forEach((habit) => {
         const completedSet = new Set(
-          (habit.history || [])
-            .filter((entry) => entry.completed)
-            .map((entry) => toDateKey(entry.date)),
+          (habit.history || []).
+          filter((entry) => entry.completed).
+          map((entry) => toDateKey(entry.date))
         );
 
         LIFE_RATING_FIELDS.forEach((field) => {
@@ -605,16 +605,16 @@ export default function AnalyticsPage() {
           });
 
           if (
-            withValues.length < HABIT_IMPACT_MIN_SAMPLES ||
-            withoutValues.length < HABIT_IMPACT_MIN_SAMPLES
-          ) {
+          withValues.length < HABIT_IMPACT_MIN_SAMPLES ||
+          withoutValues.length < HABIT_IMPACT_MIN_SAMPLES)
+          {
             return;
           }
 
           const avgWith =
-            withValues.reduce((sum, v) => sum + v, 0) / withValues.length;
+          withValues.reduce((sum, v) => sum + v, 0) / withValues.length;
           const avgWithout =
-            withoutValues.reduce((sum, v) => sum + v, 0) / withoutValues.length;
+          withoutValues.reduce((sum, v) => sum + v, 0) / withoutValues.length;
           const impact = avgWith - avgWithout;
 
           if (Math.abs(impact) < HABIT_IMPACT_THRESHOLD) {
@@ -631,7 +631,7 @@ export default function AnalyticsPage() {
             avgWithout,
             baseline: baseline[field.key],
             countWith: withValues.length,
-            countWithout: withoutValues.length,
+            countWithout: withoutValues.length
           });
         });
       });
@@ -641,7 +641,7 @@ export default function AnalyticsPage() {
     } catch (err) {
       console.error("Analytics fetch failed:", err);
       setError(
-        "Unable to connect to the intelligence engine. Please check your connection.",
+        "Unable to connect to the intelligence engine. Please check your connection."
       );
       setHabitImpactData([]);
     } finally {
@@ -657,23 +657,23 @@ export default function AnalyticsPage() {
     try {
       const expenseLimit = range === "year" ? 365 : range === "month" ? 30 : 7;
       const expenseLabelOptions =
-        range === "week"
-          ? { weekday: "short" }
-          : { month: "short", day: "numeric" };
+      range === "week" ?
+      { weekday: "short" } :
+      { month: "short", day: "numeric" };
       const { data: expenseJson } = await api.get("/time-tracker", {
-        params: { limit: expenseLimit },
+        params: { limit: expenseLimit }
       });
       const formattedExpense = expenseJson.entries.map((e) => ({
         name: new Date(e.date).toLocaleDateString(undefined, {
-          ...expenseLabelOptions,
+          ...expenseLabelOptions
         }),
-        Expense: e.expense || 0,
+        Expense: e.expense || 0
       }));
       setExpenseData(formattedExpense);
     } catch (err) {
       console.error("Analytics fetch failed:", err);
       setError(
-        "Unable to connect to the intelligence engine. Please check your connection.",
+        "Unable to connect to the intelligence engine. Please check your connection."
       );
     } finally {
       setExpenseLoading(false);
@@ -690,7 +690,7 @@ export default function AnalyticsPage() {
     } catch (err) {
       console.error("Analytics fetch failed:", err);
       setError(
-        "Unable to connect to the intelligence engine. Please check your connection.",
+        "Unable to connect to the intelligence engine. Please check your connection."
       );
     }
   };
@@ -718,45 +718,45 @@ export default function AnalyticsPage() {
       return acc;
     }, {});
 
-    return Object.entries(counts)
-      .map(([emotion, value]) => ({
-        name: `${emotion[0].toUpperCase()}${emotion.slice(1)}`,
-        value,
-        color: EMOTION_COLORS[emotion] || "#f472b6",
-      }))
-      .sort((a, b) => b.value - a.value);
+    return Object.entries(counts).
+    map(([emotion, value]) => ({
+      name: `${emotion[0].toUpperCase()}${emotion.slice(1)}`,
+      value,
+      color: EMOTION_COLORS[emotion] || "#f472b6"
+    })).
+    sort((a, b) => b.value - a.value);
   }, [moodPieData]);
 
   const insightMetricLabel =
-    insightMetric === "screen"
-      ? "Screen"
-      : insightMetric === "workStudy"
-        ? "Work/Study"
-        : "Sleep";
+  insightMetric === "screen" ?
+  "Screen" :
+  insightMetric === "workStudy" ?
+  "Work/Study" :
+  "Sleep";
 
   const insightPlotData = useMemo(
     () =>
-      sleepEmotionData.map((entry) => ({
-        x: entry[insightMetric] ?? 0,
-        emotionScore: entry.emotionScore,
-        emotion: entry.emotion,
-        label: entry.label,
-      })),
-    [sleepEmotionData, insightMetric],
+    sleepEmotionData.map((entry) => ({
+      x: entry[insightMetric] ?? 0,
+      emotionScore: entry.emotionScore,
+      emotion: entry.emotion,
+      label: entry.label
+    })),
+    [sleepEmotionData, insightMetric]
   );
 
   const insightLineData = useMemo(
     () => [...insightPlotData].sort((a, b) => a.x - b.x),
-    [insightPlotData],
+    [insightPlotData]
   );
 
   const insightSummary = useMemo(() => {
-    const valid = insightPlotData
-      .filter(
-        (entry) =>
-          Number.isFinite(entry.x) && Number.isFinite(entry.emotionScore),
-      )
-      .sort((a, b) => a.x - b.x);
+    const valid = insightPlotData.
+    filter(
+      (entry) =>
+      Number.isFinite(entry.x) && Number.isFinite(entry.emotionScore)
+    ).
+    sort((a, b) => a.x - b.x);
 
     if (valid.length < 4) {
       return `Log more ${insightMetricLabel.toLowerCase()} data to unlock insights.`;
@@ -767,7 +767,7 @@ export default function AnalyticsPage() {
     const highBand = valid.slice(valid.length - bandSize);
 
     const avg = (items) =>
-      items.reduce((sum, item) => sum + item.emotionScore, 0) / items.length;
+    items.reduce((sum, item) => sum + item.emotionScore, 0) / items.length;
     const lowAvg = avg(lowBand);
     const highAvg = avg(highBand);
     const diff = highAvg - lowAvg;
@@ -785,19 +785,19 @@ export default function AnalyticsPage() {
   }, [insightPlotData, insightMetricLabel]);
 
   const insightStrength = useMemo(() => {
-    const valid = insightPlotData
-      .filter(
-        (entry) =>
-          Number.isFinite(entry.x) && Number.isFinite(entry.emotionScore),
-      )
-      .map((entry) => ({ x: entry.x, y: entry.emotionScore }));
+    const valid = insightPlotData.
+    filter(
+      (entry) =>
+      Number.isFinite(entry.x) && Number.isFinite(entry.emotionScore)
+    ).
+    map((entry) => ({ x: entry.x, y: entry.emotionScore }));
 
     if (valid.length < 4) {
       return `Not enough ${insightMetricLabel.toLowerCase()} data to assess strength.`;
     }
 
     const mean = (items, key) =>
-      items.reduce((sum, item) => sum + item[key], 0) / items.length;
+    items.reduce((sum, item) => sum + item[key], 0) / items.length;
     const meanX = mean(valid, "x");
     const meanY = mean(valid, "y");
 
@@ -831,7 +831,7 @@ export default function AnalyticsPage() {
     }
 
     const bestDay = dayEmotionData.reduce((prev, current) =>
-      current.count > prev.count ? current : prev,
+    current.count > prev.count ? current : prev
     );
     if (!bestDay || bestDay.count === 0) {
       return "Log more emotions to reveal your weekly patterns.";
@@ -846,24 +846,24 @@ export default function AnalyticsPage() {
 
   const habitImpactTop = useMemo(
     () => habitImpactData.slice(0, 8),
-    [habitImpactData],
+    [habitImpactData]
   );
 
   const habitImpactInsights = useMemo(() => {
     if (habitImpactData.length === 0) {
       return ["Log habits and life ratings to unlock impact insights."];
     }
-    const positives = habitImpactData
-      .filter((item) => item.impact > 0)
-      .slice(0, 2);
-    const negatives = habitImpactData
-      .filter((item) => item.impact < 0)
-      .slice(0, 2);
+    const positives = habitImpactData.
+    filter((item) => item.impact > 0).
+    slice(0, 2);
+    const negatives = habitImpactData.
+    filter((item) => item.impact < 0).
+    slice(0, 2);
 
     const formatImpact = (item) => {
-      const baseline = Number.isFinite(item.baseline)
-        ? item.baseline.toFixed(1)
-        : "—";
+      const baseline = Number.isFinite(item.baseline) ?
+      item.baseline.toFixed(1) :
+      "—";
       const avg = item.avgWith.toFixed(1);
       const delta = Math.abs(item.impact).toFixed(1);
       if (item.impact > 0) {
@@ -881,7 +881,7 @@ export default function AnalyticsPage() {
       const parts = new Intl.NumberFormat(undefined, {
         style: "currency",
         currency: expenseCurrency,
-        currencyDisplay: "narrowSymbol",
+        currencyDisplay: "narrowSymbol"
       }).formatToParts(0);
       const symbolPart = parts.find((part) => part.type === "currency");
       return symbolPart?.value || expenseCurrency;
@@ -897,7 +897,7 @@ export default function AnalyticsPage() {
       return new Intl.NumberFormat(undefined, {
         style: "currency",
         currency: expenseCurrency,
-        maximumFractionDigits: 0,
+        maximumFractionDigits: 0
       }).format(amount);
     } catch (err) {
       return `${expenseCurrency} ${amount}`;
@@ -909,9 +909,9 @@ export default function AnalyticsPage() {
       return "Log a few more expense entries to unlock insights.";
     }
 
-    const values = expenseData
-      .map((item) => Number(item.Expense))
-      .filter((value) => Number.isFinite(value));
+    const values = expenseData.
+    map((item) => Number(item.Expense)).
+    filter((value) => Number.isFinite(value));
 
     if (values.length < 3) {
       return "Log a few more expense entries to unlock insights.";
@@ -921,10 +921,10 @@ export default function AnalyticsPage() {
     const average = total / values.length;
     const last = values[values.length - 1];
     const prevAvg =
-      values.length > 1
-        ? values.slice(0, -1).reduce((sum, value) => sum + value, 0) /
-          (values.length - 1)
-        : average;
+    values.length > 1 ?
+    values.slice(0, -1).reduce((sum, value) => sum + value, 0) / (
+    values.length - 1) :
+    average;
     const delta = last - prevAvg;
     const deltaAbs = Math.abs(delta);
     const peak = Math.max(...values);
@@ -932,11 +932,11 @@ export default function AnalyticsPage() {
     const peakLabel = expenseData[peakIndex]?.name || "the peak day";
 
     const rangeLabel =
-      expenseRange === "week"
-        ? "last 7 days"
-        : expenseRange === "year"
-          ? "last 365 days"
-          : "last 30 days";
+    expenseRange === "week" ?
+    "last 7 days" :
+    expenseRange === "year" ?
+    "last 365 days" :
+    "last 30 days";
 
     const avgText = `Average daily spend is ${formatCurrency(average)} over the ${rangeLabel}.`;
 
@@ -956,18 +956,18 @@ export default function AnalyticsPage() {
       return "Log a few more time entries to unlock insights.";
     }
 
-    const rows = timeData
-      .map((item) => ({
-        sleep: Number(item.Sleep),
-        work: Number(item.Work),
-        screen: Number(item.Screen),
-      }))
-      .filter(
-        (item) =>
-          Number.isFinite(item.sleep) &&
-          Number.isFinite(item.work) &&
-          Number.isFinite(item.screen),
-      );
+    const rows = timeData.
+    map((item) => ({
+      sleep: Number(item.Sleep),
+      work: Number(item.Work),
+      screen: Number(item.Screen)
+    })).
+    filter(
+      (item) =>
+      Number.isFinite(item.sleep) &&
+      Number.isFinite(item.work) &&
+      Number.isFinite(item.screen)
+    );
 
     if (rows.length < 3) {
       return "Log a few more time entries to unlock insights.";
@@ -980,7 +980,7 @@ export default function AnalyticsPage() {
         acc.screen += item.screen;
         return acc;
       },
-      { sleep: 0, work: 0, screen: 0 },
+      { sleep: 0, work: 0, screen: 0 }
     );
 
     const avgSleep = totals.sleep / rows.length;
@@ -988,29 +988,29 @@ export default function AnalyticsPage() {
     const avgScreen = totals.screen / rows.length;
 
     const dominant = [
-      { label: "Sleep", value: avgSleep },
-      { label: "Work/Study", value: avgWork },
-      { label: "Screen", value: avgScreen },
-    ].sort((a, b) => b.value - a.value)[0];
+    { label: "Sleep", value: avgSleep },
+    { label: "Work/Study", value: avgWork },
+    { label: "Screen", value: avgScreen }].
+    sort((a, b) => b.value - a.value)[0];
 
     const rangeLabel =
-      timeRange === "week"
-        ? "last 7 days"
-        : timeRange === "year"
-          ? "last 365 days"
-          : "last 30 days";
+    timeRange === "week" ?
+    "last 7 days" :
+    timeRange === "year" ?
+    "last 365 days" :
+    "last 30 days";
 
     const sleepNote =
-      avgSleep < 6
-        ? " Sleep averages below 6h."
-        : avgSleep > 9
-          ? " Sleep averages above 9h."
-          : "";
+    avgSleep < 6 ?
+    " Sleep averages below 6h." :
+    avgSleep > 9 ?
+    " Sleep averages above 9h." :
+    "";
     const screenWorkGap = avgScreen - avgWork;
     const balanceNote =
-      Math.abs(screenWorkGap) >= 1.5
-        ? ` Screen time is ${screenWorkGap > 0 ? "higher" : "lower"} than work/study by ~${Math.abs(screenWorkGap).toFixed(1)}h.`
-        : "";
+    Math.abs(screenWorkGap) >= 1.5 ?
+    ` Screen time is ${screenWorkGap > 0 ? "higher" : "lower"} than work/study by ~${Math.abs(screenWorkGap).toFixed(1)}h.` :
+    "";
 
     return `Average daily time in the ${rangeLabel}: ${avgSleep.toFixed(1)}h sleep, ${avgWork.toFixed(1)}h work/study, ${avgScreen.toFixed(1)}h screen. ${dominant.label} is highest.${sleepNote}${balanceNote}`;
   }, [timeData, timeRange]);
@@ -1018,7 +1018,7 @@ export default function AnalyticsPage() {
   const topHabit = useMemo(() => {
     if (habits.length === 0) return null;
     return habits.reduce((prev, current) =>
-      prev.currentStreak > current.currentStreak ? prev : current,
+    prev.currentStreak > current.currentStreak ? prev : current
     );
   }, [habits]);
 
@@ -1045,8 +1045,8 @@ export default function AnalyticsPage() {
             <motion.header
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-8"
-            >
+              className="mb-8">
+              
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-300 text-[10px] font-mono tracking-widest uppercase mb-4">
                 <BrainCircuit className="w-3.5 h-3.5" />
                 Behavioural Insights
@@ -1060,13 +1060,13 @@ export default function AnalyticsPage() {
               </p>
             </motion.header>
 
-            {/* Quick Stats Grid */}
+            {}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.1 }}
-              >
+                transition={{ delay: 0.1 }}>
+                
                 <Card className="border-pink-500/25 bg-gradient-to-br from-pink-500/8 via-slate-900/70 to-slate-950/95 backdrop-blur-xl group hover:border-pink-400/50 transition-all">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-xs font-mono text-slate-500 uppercase tracking-widest">
@@ -1092,8 +1092,8 @@ export default function AnalyticsPage() {
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2 }}
-              >
+                transition={{ delay: 0.2 }}>
+                
                 <Card className="border-emerald-500/25 bg-gradient-to-br from-emerald-500/8 via-slate-900/70 to-slate-950/95 backdrop-blur-xl group hover:border-emerald-400/50 transition-all">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-xs font-mono text-slate-500 uppercase tracking-widest">
@@ -1101,8 +1101,8 @@ export default function AnalyticsPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {topHabit ? (
-                      <>
+                    {topHabit ?
+                    <>
                         <div className="flex items-baseline gap-2">
                           <span className="text-3xl font-bold text-white">
                             {topHabit.currentStreak}d
@@ -1111,27 +1111,27 @@ export default function AnalyticsPage() {
                             {topHabit.name}
                           </span>
                         </div>
-                        {topHabitMilestones.length > 0 && (
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {topHabitMilestones.map((milestone) => (
-                              <span
-                                key={milestone}
-                                className="inline-flex items-center rounded-full border border-pink-500/30 bg-pink-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-pink-200"
-                              >
+                        {topHabitMilestones.length > 0 &&
+                      <div className="mt-2 flex flex-wrap gap-2">
+                            {topHabitMilestones.map((milestone) =>
+                        <span
+                          key={milestone}
+                          className="inline-flex items-center rounded-full border border-pink-500/30 bg-pink-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-pink-200">
+                          
                                 {milestone}d badge
                               </span>
-                            ))}
-                          </div>
                         )}
+                          </div>
+                      }
                         <div className="flex items-center gap-1 text-[10px] text-pink-400 mt-2">
                           <TrendingUp className="w-3 h-3" /> New record
                         </div>
-                      </>
-                    ) : (
-                      <p className="text-slate-500 text-sm italic">
+                      </> :
+
+                    <p className="text-slate-500 text-sm italic">
                         No habit data
                       </p>
-                    )}
+                    }
                   </CardContent>
                 </Card>
               </motion.div>
@@ -1139,8 +1139,8 @@ export default function AnalyticsPage() {
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.3 }}
-              >
+                transition={{ delay: 0.3 }}>
+                
                 <Card className="border-indigo-500/25 bg-gradient-to-br from-indigo-500/8 via-slate-900/70 to-slate-950/95 backdrop-blur-xl group hover:border-indigo-400/50 transition-all">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-xs font-mono text-slate-500 uppercase tracking-widest">
@@ -1150,11 +1150,11 @@ export default function AnalyticsPage() {
                   <CardContent>
                     <div className="flex items-baseline gap-2">
                       <span className="text-3xl font-bold text-white">
-                        {lifeData.length > 0
-                          ? (
-                              lifeData.reduce((acc, c) => acc + c.A, 0) / 8
-                            ).toFixed(1)
-                          : "—"}
+                        {lifeData.length > 0 ?
+                        (
+                        lifeData.reduce((acc, c) => acc + c.A, 0) / 8).
+                        toFixed(1) :
+                        "—"}
                       </span>
                       <span className="text-xs text-slate-500">/ 10.0</span>
                     </div>
@@ -1166,14 +1166,14 @@ export default function AnalyticsPage() {
               </motion.div>
             </div>
 
-            {/* Main Charts Grid */}
+            {}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Mood Trend Chart */}
+              {}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-              >
+                transition={{ delay: 0.4 }}>
+                
                 <Card className="border-pink-500/20 bg-gradient-to-br from-pink-500/8 via-slate-900/70 to-slate-950/95 backdrop-blur-xl overflow-hidden min-h-[420px]">
                   <CardHeader>
                     <CardTitle className="text-white flex items-center gap-2">
@@ -1184,89 +1184,89 @@ export default function AnalyticsPage() {
                       Fluctuations in your reported emotional state over time.
                     </CardDescription>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {["week", "month", "year"].map((range) => (
-                        <button
-                          key={range}
-                          type="button"
-                          onClick={() => setMoodBarRange(range)}
-                          className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-widest transition-all ${
-                            moodBarRange === range
-                              ? "border-pink-400/60 bg-pink-400/10 text-pink-200"
-                              : "border-white/10 text-slate-400 hover:border-white/30 hover:text-slate-200"
-                          }`}
-                        >
+                      {["week", "month", "year"].map((range) =>
+                      <button
+                        key={range}
+                        type="button"
+                        onClick={() => setMoodBarRange(range)}
+                        className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-widest transition-all ${
+                        moodBarRange === range ?
+                        "border-pink-400/60 bg-pink-400/10 text-pink-200" :
+                        "border-white/10 text-slate-400 hover:border-white/30 hover:text-slate-200"}`
+                        }>
+                        
                           {range}
                         </button>
-                      ))}
+                      )}
                     </div>
                   </CardHeader>
                   <CardContent className="h-[300px] w-full pr-6">
-                    {moodBarLoading ? (
-                      <ChartSkeleton />
-                    ) : moodBarData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                    {moodBarLoading ?
+                    <ChartSkeleton /> :
+                    moodBarData.length > 0 ?
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <BarChart data={moodBarData}>
                           <CartesianGrid
-                            strokeDasharray="3 3"
-                            stroke="#ffffff10"
-                            vertical={false}
-                          />
+                          strokeDasharray="3 3"
+                          stroke="#ffffff10"
+                          vertical={false} />
+                        
                           <XAxis
-                            dataKey="date"
-                            stroke="#64748b"
-                            fontSize={10}
-                            tickLine={false}
-                            axisLine={false}
-                          />
+                          dataKey="date"
+                          stroke="#64748b"
+                          fontSize={10}
+                          tickLine={false}
+                          axisLine={false} />
+                        
                           <YAxis
-                            domain={[1, 5]}
-                            ticks={[1, 1.5, 2, 2.5, 3, 3.5, 4, 5]}
-                            stroke="#64748b"
-                            fontSize={10}
-                            tickLine={false}
-                            axisLine={false}
-                            tickFormatter={formatEmotionLabel}
-                          />
+                          domain={[1, 5]}
+                          ticks={[1, 1.5, 2, 2.5, 3, 3.5, 4, 5]}
+                          stroke="#64748b"
+                          fontSize={10}
+                          tickLine={false}
+                          axisLine={false}
+                          tickFormatter={formatEmotionLabel} />
+                        
                           <Tooltip
-                            contentStyle={{
-                              backgroundColor: "#0f172a",
-                              borderRadius: "12px",
-                              border: "1px solid #ffffff10",
-                              fontSize: "10px",
-                            }}
-                            itemStyle={{ color: "#f472b6" }}
-                            formatter={(value) => [
-                              formatEmotionLabel(value),
-                              "Emotion",
-                            ]}
-                          />
+                          contentStyle={{
+                            backgroundColor: "#0f172a",
+                            borderRadius: "12px",
+                            border: "1px solid #ffffff10",
+                            fontSize: "10px"
+                          }}
+                          itemStyle={{ color: "#f472b6" }}
+                          formatter={(value) => [
+                          formatEmotionLabel(value),
+                          "Emotion"]
+                          } />
+                        
                           <Bar dataKey="score" radius={[6, 6, 0, 0]}>
-                            {moodBarData.map((entry) => (
-                              <Cell
-                                key={`bar-${entry.date}`}
-                                fill={
-                                  EMOTION_COLORS[entry.emotion] || "#ec4899"
-                                }
-                              />
-                            ))}
+                            {moodBarData.map((entry) =>
+                          <Cell
+                            key={`bar-${entry.date}`}
+                            fill={
+                            EMOTION_COLORS[entry.emotion] || "#ec4899"
+                            } />
+
+                          )}
                           </Bar>
                         </BarChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="h-full flex items-center justify-center text-slate-600 text-sm font-mono italic">
+                      </ResponsiveContainer> :
+
+                    <div className="h-full flex items-center justify-center text-slate-600 text-sm font-mono italic">
                         Log more emotions to see trends
                       </div>
-                    )}
+                    }
                   </CardContent>
                 </Card>
               </motion.div>
 
-              {/* Emotion Over Time Line Chart */}
+              {}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.45 }}
-              >
+                transition={{ delay: 0.45 }}>
+                
                 <Card className="border-indigo-500/20 bg-gradient-to-br from-indigo-500/8 via-slate-900/70 to-slate-950/95 backdrop-blur-xl overflow-hidden min-h-[420px]">
                   <CardHeader>
                     <CardTitle className="text-white flex items-center gap-2">
@@ -1277,96 +1277,96 @@ export default function AnalyticsPage() {
                       Timeline view of your daily emotion entries.
                     </CardDescription>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {["week", "month", "year"].map((range) => (
-                        <button
-                          key={range}
-                          type="button"
-                          onClick={() => setMoodLineRange(range)}
-                          className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-widest transition-all ${
-                            moodLineRange === range
-                              ? "border-indigo-400/60 bg-indigo-400/10 text-indigo-200"
-                              : "border-white/10 text-slate-400 hover:border-white/30 hover:text-slate-200"
-                          }`}
-                        >
+                      {["week", "month", "year"].map((range) =>
+                      <button
+                        key={range}
+                        type="button"
+                        onClick={() => setMoodLineRange(range)}
+                        className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-widest transition-all ${
+                        moodLineRange === range ?
+                        "border-indigo-400/60 bg-indigo-400/10 text-indigo-200" :
+                        "border-white/10 text-slate-400 hover:border-white/30 hover:text-slate-200"}`
+                        }>
+                        
                           {range}
                         </button>
-                      ))}
+                      )}
                     </div>
                   </CardHeader>
                   <CardContent className="h-[300px] w-full pr-6">
-                    {moodLineLoading ? (
-                      <ChartSkeleton />
-                    ) : moodLineData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                    {moodLineLoading ?
+                    <ChartSkeleton /> :
+                    moodLineData.length > 0 ?
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <LineChart data={moodLineData}>
                           <CartesianGrid
-                            strokeDasharray="3 3"
-                            stroke="#ffffff10"
-                            vertical={false}
-                          />
+                          strokeDasharray="3 3"
+                          stroke="#ffffff10"
+                          vertical={false} />
+                        
                           <XAxis
-                            dataKey="date"
-                            stroke="#64748b"
-                            fontSize={10}
-                            tickLine={false}
-                            axisLine={false}
-                          />
+                          dataKey="date"
+                          stroke="#64748b"
+                          fontSize={10}
+                          tickLine={false}
+                          axisLine={false} />
+                        
                           <YAxis
-                            domain={[1, 5]}
-                            ticks={[1, 1.5, 2, 2.5, 3, 3.5, 4, 5]}
-                            stroke="#64748b"
-                            fontSize={10}
-                            tickLine={false}
-                            axisLine={false}
-                            tickFormatter={formatEmotionLabel}
-                          />
+                          domain={[1, 5]}
+                          ticks={[1, 1.5, 2, 2.5, 3, 3.5, 4, 5]}
+                          stroke="#64748b"
+                          fontSize={10}
+                          tickLine={false}
+                          axisLine={false}
+                          tickFormatter={formatEmotionLabel} />
+                        
                           <Tooltip
-                            contentStyle={{
-                              backgroundColor: "#0f172a",
-                              borderRadius: "12px",
-                              border: "1px solid #ffffff10",
-                              fontSize: "10px",
-                            }}
-                            formatter={(value) => [
-                              formatEmotionLabel(value),
-                              "Emotion",
-                            ]}
-                          />
+                          contentStyle={{
+                            backgroundColor: "#0f172a",
+                            borderRadius: "12px",
+                            border: "1px solid #ffffff10",
+                            fontSize: "10px"
+                          }}
+                          formatter={(value) => [
+                          formatEmotionLabel(value),
+                          "Emotion"]
+                          } />
+                        
                           <Line
-                            type="monotone"
-                            dataKey="score"
-                            stroke="#64748b"
-                            strokeWidth={3}
-                            dot={({ cx, cy, payload }) => (
-                              <circle
-                                cx={cx}
-                                cy={cy}
-                                r={4}
-                                fill={
-                                  EMOTION_COLORS[payload?.emotion] || "#818cf8"
-                                }
-                                stroke="#0f172a"
-                                strokeWidth={1}
-                              />
-                            )}
-                          />
+                          type="monotone"
+                          dataKey="score"
+                          stroke="#64748b"
+                          strokeWidth={3}
+                          dot={({ cx, cy, payload }) =>
+                          <circle
+                            cx={cx}
+                            cy={cy}
+                            r={4}
+                            fill={
+                            EMOTION_COLORS[payload?.emotion] || "#818cf8"
+                            }
+                            stroke="#0f172a"
+                            strokeWidth={1} />
+
+                          } />
+                        
                         </LineChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="h-full flex items-center justify-center text-slate-600 text-sm font-mono italic">
+                      </ResponsiveContainer> :
+
+                    <div className="h-full flex items-center justify-center text-slate-600 text-sm font-mono italic">
                         Log more emotions to see the timeline
                       </div>
-                    )}
+                    }
                   </CardContent>
                 </Card>
               </motion.div>
 
-              {/* Emotion Distribution Pie Chart */}
+              {}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-              >
+                transition={{ delay: 0.5 }}>
+                
                 <Card className="border-cyan-500/20 bg-gradient-to-br from-cyan-500/8 via-slate-900/70 to-slate-950/95 backdrop-blur-xl overflow-hidden min-h-[420px]">
                   <CardHeader>
                     <CardTitle className="text-white flex items-center gap-2">
@@ -1377,74 +1377,74 @@ export default function AnalyticsPage() {
                       Breakdown of emotions logged in this period.
                     </CardDescription>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {["week", "month", "year"].map((range) => (
-                        <button
-                          key={range}
-                          type="button"
-                          onClick={() => setMoodPieRange(range)}
-                          className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-widest transition-all ${
-                            moodPieRange === range
-                              ? "border-cyan-400/60 bg-cyan-400/10 text-cyan-200"
-                              : "border-white/10 text-slate-400 hover:border-white/30 hover:text-slate-200"
-                          }`}
-                        >
+                      {["week", "month", "year"].map((range) =>
+                      <button
+                        key={range}
+                        type="button"
+                        onClick={() => setMoodPieRange(range)}
+                        className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-widest transition-all ${
+                        moodPieRange === range ?
+                        "border-cyan-400/60 bg-cyan-400/10 text-cyan-200" :
+                        "border-white/10 text-slate-400 hover:border-white/30 hover:text-slate-200"}`
+                        }>
+                        
                           {range}
                         </button>
-                      ))}
+                      )}
                     </div>
                   </CardHeader>
                   <CardContent className="h-[300px] w-full">
-                    {moodPieLoading ? (
-                      <ChartSkeleton />
-                    ) : emotionDistribution.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                    {moodPieLoading ?
+                    <ChartSkeleton /> :
+                    emotionDistribution.length > 0 ?
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <PieChart>
                           <Tooltip
-                            contentStyle={{
-                              backgroundColor: "#0f172a",
-                              borderRadius: "12px",
-                              border: "1px solid #ffffff10",
-                              fontSize: "10px",
-                            }}
-                            formatter={(value) => [value, "Days"]}
-                          />
+                          contentStyle={{
+                            backgroundColor: "#0f172a",
+                            borderRadius: "12px",
+                            border: "1px solid #ffffff10",
+                            fontSize: "10px"
+                          }}
+                          formatter={(value) => [value, "Days"]} />
+                        
                           <Legend
-                            wrapperStyle={{
-                              paddingTop: "12px",
-                              fontSize: "10px",
-                            }}
-                          />
+                          wrapperStyle={{
+                            paddingTop: "12px",
+                            fontSize: "10px"
+                          }} />
+                        
                           <Pie
-                            data={emotionDistribution}
-                            dataKey="value"
-                            nameKey="name"
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={60}
-                            outerRadius={100}
-                            paddingAngle={2}
-                          >
-                            {emotionDistribution.map((entry) => (
-                              <Cell key={entry.name} fill={entry.color} />
-                            ))}
+                          data={emotionDistribution}
+                          dataKey="value"
+                          nameKey="name"
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={100}
+                          paddingAngle={2}>
+                          
+                            {emotionDistribution.map((entry) =>
+                          <Cell key={entry.name} fill={entry.color} />
+                          )}
                           </Pie>
                         </PieChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="h-full flex items-center justify-center text-slate-600 text-sm font-mono italic">
+                      </ResponsiveContainer> :
+
+                    <div className="h-full flex items-center justify-center text-slate-600 text-sm font-mono italic">
                         Log more emotions to see distribution
                       </div>
-                    )}
+                    }
                   </CardContent>
                 </Card>
               </motion.div>
 
-              {/* Wheel of Life Radar Chart */}
+              {}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-              >
+                transition={{ delay: 0.5 }}>
+                
                 <Card className="border-amber-500/25 bg-gradient-to-br from-amber-500/8 via-slate-900/70 to-slate-950/95 backdrop-blur-xl overflow-hidden min-h-[420px]">
                   <CardHeader>
                     <CardTitle className="text-white flex items-center gap-2">
@@ -1455,59 +1455,59 @@ export default function AnalyticsPage() {
                       Visualisation of your current life domain ratings.
                     </CardDescription>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {["week", "month", "year"].map((range) => (
-                        <button
-                          key={range}
-                          type="button"
-                          onClick={() => setLifeAverageRange(range)}
-                          className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-widest transition-all ${
-                            lifeAverageRange === range
-                              ? "border-amber-400/60 bg-amber-400/10 text-amber-200"
-                              : "border-white/10 text-slate-400 hover:border-white/30 hover:text-slate-200"
-                          }`}
-                        >
+                      {["week", "month", "year"].map((range) =>
+                      <button
+                        key={range}
+                        type="button"
+                        onClick={() => setLifeAverageRange(range)}
+                        className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-widest transition-all ${
+                        lifeAverageRange === range ?
+                        "border-amber-400/60 bg-amber-400/10 text-amber-200" :
+                        "border-white/10 text-slate-400 hover:border-white/30 hover:text-slate-200"}`
+                        }>
+                        
                           {range}
                         </button>
-                      ))}
+                      )}
                     </div>
                   </CardHeader>
                   <CardContent className="h-[300px] w-full">
-                    {lifeLoading ? (
-                      <ChartSkeleton />
-                    ) : lifeData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                    {lifeLoading ?
+                    <ChartSkeleton /> :
+                    lifeData.length > 0 ?
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <RadarChart
-                          cx="50%"
-                          cy="50%"
-                          outerRadius="80%"
-                          data={lifeData}
-                        >
+                        cx="50%"
+                        cy="50%"
+                        outerRadius="80%"
+                        data={lifeData}>
+                        
                           <PolarGrid stroke="#ffffff10" />
                           <PolarAngleAxis
-                            dataKey="subject"
-                            stroke="#64748b"
-                            fontSize={10}
-                          />
+                          dataKey="subject"
+                          stroke="#64748b"
+                          fontSize={10} />
+                        
                           <PolarRadiusAxis angle={30} domain={[0, 10]} hide />
                           <Radar
-                            name="Satisfaction"
-                            dataKey="A"
-                            stroke="#f59e0b"
-                            fill="#f59e0b"
-                            fillOpacity={0.3}
-                          />
+                          name="Satisfaction"
+                          dataKey="A"
+                          stroke="#f59e0b"
+                          fill="#f59e0b"
+                          fillOpacity={0.3} />
+                        
                         </RadarChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="h-full flex items-center justify-center text-slate-600 text-sm font-mono italic">
+                      </ResponsiveContainer> :
+
+                    <div className="h-full flex items-center justify-center text-slate-600 text-sm font-mono italic">
                         Submit Life Ratings to view balance
                       </div>
-                    )}
+                    }
                   </CardContent>
                 </Card>
               </motion.div>
 
-              {/* Insight Engine */}
+              {}
               <div className="lg:col-span-2">
                 <div className="mb-4 flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-violet-500/15 text-violet-300">
@@ -1526,8 +1526,8 @@ export default function AnalyticsPage() {
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.55 }}
-                >
+                  transition={{ delay: 0.55 }}>
+                  
                   <Card className="border-violet-500/20 bg-gradient-to-br from-violet-500/8 via-slate-900/70 to-slate-950/95 backdrop-blur-xl overflow-hidden min-h-[420px]">
                     <CardHeader>
                       <CardTitle className="text-white flex items-center gap-2">
@@ -1540,192 +1540,192 @@ export default function AnalyticsPage() {
                       </CardDescription>
                       <div className="mt-3 flex flex-wrap items-center gap-2">
                         {[
-                          { key: "week", label: "week" },
-                          { key: "month", label: "month" },
-                          { key: "year", label: "year" },
-                        ].map((range) => (
-                          <button
-                            key={range.key}
-                            type="button"
-                            onClick={() => setSleepEmotionRange(range.key)}
-                            className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-widest transition-all ${
-                              sleepEmotionRange === range.key
-                                ? "border-violet-400/60 bg-violet-400/10 text-violet-200"
-                                : "border-white/10 text-slate-400 hover:border-white/30 hover:text-slate-200"
-                            }`}
-                          >
+                        { key: "week", label: "week" },
+                        { key: "month", label: "month" },
+                        { key: "year", label: "year" }].
+                        map((range) =>
+                        <button
+                          key={range.key}
+                          type="button"
+                          onClick={() => setSleepEmotionRange(range.key)}
+                          className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-widest transition-all ${
+                          sleepEmotionRange === range.key ?
+                          "border-violet-400/60 bg-violet-400/10 text-violet-200" :
+                          "border-white/10 text-slate-400 hover:border-white/30 hover:text-slate-200"}`
+                          }>
+                          
                             {range.label}
                           </button>
-                        ))}
+                        )}
                         <div className="ml-auto flex items-center gap-2">
                           {[
-                            { key: "scatter", label: "Scatter" },
-                            { key: "line", label: "Line" },
-                          ].map((view) => (
-                            <button
-                              key={view.key}
-                              type="button"
-                              onClick={() => setSleepEmotionView(view.key)}
-                              className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-widest transition-all ${
-                                sleepEmotionView === view.key
-                                  ? "border-white/40 bg-white/10 text-white"
-                                  : "border-white/10 text-slate-400 hover:border-white/30 hover:text-slate-200"
-                              }`}
-                            >
+                          { key: "scatter", label: "Scatter" },
+                          { key: "line", label: "Line" }].
+                          map((view) =>
+                          <button
+                            key={view.key}
+                            type="button"
+                            onClick={() => setSleepEmotionView(view.key)}
+                            className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-widest transition-all ${
+                            sleepEmotionView === view.key ?
+                            "border-white/40 bg-white/10 text-white" :
+                            "border-white/10 text-slate-400 hover:border-white/30 hover:text-slate-200"}`
+                            }>
+                            
                               {view.label}
                             </button>
-                          ))}
+                          )}
                         </div>
                       </div>
                       <div className="mt-3 flex flex-wrap gap-2">
                         {[
-                          { key: "sleep", label: "Sleep" },
-                          { key: "screen", label: "Screen" },
-                          { key: "workStudy", label: "Work/Study" },
-                        ].map((metric) => (
-                          <button
-                            key={metric.key}
-                            type="button"
-                            onClick={() => setInsightMetric(metric.key)}
-                            className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-widest transition-all ${
-                              insightMetric === metric.key
-                                ? "border-white/40 bg-white/10 text-white"
-                                : "border-white/10 text-slate-400 hover:border-white/30 hover:text-slate-200"
-                            }`}
-                          >
+                        { key: "sleep", label: "Sleep" },
+                        { key: "screen", label: "Screen" },
+                        { key: "workStudy", label: "Work/Study" }].
+                        map((metric) =>
+                        <button
+                          key={metric.key}
+                          type="button"
+                          onClick={() => setInsightMetric(metric.key)}
+                          className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-widest transition-all ${
+                          insightMetric === metric.key ?
+                          "border-white/40 bg-white/10 text-white" :
+                          "border-white/10 text-slate-400 hover:border-white/30 hover:text-slate-200"}`
+                          }>
+                          
                             {metric.label}
                           </button>
-                        ))}
+                        )}
                       </div>
                     </CardHeader>
                     <CardContent className="h-[300px] w-full">
-                      {sleepEmotionLoading ? (
-                        <ChartSkeleton />
-                      ) : insightPlotData.length > 0 ? (
-                        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                          {sleepEmotionView === "scatter" ? (
-                            <ScatterChart
-                              margin={{
-                                top: 20,
-                                right: 30,
-                                left: 0,
-                                bottom: 0,
-                              }}
-                            >
+                      {sleepEmotionLoading ?
+                      <ChartSkeleton /> :
+                      insightPlotData.length > 0 ?
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                          {sleepEmotionView === "scatter" ?
+                        <ScatterChart
+                          margin={{
+                            top: 20,
+                            right: 30,
+                            left: 0,
+                            bottom: 0
+                          }}>
+                          
                               <CartesianGrid
-                                strokeDasharray="3 3"
-                                stroke="#ffffff10"
-                                vertical={false}
-                              />
+                            strokeDasharray="3 3"
+                            stroke="#ffffff10"
+                            vertical={false} />
+                          
                               <XAxis
-                                type="number"
-                                dataKey="x"
-                                stroke="#64748b"
-                                fontSize={10}
-                                tickLine={false}
-                                axisLine={false}
-                                unit="h"
-                              />
+                            type="number"
+                            dataKey="x"
+                            stroke="#64748b"
+                            fontSize={10}
+                            tickLine={false}
+                            axisLine={false}
+                            unit="h" />
+                          
                               <YAxis
-                                type="number"
-                                dataKey="emotionScore"
-                                domain={[1, 5]}
-                                ticks={[1, 1.5, 2, 2.5, 3, 3.5, 4, 5]}
-                                stroke="#64748b"
-                                fontSize={10}
-                                tickLine={false}
-                                axisLine={false}
-                                tickFormatter={formatEmotionLabel}
-                              />
+                            type="number"
+                            dataKey="emotionScore"
+                            domain={[1, 5]}
+                            ticks={[1, 1.5, 2, 2.5, 3, 3.5, 4, 5]}
+                            stroke="#64748b"
+                            fontSize={10}
+                            tickLine={false}
+                            axisLine={false}
+                            tickFormatter={formatEmotionLabel} />
+                          
                               <Tooltip
-                                contentStyle={{
-                                  backgroundColor: "#0f172a",
-                                  borderRadius: "12px",
-                                  border: "1px solid #ffffff10",
-                                  fontSize: "10px",
-                                }}
-                                formatter={(value, name, payload) => {
-                                  if (name === "emotionScore") {
-                                    return [
-                                      formatEmotionLabel(value),
-                                      "Emotion",
-                                    ];
-                                  }
-                                  if (name === "x") {
-                                    return [`${value}h`, insightMetricLabel];
-                                  }
-                                  return [value, name];
-                                }}
-                                labelFormatter={(_, payload) =>
-                                  payload?.[0]?.payload?.label || ""
-                                }
-                              />
+                            contentStyle={{
+                              backgroundColor: "#0f172a",
+                              borderRadius: "12px",
+                              border: "1px solid #ffffff10",
+                              fontSize: "10px"
+                            }}
+                            formatter={(value, name, payload) => {
+                              if (name === "emotionScore") {
+                                return [
+                                formatEmotionLabel(value),
+                                "Emotion"];
+
+                              }
+                              if (name === "x") {
+                                return [`${value}h`, insightMetricLabel];
+                              }
+                              return [value, name];
+                            }}
+                            labelFormatter={(_, payload) =>
+                            payload?.[0]?.payload?.label || ""
+                            } />
+                          
                               <Scatter data={insightPlotData} fill="#a78bfa" />
-                            </ScatterChart>
-                          ) : (
-                            <LineChart data={insightLineData}>
+                            </ScatterChart> :
+
+                        <LineChart data={insightLineData}>
                               <CartesianGrid
-                                strokeDasharray="3 3"
-                                stroke="#ffffff10"
-                                vertical={false}
-                              />
+                            strokeDasharray="3 3"
+                            stroke="#ffffff10"
+                            vertical={false} />
+                          
                               <XAxis
-                                type="number"
-                                dataKey="x"
-                                stroke="#64748b"
-                                fontSize={10}
-                                tickLine={false}
-                                axisLine={false}
-                                unit="h"
-                              />
+                            type="number"
+                            dataKey="x"
+                            stroke="#64748b"
+                            fontSize={10}
+                            tickLine={false}
+                            axisLine={false}
+                            unit="h" />
+                          
                               <YAxis
-                                type="number"
-                                domain={[1, 5]}
-                                ticks={[1, 1.5, 2, 2.5, 3, 3.5, 4, 5]}
-                                stroke="#64748b"
-                                fontSize={10}
-                                tickLine={false}
-                                axisLine={false}
-                                tickFormatter={formatEmotionLabel}
-                              />
+                            type="number"
+                            domain={[1, 5]}
+                            ticks={[1, 1.5, 2, 2.5, 3, 3.5, 4, 5]}
+                            stroke="#64748b"
+                            fontSize={10}
+                            tickLine={false}
+                            axisLine={false}
+                            tickFormatter={formatEmotionLabel} />
+                          
                               <Tooltip
-                                contentStyle={{
-                                  backgroundColor: "#0f172a",
-                                  borderRadius: "12px",
-                                  border: "1px solid #ffffff10",
-                                  fontSize: "10px",
-                                }}
-                                formatter={(value, name, payload) => {
-                                  if (name === "emotionScore") {
-                                    return [
-                                      formatEmotionLabel(value),
-                                      "Emotion",
-                                    ];
-                                  }
-                                  if (name === "x") {
-                                    return [`${value}h`, insightMetricLabel];
-                                  }
-                                  return [value, name];
-                                }}
-                                labelFormatter={(_, payload) =>
-                                  payload?.[0]?.payload?.label || ""
-                                }
-                              />
+                            contentStyle={{
+                              backgroundColor: "#0f172a",
+                              borderRadius: "12px",
+                              border: "1px solid #ffffff10",
+                              fontSize: "10px"
+                            }}
+                            formatter={(value, name, payload) => {
+                              if (name === "emotionScore") {
+                                return [
+                                formatEmotionLabel(value),
+                                "Emotion"];
+
+                              }
+                              if (name === "x") {
+                                return [`${value}h`, insightMetricLabel];
+                              }
+                              return [value, name];
+                            }}
+                            labelFormatter={(_, payload) =>
+                            payload?.[0]?.payload?.label || ""
+                            } />
+                          
                               <Line
-                                type="monotone"
-                                dataKey="emotionScore"
-                                stroke="#a78bfa"
-                                strokeWidth={3}
-                                dot={{ r: 3 }}
-                              />
+                            type="monotone"
+                            dataKey="emotionScore"
+                            stroke="#a78bfa"
+                            strokeWidth={3}
+                            dot={{ r: 3 }} />
+                          
                             </LineChart>
-                          )}
-                        </ResponsiveContainer>
-                      ) : (
-                        <div className="h-full flex items-center justify-center text-slate-600 text-sm font-mono italic">
+                        }
+                        </ResponsiveContainer> :
+
+                      <div className="h-full flex items-center justify-center text-slate-600 text-sm font-mono italic">
                           Log sleep and emotions to see the correlation
                         </div>
-                      )}
+                      }
                     </CardContent>
                     <div className="px-6 pb-6 text-xs text-slate-400 space-y-2">
                       <p>{insightSummary}</p>
@@ -1738,8 +1738,8 @@ export default function AnalyticsPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.6 }}
-                  className="mt-6"
-                >
+                  className="mt-6">
+                  
                   <Card className="border-slate-500/20 bg-gradient-to-br from-slate-500/8 via-slate-900/70 to-slate-950/95 backdrop-blur-xl overflow-hidden min-h-[360px]">
                     <CardHeader>
                       <CardTitle className="text-white flex items-center gap-2">
@@ -1751,90 +1751,90 @@ export default function AnalyticsPage() {
                       </CardDescription>
                       <div className="mt-3 flex flex-wrap gap-2">
                         {[
-                          { key: "week", label: "week" },
-                          { key: "month", label: "month" },
-                          { key: "year", label: "year" },
-                        ].map((range) => (
-                          <button
-                            key={range.key}
-                            type="button"
-                            onClick={() => setDayEmotionRange(range.key)}
-                            className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-widest transition-all ${
-                              dayEmotionRange === range.key
-                                ? "border-slate-300/60 bg-slate-300/10 text-slate-100"
-                                : "border-white/10 text-slate-400 hover:border-white/30 hover:text-slate-200"
-                            }`}
-                          >
+                        { key: "week", label: "week" },
+                        { key: "month", label: "month" },
+                        { key: "year", label: "year" }].
+                        map((range) =>
+                        <button
+                          key={range.key}
+                          type="button"
+                          onClick={() => setDayEmotionRange(range.key)}
+                          className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-widest transition-all ${
+                          dayEmotionRange === range.key ?
+                          "border-slate-300/60 bg-slate-300/10 text-slate-100" :
+                          "border-white/10 text-slate-400 hover:border-white/30 hover:text-slate-200"}`
+                          }>
+                          
                             {range.label}
                           </button>
-                        ))}
+                        )}
                       </div>
                     </CardHeader>
                     <CardContent className="h-[240px] w-full">
-                      {dayEmotionLoading ? (
-                        <ChartSkeleton />
-                      ) : dayEmotionData.length > 0 ? (
-                        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                      {dayEmotionLoading ?
+                      <ChartSkeleton /> :
+                      dayEmotionData.length > 0 ?
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                           <BarChart data={dayEmotionData}>
                             <CartesianGrid
-                              strokeDasharray="3 3"
-                              stroke="#ffffff10"
-                              vertical={false}
-                            />
+                            strokeDasharray="3 3"
+                            stroke="#ffffff10"
+                            vertical={false} />
+                          
                             <XAxis
-                              dataKey="day"
-                              stroke="#64748b"
-                              fontSize={10}
-                              tickLine={false}
-                              axisLine={false}
-                            />
+                            dataKey="day"
+                            stroke="#64748b"
+                            fontSize={10}
+                            tickLine={false}
+                            axisLine={false} />
+                          
                             <YAxis
-                              domain={[0, 5]}
-                              ticks={[1, 2, 3, 4, 5]}
-                              stroke="#64748b"
-                              fontSize={10}
-                              tickLine={false}
-                              axisLine={false}
-                              tickFormatter={formatEmotionLabel}
-                            />
+                            domain={[0, 5]}
+                            ticks={[1, 2, 3, 4, 5]}
+                            stroke="#64748b"
+                            fontSize={10}
+                            tickLine={false}
+                            axisLine={false}
+                            tickFormatter={formatEmotionLabel} />
+                          
                             <Tooltip
-                              contentStyle={{
-                                backgroundColor: "#0f172a",
-                                borderRadius: "12px",
-                                border: "1px solid #ffffff10",
-                                fontSize: "10px",
-                              }}
-                              formatter={(value, name, payload) => {
-                                const row = payload?.payload;
-                                if (!row || row.total === 0) {
-                                  return ["No data", "Emotion"];
-                                }
-                                return [
-                                  `${row.emotionLabel} (${row.count})`,
-                                  "Dominant",
-                                ];
-                              }}
-                            />
+                            contentStyle={{
+                              backgroundColor: "#0f172a",
+                              borderRadius: "12px",
+                              border: "1px solid #ffffff10",
+                              fontSize: "10px"
+                            }}
+                            formatter={(value, name, payload) => {
+                              const row = payload?.payload;
+                              if (!row || row.total === 0) {
+                                return ["No data", "Emotion"];
+                              }
+                              return [
+                              `${row.emotionLabel} (${row.count})`,
+                              "Dominant"];
+
+                            }} />
+                          
                             <Bar dataKey="score" radius={[6, 6, 0, 0]}>
-                              {dayEmotionData.map((entry) => (
-                                <Cell
-                                  key={entry.day}
-                                  fill={
-                                    entry.emotion === "mixed"
-                                      ? "#94a3b8"
-                                      : EMOTION_COLORS[entry.emotion] ||
-                                        "#94a3b8"
-                                  }
-                                />
-                              ))}
+                              {dayEmotionData.map((entry) =>
+                            <Cell
+                              key={entry.day}
+                              fill={
+                              entry.emotion === "mixed" ?
+                              "#94a3b8" :
+                              EMOTION_COLORS[entry.emotion] ||
+                              "#94a3b8"
+                              } />
+
+                            )}
                             </Bar>
                           </BarChart>
-                        </ResponsiveContainer>
-                      ) : (
-                        <div className="h-full flex items-center justify-center text-slate-600 text-sm font-mono italic">
+                        </ResponsiveContainer> :
+
+                      <div className="h-full flex items-center justify-center text-slate-600 text-sm font-mono italic">
                           Log emotions to see day patterns
                         </div>
-                      )}
+                      }
                     </CardContent>
                     <div className="px-6 pb-6 text-xs text-slate-400">
                       {dayEmotionInsight}
@@ -1846,8 +1846,8 @@ export default function AnalyticsPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.65 }}
-                  className="mt-6"
-                >
+                  className="mt-6">
+                  
                   <Card className="border-emerald-500/20 bg-gradient-to-br from-emerald-500/8 via-slate-900/70 to-slate-950/95 backdrop-blur-xl overflow-hidden min-h-[360px]">
                     <CardHeader>
                       <CardTitle className="text-white flex items-center gap-2">
@@ -1859,104 +1859,104 @@ export default function AnalyticsPage() {
                       </CardDescription>
                       <div className="mt-3 flex flex-wrap gap-2">
                         {[
-                          { key: "week", label: "week" },
-                          { key: "month", label: "month" },
-                          { key: "year", label: "year" },
-                        ].map((range) => (
-                          <button
-                            key={range.key}
-                            type="button"
-                            onClick={() => setHabitImpactRange(range.key)}
-                            className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-widest transition-all ${
-                              habitImpactRange === range.key
-                                ? "border-emerald-400/60 bg-emerald-400/10 text-emerald-200"
-                                : "border-white/10 text-slate-400 hover:border-white/30 hover:text-slate-200"
-                            }`}
-                          >
+                        { key: "week", label: "week" },
+                        { key: "month", label: "month" },
+                        { key: "year", label: "year" }].
+                        map((range) =>
+                        <button
+                          key={range.key}
+                          type="button"
+                          onClick={() => setHabitImpactRange(range.key)}
+                          className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-widest transition-all ${
+                          habitImpactRange === range.key ?
+                          "border-emerald-400/60 bg-emerald-400/10 text-emerald-200" :
+                          "border-white/10 text-slate-400 hover:border-white/30 hover:text-slate-200"}`
+                          }>
+                          
                             {range.label}
                           </button>
-                        ))}
+                        )}
                       </div>
                     </CardHeader>
                     <CardContent className="h-[220px] w-full">
-                      {habitImpactLoading ? (
-                        <ChartSkeleton />
-                      ) : habitImpactTop.length > 0 ? (
-                        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                      {habitImpactLoading ?
+                      <ChartSkeleton /> :
+                      habitImpactTop.length > 0 ?
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                           <BarChart data={habitImpactTop} layout="vertical">
                             <CartesianGrid
-                              strokeDasharray="3 3"
-                              stroke="#ffffff10"
-                              horizontal={false}
-                            />
+                            strokeDasharray="3 3"
+                            stroke="#ffffff10"
+                            horizontal={false} />
+                          
                             <XAxis
-                              type="number"
-                              stroke="#64748b"
-                              fontSize={10}
-                              tickLine={false}
-                              axisLine={false}
-                            />
+                            type="number"
+                            stroke="#64748b"
+                            fontSize={10}
+                            tickLine={false}
+                            axisLine={false} />
+                          
                             <YAxis
-                              type="category"
-                              dataKey="habitName"
-                              stroke="#64748b"
-                              fontSize={10}
-                              width={90}
-                              tickLine={false}
-                              axisLine={false}
-                            />
+                            type="category"
+                            dataKey="habitName"
+                            stroke="#64748b"
+                            fontSize={10}
+                            width={90}
+                            tickLine={false}
+                            axisLine={false} />
+                          
                             <Tooltip
-                              contentStyle={{
-                                backgroundColor: "#0f172a",
-                                borderRadius: "12px",
-                                border: "1px solid #ffffff10",
-                                fontSize: "10px",
-                              }}
-                              formatter={(value, name, payload) => {
-                                const row = payload?.payload;
-                                if (!row) return [value, "Impact"];
-                                const delta = Number(value).toFixed(2);
-                                return [
-                                  `${delta} on ${row.ratingLabel}`,
-                                  "Impact",
-                                ];
-                              }}
-                            />
+                            contentStyle={{
+                              backgroundColor: "#0f172a",
+                              borderRadius: "12px",
+                              border: "1px solid #ffffff10",
+                              fontSize: "10px"
+                            }}
+                            formatter={(value, name, payload) => {
+                              const row = payload?.payload;
+                              if (!row) return [value, "Impact"];
+                              const delta = Number(value).toFixed(2);
+                              return [
+                              `${delta} on ${row.ratingLabel}`,
+                              "Impact"];
+
+                            }} />
+                          
                             <Bar dataKey="impact" radius={[6, 6, 6, 6]}>
-                              {habitImpactTop.map((entry) => (
-                                <Cell
-                                  key={`${entry.habitId}-${entry.ratingKey}`}
-                                  fill={
-                                    entry.impact >= 0 ? "#34d399" : "#f87171"
-                                  }
-                                />
-                              ))}
+                              {habitImpactTop.map((entry) =>
+                            <Cell
+                              key={`${entry.habitId}-${entry.ratingKey}`}
+                              fill={
+                              entry.impact >= 0 ? "#34d399" : "#f87171"
+                              } />
+
+                            )}
                             </Bar>
                           </BarChart>
-                        </ResponsiveContainer>
-                      ) : (
-                        <div className="h-full flex items-center justify-center text-slate-600 text-sm font-mono italic">
+                        </ResponsiveContainer> :
+
+                      <div className="h-full flex items-center justify-center text-slate-600 text-sm font-mono italic">
                           Log habits and life ratings to see impacts
                         </div>
-                      )}
+                      }
                     </CardContent>
                     <div className="px-6 pb-6 text-xs text-slate-400 space-y-2">
-                      {habitImpactInsights.map((insight) => (
-                        <p key={insight}>{insight}</p>
-                      ))}
+                      {habitImpactInsights.map((insight) =>
+                      <p key={insight}>{insight}</p>
+                      )}
                     </div>
                   </Card>
                 </motion.div>
               </div>
 
-              {/* Time Tracker Composition Chart */}
+              {}
               <motion.div
                 id="time-allocation"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
-                className="lg:col-span-2"
-              >
+                className="lg:col-span-2">
+                
                 <Card className="border-emerald-500/20 bg-gradient-to-br from-emerald-500/8 via-slate-900/70 to-slate-950/95 backdrop-blur-xl overflow-hidden min-h-[420px]">
                   <CardHeader>
                     <CardTitle className="text-white flex items-center gap-2">
@@ -1968,91 +1968,91 @@ export default function AnalyticsPage() {
                       selected range.
                     </CardDescription>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {["week", "month", "year"].map((range) => (
-                        <button
-                          key={range}
-                          type="button"
-                          onClick={() => setTimeRange(range)}
-                          className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-widest transition-all ${
-                            timeRange === range
-                              ? "border-emerald-400/60 bg-emerald-400/10 text-emerald-200"
-                              : "border-white/10 text-slate-400 hover:border-white/30 hover:text-slate-200"
-                          }`}
-                        >
+                      {["week", "month", "year"].map((range) =>
+                      <button
+                        key={range}
+                        type="button"
+                        onClick={() => setTimeRange(range)}
+                        className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-widest transition-all ${
+                        timeRange === range ?
+                        "border-emerald-400/60 bg-emerald-400/10 text-emerald-200" :
+                        "border-white/10 text-slate-400 hover:border-white/30 hover:text-slate-200"}`
+                        }>
+                        
                           {range}
                         </button>
-                      ))}
+                      )}
                     </div>
                   </CardHeader>
                   <CardContent className="h-[300px] w-full">
-                    {timeLoading ? (
-                      <ChartSkeleton />
-                    ) : timeData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                    {timeLoading ?
+                    <ChartSkeleton /> :
+                    timeData.length > 0 ?
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <LineChart
-                          data={timeData}
-                          margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
-                        >
+                        data={timeData}
+                        margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                        
                           <CartesianGrid
-                            strokeDasharray="3 3"
-                            stroke="#ffffff10"
-                            vertical={false}
-                          />
+                          strokeDasharray="3 3"
+                          stroke="#ffffff10"
+                          vertical={false} />
+                        
                           <XAxis
-                            dataKey="name"
-                            stroke="#64748b"
-                            fontSize={10}
-                            tickLine={false}
-                            axisLine={false}
-                          />
+                          dataKey="name"
+                          stroke="#64748b"
+                          fontSize={10}
+                          tickLine={false}
+                          axisLine={false} />
+                        
                           <YAxis
-                            stroke="#64748b"
-                            fontSize={10}
-                            tickLine={false}
-                            axisLine={false}
-                          />
+                          stroke="#64748b"
+                          fontSize={10}
+                          tickLine={false}
+                          axisLine={false} />
+                        
                           <Tooltip
-                            cursor={{ fill: "#ffffff05" }}
-                            contentStyle={{
-                              backgroundColor: "#0f172a",
-                              borderRadius: "12px",
-                              border: "1px solid #ffffff10",
-                            }}
-                          />
+                          cursor={{ fill: "#ffffff05" }}
+                          contentStyle={{
+                            backgroundColor: "#0f172a",
+                            borderRadius: "12px",
+                            border: "1px solid #ffffff10"
+                          }} />
+                        
                           <Legend
-                            wrapperStyle={{
-                              paddingTop: "20px",
-                              fontSize: "10px",
-                            }}
-                          />
+                          wrapperStyle={{
+                            paddingTop: "20px",
+                            fontSize: "10px"
+                          }} />
+                        
                           <Line
-                            type="monotone"
-                            dataKey="Sleep"
-                            stroke="#10b981"
-                            strokeWidth={3}
-                            dot={false}
-                          />
+                          type="monotone"
+                          dataKey="Sleep"
+                          stroke="#10b981"
+                          strokeWidth={3}
+                          dot={false} />
+                        
                           <Line
-                            type="monotone"
-                            dataKey="Work"
-                            stroke="#3b82f6"
-                            strokeWidth={3}
-                            dot={false}
-                          />
+                          type="monotone"
+                          dataKey="Work"
+                          stroke="#3b82f6"
+                          strokeWidth={3}
+                          dot={false} />
+                        
                           <Line
-                            type="monotone"
-                            dataKey="Screen"
-                            stroke="#ef4444"
-                            strokeWidth={3}
-                            dot={false}
-                          />
+                          type="monotone"
+                          dataKey="Screen"
+                          stroke="#ef4444"
+                          strokeWidth={3}
+                          dot={false} />
+                        
                         </LineChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="h-full flex items-center justify-center text-slate-600 text-sm font-mono italic">
+                      </ResponsiveContainer> :
+
+                    <div className="h-full flex items-center justify-center text-slate-600 text-sm font-mono italic">
                         Log data in the Track page to see time allocation
                       </div>
-                    )}
+                    }
                   </CardContent>
                   <div className="px-6 pb-5 text-xs font-mono text-emerald-200/80">
                     {timeInsight}
@@ -2060,13 +2060,13 @@ export default function AnalyticsPage() {
                 </Card>
               </motion.div>
 
-              {/* Expense Tracker Chart */}
+              {}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.7 }}
-                className="lg:col-span-2"
-              >
+                className="lg:col-span-2">
+                
                 <Card className="border-cyan-500/20 bg-gradient-to-br from-cyan-500/8 via-slate-900/70 to-slate-950/95 backdrop-blur-xl overflow-hidden min-h-[420px]">
                   <CardHeader>
                     <CardTitle className="text-white flex items-center gap-2">
@@ -2078,75 +2078,75 @@ export default function AnalyticsPage() {
                       {expenseSymbol} {expenseCurrency}).
                     </CardDescription>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {["week", "month", "year"].map((range) => (
-                        <button
-                          key={range}
-                          type="button"
-                          onClick={() => setExpenseRange(range)}
-                          className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-widest transition-all ${
-                            expenseRange === range
-                              ? "border-amber-400/60 bg-amber-400/10 text-amber-200"
-                              : "border-white/10 text-slate-400 hover:border-white/30 hover:text-slate-200"
-                          }`}
-                        >
+                      {["week", "month", "year"].map((range) =>
+                      <button
+                        key={range}
+                        type="button"
+                        onClick={() => setExpenseRange(range)}
+                        className={`rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-widest transition-all ${
+                        expenseRange === range ?
+                        "border-amber-400/60 bg-amber-400/10 text-amber-200" :
+                        "border-white/10 text-slate-400 hover:border-white/30 hover:text-slate-200"}`
+                        }>
+                        
                           {range}
                         </button>
-                      ))}
+                      )}
                     </div>
                   </CardHeader>
                   <CardContent className="h-[300px] w-full">
-                    {expenseLoading ? (
-                      <ChartSkeleton />
-                    ) : expenseData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                    {expenseLoading ?
+                    <ChartSkeleton /> :
+                    expenseData.length > 0 ?
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <LineChart
-                          data={expenseData}
-                          margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
-                        >
+                        data={expenseData}
+                        margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                        
                           <CartesianGrid
-                            strokeDasharray="3 3"
-                            stroke="#ffffff10"
-                            vertical={false}
-                          />
+                          strokeDasharray="3 3"
+                          stroke="#ffffff10"
+                          vertical={false} />
+                        
                           <XAxis
-                            dataKey="name"
-                            stroke="#64748b"
-                            fontSize={10}
-                            tickLine={false}
-                            axisLine={false}
-                          />
+                          dataKey="name"
+                          stroke="#64748b"
+                          fontSize={10}
+                          tickLine={false}
+                          axisLine={false} />
+                        
                           <YAxis
-                            stroke="#64748b"
-                            fontSize={10}
-                            tickLine={false}
-                            axisLine={false}
-                          />
+                          stroke="#64748b"
+                          fontSize={10}
+                          tickLine={false}
+                          axisLine={false} />
+                        
                           <Tooltip
-                            cursor={{ fill: "#ffffff05" }}
-                            contentStyle={{
-                              backgroundColor: "#0f172a",
-                              borderRadius: "12px",
-                              border: "1px solid #ffffff10",
-                            }}
-                            formatter={(value) => [
-                              formatCurrency(value),
-                              "Expense",
-                            ]}
-                          />
+                          cursor={{ fill: "#ffffff05" }}
+                          contentStyle={{
+                            backgroundColor: "#0f172a",
+                            borderRadius: "12px",
+                            border: "1px solid #ffffff10"
+                          }}
+                          formatter={(value) => [
+                          formatCurrency(value),
+                          "Expense"]
+                          } />
+                        
                           <Line
-                            type="monotone"
-                            dataKey="Expense"
-                            stroke="#f59e0b"
-                            strokeWidth={3}
-                            dot={false}
-                          />
+                          type="monotone"
+                          dataKey="Expense"
+                          stroke="#f59e0b"
+                          strokeWidth={3}
+                          dot={false} />
+                        
                         </LineChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="h-full flex items-center justify-center text-slate-600 text-sm font-mono italic">
+                      </ResponsiveContainer> :
+
+                    <div className="h-full flex items-center justify-center text-slate-600 text-sm font-mono italic">
                         Log expenses in Track to see trends
                       </div>
-                    )}
+                    }
                   </CardContent>
                   <div className="px-6 pb-5 text-xs font-mono text-amber-200/80">
                     {expenseInsight}
@@ -2157,6 +2157,6 @@ export default function AnalyticsPage() {
           </div>
         </main>
       </div>
-    </div>
-  );
+    </div>);
+
 }

@@ -4,7 +4,7 @@ const User = require("../models/user");
 
 const router = express.Router();
 
-// GET /goals - get current user goals
+
 router.get("/", auth, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
@@ -15,7 +15,7 @@ router.get("/", auth, async (req, res) => {
   }
 });
 
-// PATCH /goals - update user goals
+
 router.patch("/", auth, async (req, res) => {
   try {
     const { goals } = req.body;

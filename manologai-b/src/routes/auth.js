@@ -7,14 +7,14 @@ const { getCurrencyForCountry } = require("../config/currency");
 
 const router = express.Router();
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key"; 
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 const REFRESH_SECRET = process.env.REFRESH_SECRET || "your-refresh-secret-key";
 
 const cookieOptions = {
   httpOnly: true,
   sameSite: "lax",
   secure: process.env.NODE_ENV === "production",
-  path: "/",
+  path: "/"
 };
 
 const generateTokens = (userId) => {
@@ -26,9 +26,9 @@ const generateTokens = (userId) => {
 router.post("/signup", async (req, res) => {
   try {
     const { email, password, firstName, lastName, country } = req.body || {};
-    // ... validation logic ...
+
     const normalizedEmail = String(email).toLowerCase().trim();
-    if (!await User.findOne({ email: normalizedEmail })) {
+    if (!(await User.findOne({ email: normalizedEmail }))) {
       const salt = await bcrypt.genSalt(10);
       const passwordHash = await bcrypt.hash(password, salt);
       const user = await User.create({
@@ -58,7 +58,7 @@ router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body || {};
     const user = await User.findOne({ email: String(email).toLowerCase().trim() });
-    if (!user || user.isDeleted || !await bcrypt.compare(password, user.passwordHash)) {
+    if (!user || user.isDeleted || !(await bcrypt.compare(password, user.passwordHash))) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
@@ -86,11 +86,11 @@ router.post("/refresh", async (req, res) => {
   try {
     const decoded = jwt.verify(refreshToken, REFRESH_SECRET);
     const user = await User.findById(decoded.userId);
-    const sessionIndex = user?.sessions.findIndex(s => s.token === refreshToken);
+    const sessionIndex = user?.sessions.findIndex((s) => s.token === refreshToken);
 
     if (sessionIndex === -1) {
-      if (user) { user.sessions = []; await user.save(); }
-      res.clearCookie("token"); res.clearCookie("refreshToken");
+      if (user) {user.sessions = [];await user.save();}
+      res.clearCookie("token");res.clearCookie("refreshToken");
       return res.status(403).json({ error: "Multiple session conflict - safety reset" });
     }
 
@@ -104,7 +104,7 @@ router.post("/refresh", async (req, res) => {
     res.cookie("refreshToken", newTokens.refreshToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
     res.status(200).json({ message: "Token refreshed" });
   } catch (error) {
-    res.clearCookie("token"); res.clearCookie("refreshToken");
+    res.clearCookie("token");res.clearCookie("refreshToken");
     return res.status(401).json({ error: "Invalid refresh token" });
   }
 });
@@ -113,15 +113,15 @@ router.get("/sessions", require("../middleware/auth"), async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     const activeRefreshToken = req.cookies?.refreshToken;
-    
-    const sessions = user.sessions.map(s => ({
+
+    const sessions = user.sessions.map((s) => ({
       id: s._id,
       userAgent: s.userAgent,
       ip: s.ip,
       lastActive: s.lastActive,
       isCurrent: s.token === activeRefreshToken
     }));
-    
+
     res.status(200).json({ sessions });
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch sessions" });
@@ -132,7 +132,7 @@ router.delete("/sessions/others", require("../middleware/auth"), async (req, res
   try {
     const activeRefreshToken = req.cookies?.refreshToken;
     const user = await User.findById(req.user._id);
-    user.sessions = user.sessions.filter(s => s.token === activeRefreshToken);
+    user.sessions = user.sessions.filter((s) => s.token === activeRefreshToken);
     await user.save();
     res.status(200).json({ message: "All other sessions revoked" });
   } catch (err) {
@@ -143,7 +143,7 @@ router.delete("/sessions/others", require("../middleware/auth"), async (req, res
 router.delete("/sessions/:id", require("../middleware/auth"), async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-    user.sessions = user.sessions.filter(s => s._id.toString() !== req.params.id);
+    user.sessions = user.sessions.filter((s) => s._id.toString() !== req.params.id);
     await user.save();
     res.status(200).json({ message: "Session revoked" });
   } catch (err) {
@@ -161,7 +161,7 @@ router.post("/logout", async (req, res) => {
       }
     } catch (err) {}
   }
-  res.clearCookie("token"); res.clearCookie("refreshToken");
+  res.clearCookie("token");res.clearCookie("refreshToken");
   res.status(200).json({ message: "Logout successful" });
 });
 

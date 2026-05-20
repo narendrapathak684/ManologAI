@@ -7,14 +7,14 @@ const Timetable = require("../models/timetable");
 const router = express.Router();
 
 const VALID_DAYS = [
-  "monday",
-  "tuesday",
-  "wednesday",
-  "thursday",
-  "friday",
-  "saturday",
-  "sunday",
-];
+"monday",
+"tuesday",
+"wednesday",
+"thursday",
+"friday",
+"saturday",
+"sunday"];
+
 
 function toMinutes(timeStr) {
   const [h, m] = timeStr.split(":").map(Number);
@@ -30,17 +30,17 @@ function isValidTime(t) {
 
 function overlaps(aStart, aEnd, bStart, bEnd) {
   return (
-    toMinutes(aStart) < toMinutes(bEnd) && toMinutes(bStart) < toMinutes(aEnd)
-  );
+    toMinutes(aStart) < toMinutes(bEnd) && toMinutes(bStart) < toMinutes(aEnd));
+
 }
 
 function findConflict(
-  blocks,
-  day,
-  startTime,
-  endTime,
-  excludedIds = new Set(),
-) {
+blocks,
+day,
+startTime,
+endTime,
+excludedIds = new Set())
+{
   return blocks.find((block) => {
     if (excludedIds.has(block._id.toString())) return false;
     if (block.day !== day) return false;
@@ -50,7 +50,7 @@ function findConflict(
 
 function normalizeDays(day, days) {
   const rawDays =
-    Array.isArray(days) && days.length > 0 ? days : day ? [day] : [];
+  Array.isArray(days) && days.length > 0 ? days : day ? [day] : [];
   const normalizedDays = rawDays.map((entry) => String(entry).toLowerCase());
   return [...new Set(normalizedDays)];
 }
@@ -71,7 +71,7 @@ function groupByDay(blocks) {
     thursday: [],
     friday: [],
     saturday: [],
-    sunday: [],
+    sunday: []
   };
 
   for (const block of blocks) {
@@ -80,7 +80,7 @@ function groupByDay(blocks) {
 
   for (const day of Object.keys(grouped)) {
     grouped[day].sort(
-      (a, b) => toMinutes(a.startTime) - toMinutes(b.startTime),
+      (a, b) => toMinutes(a.startTime) - toMinutes(b.startTime)
     );
   }
 
@@ -93,7 +93,7 @@ router.get("/", auth, async (req, res) => {
     return res.status(200).json({
       timetableId: timetable._id,
       schedule: groupByDay(timetable.blocks),
-      updatedAt: timetable.updatedAt,
+      updatedAt: timetable.updatedAt
     });
   } catch (err) {
     console.error("GET /timetable error:", err);
@@ -107,24 +107,24 @@ router.post("/blocks", auth, async (req, res) => {
     const normalizedDays = normalizeDays(day, days);
 
     if (
-      normalizedDays.length === 0 ||
-      normalizedDays.some((entry) => !VALID_DAYS.includes(entry))
-    ) {
-      return res
-        .status(400)
-        .json({
-          error: `days must contain one or more of: ${VALID_DAYS.join(", ")}`,
-        });
+    normalizedDays.length === 0 ||
+    normalizedDays.some((entry) => !VALID_DAYS.includes(entry)))
+    {
+      return res.
+      status(400).
+      json({
+        error: `days must contain one or more of: ${VALID_DAYS.join(", ")}`
+      });
     }
     if (!isValidTime(startTime)) {
-      return res
-        .status(400)
-        .json({ error: "startTime must be in HH:MM (24-hour) format" });
+      return res.
+      status(400).
+      json({ error: "startTime must be in HH:MM (24-hour) format" });
     }
     if (!isValidTime(endTime)) {
-      return res
-        .status(400)
-        .json({ error: "endTime must be in HH:MM (24-hour) format" });
+      return res.
+      status(400).
+      json({ error: "endTime must be in HH:MM (24-hour) format" });
     }
     if (toMinutes(startTime) >= toMinutes(endTime)) {
       return res.status(400).json({ error: "endTime must be after startTime" });
@@ -140,19 +140,19 @@ router.post("/blocks", auth, async (req, res) => {
         timetable.blocks,
         normalizedDay,
         startTime,
-        endTime,
+        endTime
       );
       if (conflict) {
         return res.status(409).json({
-          error: `Time block overlaps on ${normalizedDay} with existing block: "${conflict.activity}" (${conflict.startTime}-${conflict.endTime})`,
+          error: `Time block overlaps on ${normalizedDay} with existing block: "${conflict.activity}" (${conflict.startTime}-${conflict.endTime})`
         });
       }
     }
 
     const groupId =
-      normalizedDays.length > 1
-        ? new mongoose.Types.ObjectId().toString()
-        : null;
+    normalizedDays.length > 1 ?
+    new mongoose.Types.ObjectId().toString() :
+    null;
 
     normalizedDays.forEach((normalizedDay) => {
       timetable.blocks.push({
@@ -160,7 +160,7 @@ router.post("/blocks", auth, async (req, res) => {
         day: normalizedDay,
         startTime,
         endTime,
-        activity: activity.trim(),
+        activity: activity.trim()
       });
     });
 
@@ -169,7 +169,7 @@ router.post("/blocks", auth, async (req, res) => {
     const addedBlocks = timetable.blocks.slice(-normalizedDays.length);
     return res.status(201).json({
       block: addedBlocks[0],
-      blocks: addedBlocks,
+      blocks: addedBlocks
     });
   } catch (err) {
     console.error("POST /timetable/blocks error:", err);
@@ -184,46 +184,46 @@ router.patch("/blocks/:blockId", auth, async (req, res) => {
 
     const timetable = await Timetable.findOne({ user: req.user._id });
     if (!timetable)
-      return res.status(404).json({ error: "Timetable not found" });
+    return res.status(404).json({ error: "Timetable not found" });
 
     const block = timetable.blocks.id(blockId);
     if (!block) return res.status(404).json({ error: "Time block not found" });
 
-    const blockGroup = block.groupId
-      ? timetable.blocks.filter((entry) => entry.groupId === block.groupId)
-      : [block];
+    const blockGroup = block.groupId ?
+    timetable.blocks.filter((entry) => entry.groupId === block.groupId) :
+    [block];
     const excludedIds = new Set(
-      blockGroup.map((entry) => entry._id.toString()),
+      blockGroup.map((entry) => entry._id.toString())
     );
 
     const incomingDays = normalizeDays(day, days);
     const nextDays =
-      incomingDays.length > 0
-        ? incomingDays
-        : blockGroup.map((entry) => entry.day);
+    incomingDays.length > 0 ?
+    incomingDays :
+    blockGroup.map((entry) => entry.day);
     const newStart = startTime || block.startTime;
     const newEnd = endTime || block.endTime;
     const newActivity = activity ? activity.trim() : block.activity;
 
     if (
-      nextDays.length === 0 ||
-      nextDays.some((entry) => !VALID_DAYS.includes(entry))
-    ) {
-      return res
-        .status(400)
-        .json({
-          error: `days must contain one or more of: ${VALID_DAYS.join(", ")}`,
-        });
+    nextDays.length === 0 ||
+    nextDays.some((entry) => !VALID_DAYS.includes(entry)))
+    {
+      return res.
+      status(400).
+      json({
+        error: `days must contain one or more of: ${VALID_DAYS.join(", ")}`
+      });
     }
     if (!isValidTime(newStart)) {
-      return res
-        .status(400)
-        .json({ error: "startTime must be in HH:MM (24-hour) format" });
+      return res.
+      status(400).
+      json({ error: "startTime must be in HH:MM (24-hour) format" });
     }
     if (!isValidTime(newEnd)) {
-      return res
-        .status(400)
-        .json({ error: "endTime must be in HH:MM (24-hour) format" });
+      return res.
+      status(400).
+      json({ error: "endTime must be in HH:MM (24-hour) format" });
     }
     if (toMinutes(newStart) >= toMinutes(newEnd)) {
       return res.status(400).json({ error: "endTime must be after startTime" });
@@ -238,19 +238,19 @@ router.patch("/blocks/:blockId", auth, async (req, res) => {
         nextDay,
         newStart,
         newEnd,
-        excludedIds,
+        excludedIds
       );
       if (conflict) {
         return res.status(409).json({
-          error: `Time block overlaps on ${nextDay} with existing block: "${conflict.activity}" (${conflict.startTime}-${conflict.endTime})`,
+          error: `Time block overlaps on ${nextDay} with existing block: "${conflict.activity}" (${conflict.startTime}-${conflict.endTime})`
         });
       }
     }
 
     const nextGroupId =
-      nextDays.length > 1
-        ? block.groupId || new mongoose.Types.ObjectId().toString()
-        : null;
+    nextDays.length > 1 ?
+    block.groupId || new mongoose.Types.ObjectId().toString() :
+    null;
     const blocksByDay = new Map(blockGroup.map((entry) => [entry.day, entry]));
     const updatedBlocks = [];
 
@@ -272,7 +272,7 @@ router.patch("/blocks/:blockId", auth, async (req, res) => {
         day: nextDay,
         startTime: newStart,
         endTime: newEnd,
-        activity: newActivity,
+        activity: newActivity
       });
 
       updatedBlocks.push(timetable.blocks[timetable.blocks.length - 1]);
@@ -288,7 +288,7 @@ router.patch("/blocks/:blockId", auth, async (req, res) => {
 
     return res.status(200).json({
       block: updatedBlocks[0] || null,
-      blocks: updatedBlocks,
+      blocks: updatedBlocks
     });
   } catch (err) {
     console.error("PATCH /timetable/blocks/:blockId error:", err);
@@ -315,7 +315,7 @@ router.delete("/blocks/:blockId", auth, async (req, res) => {
 
     const timetable = await Timetable.findOne({ user: req.user._id });
     if (!timetable)
-      return res.status(404).json({ error: "Timetable not found" });
+    return res.status(404).json({ error: "Timetable not found" });
 
     const block = timetable.blocks.id(blockId);
     if (!block) return res.status(404).json({ error: "Time block not found" });

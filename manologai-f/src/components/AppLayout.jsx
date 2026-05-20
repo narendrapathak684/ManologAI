@@ -7,17 +7,17 @@ import {
   CheckCircle2,
   FolderKanban,
   LayoutDashboard,
-  User,
-} from "lucide-react";
+  User } from
+"lucide-react";
 
 const navItems = [
-  { label: "Today", icon: LayoutDashboard, to: "/dashboard" },
-  { label: "Journal", icon: BookOpenText, to: "/journal" },
-  { label: "Track", icon: CheckCircle2, to: "/track" },
-  { label: "Analytics", icon: ChartColumnBig, to: "/analytics" },
-  { label: "Organise", icon: FolderKanban, to: "/organise" },
-  { label: "Profile", icon: User, to: "/profile" },
-];
+{ label: "Today", icon: LayoutDashboard, to: "/dashboard" },
+{ label: "Journal", icon: BookOpenText, to: "/journal" },
+{ label: "Track", icon: CheckCircle2, to: "/track" },
+{ label: "Analytics", icon: ChartColumnBig, to: "/analytics" },
+{ label: "Organise", icon: FolderKanban, to: "/organise" },
+{ label: "Profile", icon: User, to: "/profile" }];
+
 
 export default function AppLayout() {
   return (
@@ -27,6 +27,6 @@ export default function AppLayout() {
         <Outlet />
       </main>
       <MobileTabBar items={navItems} />
-    </div>
-  );
+    </div>);
+
 }

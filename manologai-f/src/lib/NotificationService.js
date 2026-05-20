@@ -4,7 +4,7 @@ const NOTIFICATION_ICON = "/logo.png";
 const VAPID_PUBLIC_KEY = "BCtUqMA5nvCbkYA61vMf8OakEptRY58KeH6rckI0s3o75RFQjwCTpwiX_YKFkuj513Oa4lCsGzFs1GVko6qWpO4";
 
 function urlBase64ToUint8Array(base64String) {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const padding = "=".repeat((4 - base64String.length % 4) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
   const rawData = window.atob(base64);
   const outputArray = new Uint8Array(rawData.length);
@@ -22,7 +22,7 @@ export const requestNotificationPermission = async () => {
 
   const permission = await Notification.requestPermission();
   if (permission === "granted") {
-    // If permission is granted, also try to subscribe to push notifications
+
     await subscribeUserToPush();
   }
   return permission === "granted";
@@ -35,10 +35,10 @@ export const subscribeUserToPush = async () => {
     const registration = await navigator.serviceWorker.ready;
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
     });
 
-    // Send subscription to backend
+
     await api.post("/notifications/subscribe", subscription);
     console.log("Push subscription successful.");
     return true;
@@ -55,11 +55,11 @@ export const showNotification = (title, body, tag = "manolog-reminder") => {
       journal: "/journal",
       tracking: "/track",
       dailyLog: "/dashboard",
-      "manolog-reminder": "/dashboard",
+      "manolog-reminder": "/dashboard"
     };
     const targetUrl = urlMap[tag] || "/dashboard";
 
-    // Try to show via Service Worker if available for better PWA support
+
     if (navigator.serviceWorker && navigator.serviceWorker.controller) {
       navigator.serviceWorker.ready.then((registration) => {
         registration.showNotification(title, {
@@ -68,15 +68,15 @@ export const showNotification = (title, body, tag = "manolog-reminder") => {
           vibrate: [200, 100, 200],
           tag,
           badge: NOTIFICATION_ICON,
-          data: { url: targetUrl },
+          data: { url: targetUrl }
         });
       });
     } else {
-      // Fallback to standard Notification
+
       const notification = new Notification(title, {
         body,
         icon: NOTIFICATION_ICON,
-        tag,
+        tag
       });
 
       notification.onclick = () => {
@@ -89,7 +89,7 @@ export const showNotification = (title, body, tag = "manolog-reminder") => {
 };
 
 export const scheduleReminders = (reminders) => {
-  // Store reminders in localStorage for global access
+
   localStorage.setItem("manolog_reminders", JSON.stringify(reminders));
 };
 
@@ -101,7 +101,7 @@ export const checkAndTriggerReminders = () => {
   const now = new Date();
   const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 
-  // Find reminders matching current time that haven't been triggered in the last minute
+
   Object.keys(reminders).forEach((id) => {
     const reminder = reminders[id];
     if (reminder.enabled && reminder.time === currentTime) {

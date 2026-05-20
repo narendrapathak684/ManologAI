@@ -18,10 +18,10 @@ import { checkAndTriggerReminders } from "./lib/NotificationService";
 
 function App() {
   useEffect(() => {
-    // Initial check on load
+
     checkAndTriggerReminders();
 
-    // Check for due reminders every 60 seconds
+
     const interval = setInterval(() => {
       checkAndTriggerReminders();
     }, 60000);
@@ -35,19 +35,19 @@ function App() {
         <SaveAlertProvider>
           <BrowserRouter>
             <Routes>
-              {/* Public Routes */}
+              {}
               <Route path="/" element={<WelcomePage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
 
-              {/* Protected Routes */}
+              {}
               <Route
                 element={
-                  <ProtectedRoute>
+                <ProtectedRoute>
                     <AppLayout />
                   </ProtectedRoute>
-                }
-              >
+                }>
+                
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/journal" element={<JournalPage />} />
                 <Route path="/track" element={<TrackPage />} />
@@ -59,8 +59,8 @@ function App() {
           </BrowserRouter>
         </SaveAlertProvider>
       </AuthProvider>
-    </ThemeProvider>
-  );
+    </ThemeProvider>);
+
 }
 
 export default App;

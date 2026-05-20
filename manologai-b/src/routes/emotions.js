@@ -7,15 +7,15 @@ const router = express.Router();
 const MAX_RANGE_LIMIT = 1000;
 
 const VALID_EMOTIONS = [
-  "happy",
-  "calm",
-  "neutral",
-  "sad",
-  "stressed",
-  "angry",
-  "tired",
-  "excited",
-];
+"happy",
+"calm",
+"neutral",
+"sad",
+"stressed",
+"angry",
+"tired",
+"excited"];
+
 
 function toLocalMidnight(dateInput) {
   if (!dateInput) return null;
@@ -62,18 +62,18 @@ router.post("/", auth, async (req, res) => {
 
     if (!emotion || !VALID_EMOTIONS.includes(emotion.toLowerCase())) {
       return res.status(400).json({
-        error: `emotion must be one of: ${VALID_EMOTIONS.join(", ")}`,
+        error: `emotion must be one of: ${VALID_EMOTIONS.join(", ")}`
       });
     }
 
     const today = todayMidnight();
     const existing = await Emotion.findOne({
       user: userId,
-      date: today,
+      date: today
     }).select("lockedUntil");
     if (existing && isLocked(existing)) {
       return res.status(403).json({
-        error: "Today's emotion entry is locked and can no longer be changed",
+        error: "Today's emotion entry is locked and can no longer be changed"
       });
     }
 
@@ -84,15 +84,15 @@ router.post("/", auth, async (req, res) => {
         new: true,
         upsert: true,
         setDefaultsOnInsert: true,
-        select: "date emotion lockedUntil",
-      },
+        select: "date emotion lockedUntil"
+      }
     );
 
     return res.status(200).json({
       date: entry.date,
       emotion: entry.emotion,
       locked: isLocked(entry),
-      alreadySubmitted: Boolean(existing),
+      alreadySubmitted: Boolean(existing)
     });
   } catch (err) {
     console.error("POST /emotions error:", err);
@@ -107,27 +107,27 @@ router.post("/:date", auth, async (req, res) => {
 
     if (!emotion || !VALID_EMOTIONS.includes(emotion.toLowerCase())) {
       return res.status(400).json({
-        error: `emotion must be one of: ${VALID_EMOTIONS.join(", ")}`,
+        error: `emotion must be one of: ${VALID_EMOTIONS.join(", ")}`
       });
     }
 
     const date = toLocalMidnight(req.params.date);
     if (!date)
-      return res
-        .status(400)
-        .json({ error: "Invalid date format. Use YYYY-MM-DD" });
+    return res.
+    status(400).
+    json({ error: "Invalid date format. Use YYYY-MM-DD" });
     if (isFutureDate(date)) {
-      return res
-        .status(400)
-        .json({ error: "Future emotion entries are not allowed" });
+      return res.
+      status(400).
+      json({ error: "Future emotion entries are not allowed" });
     }
 
     const existing = await Emotion.findOne({ user: userId, date }).select(
-      "lockedUntil",
+      "lockedUntil"
     );
     if (existing && isLocked(existing)) {
       return res.status(403).json({
-        error: "Emotion entry is locked and can no longer be changed",
+        error: "Emotion entry is locked and can no longer be changed"
       });
     }
 
@@ -138,15 +138,15 @@ router.post("/:date", auth, async (req, res) => {
         new: true,
         upsert: true,
         setDefaultsOnInsert: true,
-        select: "date emotion lockedUntil",
-      },
+        select: "date emotion lockedUntil"
+      }
     );
 
     return res.status(200).json({
       date: entry.date,
       emotion: entry.emotion,
       locked: isLocked(entry),
-      alreadySubmitted: Boolean(existing),
+      alreadySubmitted: Boolean(existing)
     });
   } catch (err) {
     console.error("POST /emotions/:date error:", err);
@@ -161,30 +161,30 @@ router.patch("/:date", auth, async (req, res) => {
 
     if (!emotion || !VALID_EMOTIONS.includes(emotion.toLowerCase())) {
       return res.status(400).json({
-        error: `emotion must be one of: ${VALID_EMOTIONS.join(", ")}`,
+        error: `emotion must be one of: ${VALID_EMOTIONS.join(", ")}`
       });
     }
 
     const date = toLocalMidnight(req.params.date);
     if (!date)
-      return res
-        .status(400)
-        .json({ error: "Invalid date format. Use YYYY-MM-DD" });
+    return res.
+    status(400).
+    json({ error: "Invalid date format. Use YYYY-MM-DD" });
     if (isFutureDate(date)) {
-      return res
-        .status(400)
-        .json({ error: "Future emotion entries are not allowed" });
+      return res.
+      status(400).
+      json({ error: "Future emotion entries are not allowed" });
     }
 
     const entry = await Emotion.findOne({ user: userId, date }).select(
-      "date emotion lockedUntil",
+      "date emotion lockedUntil"
     );
     if (!entry)
-      return res.status(404).json({ error: "No entry found for this date" });
+    return res.status(404).json({ error: "No entry found for this date" });
 
     if (isLocked(entry)) {
       return res.status(403).json({
-        error: "Emotion entry is locked and can no longer be changed",
+        error: "Emotion entry is locked and can no longer be changed"
       });
     }
 
@@ -194,7 +194,7 @@ router.patch("/:date", auth, async (req, res) => {
     return res.status(200).json({
       date: entry.date,
       emotion: entry.emotion,
-      locked: isLocked(entry),
+      locked: isLocked(entry)
     });
   } catch (err) {
     console.error("PATCH /emotions/:date error:", err);
@@ -208,14 +208,14 @@ router.get("/today", auth, async (req, res) => {
     const today = todayMidnight();
 
     const entry = await Emotion.findOne({ user: userId, date: today }).select(
-      "date emotion lockedUntil",
+      "date emotion lockedUntil"
     );
     if (!entry) {
       return res.status(200).json({
         date: today,
         emotion: null,
         locked: false,
-        alreadySubmitted: false,
+        alreadySubmitted: false
       });
     }
 
@@ -223,7 +223,7 @@ router.get("/today", auth, async (req, res) => {
       date: entry.date,
       emotion: entry.emotion,
       locked: isLocked(entry),
-      alreadySubmitted: true,
+      alreadySubmitted: true
     });
   } catch (err) {
     console.error("GET /emotions/today error:", err);
@@ -238,14 +238,14 @@ router.get("/month", auth, async (req, res) => {
 
     const entries = await Emotion.find({
       user: userId,
-      date: { $gte: from, $lte: to },
-    })
-      .select("date emotion")
-      .sort({ date: 1 });
+      date: { $gte: from, $lte: to }
+    }).
+    select("date emotion").
+    sort({ date: 1 });
 
     const result = entries.map((entry) => ({
       date: entry.date,
-      emotion: entry.emotion,
+      emotion: entry.emotion
     }));
 
     return res.status(200).json({ emotions: result, range: { from, to } });
@@ -255,17 +255,17 @@ router.get("/month", auth, async (req, res) => {
   }
 });
 
-// GET /emotions/range
-// Get entries within a date range.
-// Query params: ?from=YYYY-MM-DD&to=YYYY-MM-DD&limit=N
+
+
+
 router.get("/range", auth, async (req, res) => {
   try {
     const userId = req.user._id;
     const { from, to, limit } = req.query;
     if (!from || !to) {
-      return res
-        .status(400)
-        .json({ error: "from and to query params are required" });
+      return res.
+      status(400).
+      json({ error: "from and to query params are required" });
     }
 
     const fromDate = toLocalMidnight(from);
@@ -279,26 +279,26 @@ router.get("/range", auth, async (req, res) => {
 
     toDate.setHours(23, 59, 59, 999);
     const safeLimit =
-      limit !== undefined
-        ? Math.max(1, Math.min(Number(limit) || 62, MAX_RANGE_LIMIT))
-        : 62;
+    limit !== undefined ?
+    Math.max(1, Math.min(Number(limit) || 62, MAX_RANGE_LIMIT)) :
+    62;
 
     const entries = await Emotion.find({
       user: userId,
-      date: { $gte: fromDate, $lte: toDate },
-    })
-      .select("date emotion")
-      .sort({ date: 1 })
-      .limit(safeLimit);
+      date: { $gte: fromDate, $lte: toDate }
+    }).
+    select("date emotion").
+    sort({ date: 1 }).
+    limit(safeLimit);
 
     const result = entries.map((entry) => ({
       date: entry.date,
-      emotion: entry.emotion,
+      emotion: entry.emotion
     }));
 
-    return res
-      .status(200)
-      .json({ emotions: result, range: { from: fromDate, to: toDate } });
+    return res.
+    status(200).
+    json({ emotions: result, range: { from: fromDate, to: toDate } });
   } catch (err) {
     console.error("GET /emotions/range error:", err);
     return res.status(500).json({ error: "Failed to fetch emotions" });
@@ -310,23 +310,23 @@ router.get("/range/:range", auth, async (req, res) => {
     const userId = req.user._id;
     const { range } = req.params;
     if (!range || !["week", "month", "year"].includes(range)) {
-      return res
-        .status(400)
-        .json({ error: "Range must be week, month, or year" });
+      return res.
+      status(400).
+      json({ error: "Range must be week, month, or year" });
     }
 
     const { from, to } = getRangeWindow(range);
 
     const entries = await Emotion.find({
       user: userId,
-      date: { $gte: from, $lte: to },
-    })
-      .select("date emotion")
-      .sort({ date: 1 });
+      date: { $gte: from, $lte: to }
+    }).
+    select("date emotion").
+    sort({ date: 1 });
 
     const result = entries.map((entry) => ({
       date: entry.date,
-      emotion: entry.emotion,
+      emotion: entry.emotion
     }));
 
     return res.status(200).json({ emotions: result, range: { from, to } });
@@ -342,19 +342,19 @@ router.get("/:date", auth, async (req, res) => {
 
     const date = toLocalMidnight(req.params.date);
     if (!date)
-      return res
-        .status(400)
-        .json({ error: "Invalid date format. Use YYYY-MM-DD" });
+    return res.
+    status(400).
+    json({ error: "Invalid date format. Use YYYY-MM-DD" });
 
     const entry = await Emotion.findOne({ user: userId, date }).select(
-      "date emotion lockedUntil",
+      "date emotion lockedUntil"
     );
     if (!entry) {
       return res.status(200).json({
         date: date,
         emotion: null,
         locked: false,
-        alreadySubmitted: false,
+        alreadySubmitted: false
       });
     }
 
@@ -362,7 +362,7 @@ router.get("/:date", auth, async (req, res) => {
       date: entry.date,
       emotion: entry.emotion,
       locked: isLocked(entry),
-      alreadySubmitted: true,
+      alreadySubmitted: true
     });
   } catch (err) {
     console.error("GET /emotions/:date error:", err);

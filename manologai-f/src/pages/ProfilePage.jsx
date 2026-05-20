@@ -38,8 +38,8 @@ import {
   Info,
   Share,
   PlusSquare,
-  Sparkles,
-} from "lucide-react";
+  Sparkles } from
+"lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,25 +48,25 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  CardTitle } from
+"@/components/ui/card";
 import { ListSkeleton, PageSkeleton } from "@/components/SkeletonBoneyard";
 import { api, getApiErrorMessage } from "../lib/api";
 import { COUNTRIES } from "../lib/constants";
-import { 
-  showNotification, 
-  requestNotificationPermission 
-} from "../lib/NotificationService";
+import {
+  showNotification,
+  requestNotificationPermission } from
+"../lib/NotificationService";
 import MobileTabBar from "../components/MobileTabBar";
 
 const navItems = [
-  { label: "Today", icon: LayoutDashboard, to: "/dashboard" },
-  { label: "Journal", icon: BookOpenText, to: "/journal" },
-  { label: "Track", icon: CheckCircle2, to: "/track" },
-  { label: "Analytics", icon: ChartColumnBig, to: "/analytics" },
-  { label: "Organise", icon: FolderKanban, to: "/organise" },
-  { label: "Profile", icon: User, to: "/profile", active: true },
-];
+{ label: "Today", icon: LayoutDashboard, to: "/dashboard" },
+{ label: "Journal", icon: BookOpenText, to: "/journal" },
+{ label: "Track", icon: CheckCircle2, to: "/track" },
+{ label: "Analytics", icon: ChartColumnBig, to: "/analytics" },
+{ label: "Organise", icon: FolderKanban, to: "/organise" },
+{ label: "Profile", icon: User, to: "/profile", active: true }];
+
 
 const getProfilePictureUrl = (profilePicture) => {
   if (!profilePicture) {
@@ -80,26 +80,26 @@ const getProfilePictureUrl = (profilePicture) => {
   return profilePicture.url || "";
 };
 
-/* ────────────────────────────────────────────────────────────
-   Image Crop Modal (canvas-based, zero extra dependencies)
-   ──────────────────────────────────────────────────────────── */
+
+
+
 function ImageCropModal({ imageSrc, onConfirm, onCancel }) {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
 
-  // image natural dimensions
+
   const imgRef = useRef(null);
   const [imgLoaded, setImgLoaded] = useState(false);
 
-  // pan & zoom state
+
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const dragRef = useRef(null); // { startX, startY, startOffsetX, startOffsetY }
+  const dragRef = useRef(null);
 
-  const CROP_SIZE = 300; // visible crop circle diameter in logic pixels
-  const CANVAS = CROP_SIZE + 80; // canvas size with padding
+  const CROP_SIZE = 300;
+  const CANVAS = CROP_SIZE + 80;
 
-  // ── draw ──────────────────────────────────────────────────
+
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
     const img = imgRef.current;
@@ -113,12 +113,12 @@ function ImageCropModal({ imageSrc, onConfirm, onCancel }) {
 
     ctx.clearRect(0, 0, W, H);
 
-    // draw image
+
     const drawW = img.naturalWidth * scale;
     const drawH = img.naturalHeight * scale;
     ctx.drawImage(img, cx + offset.x - drawW / 2, cy + offset.y - drawH / 2, drawW, drawH);
 
-    // dark overlay outside circle
+
     ctx.save();
     ctx.fillStyle = "rgba(0,0,0,0.65)";
     ctx.beginPath();
@@ -127,7 +127,7 @@ function ImageCropModal({ imageSrc, onConfirm, onCancel }) {
     ctx.fill("evenodd");
     ctx.restore();
 
-    // circle border
+
     ctx.save();
     ctx.strokeStyle = "rgba(236,72,153,0.8)";
     ctx.lineWidth = 2;
@@ -137,14 +137,14 @@ function ImageCropModal({ imageSrc, onConfirm, onCancel }) {
     ctx.restore();
   }, [scale, offset, imgLoaded, CROP_SIZE]);
 
-  useEffect(() => { draw(); }, [draw]);
+  useEffect(() => {draw();}, [draw]);
 
-  // ── load image ────────────────────────────────────────────
+
   useEffect(() => {
     const img = new Image();
     img.onload = () => {
       imgRef.current = img;
-      // fit image to crop circle initially
+
       const fitScale = Math.max(CROP_SIZE / img.naturalWidth, CROP_SIZE / img.naturalHeight);
       setScale(fitScale);
       setOffset({ x: 0, y: 0 });
@@ -153,13 +153,13 @@ function ImageCropModal({ imageSrc, onConfirm, onCancel }) {
     img.src = imageSrc;
   }, [imageSrc, CROP_SIZE]);
 
-  // ── mouse drag ────────────────────────────────────────────
+
   const onMouseDown = (e) => {
     dragRef.current = {
       startX: e.clientX,
       startY: e.clientY,
       startOffsetX: offset.x,
-      startOffsetY: offset.y,
+      startOffsetY: offset.y
     };
   };
   const onMouseMove = (e) => {
@@ -168,12 +168,12 @@ function ImageCropModal({ imageSrc, onConfirm, onCancel }) {
     const dy = e.clientY - dragRef.current.startY;
     setOffset({
       x: dragRef.current.startOffsetX + dx,
-      y: dragRef.current.startOffsetY + dy,
+      y: dragRef.current.startOffsetY + dy
     });
   };
-  const onMouseUp = () => { dragRef.current = null; };
+  const onMouseUp = () => {dragRef.current = null;};
 
-  // ── touch drag ────────────────────────────────────────────
+
   const touchRef = useRef(null);
   const onTouchStart = (e) => {
     if (e.touches.length === 1) {
@@ -182,7 +182,7 @@ function ImageCropModal({ imageSrc, onConfirm, onCancel }) {
         startY: e.touches[0].clientY,
         startOffsetX: offset.x,
         startOffsetY: offset.y,
-        type: "pan",
+        type: "pan"
       };
     } else if (e.touches.length === 2) {
       const dx = e.touches[0].clientX - e.touches[1].clientX;
@@ -190,7 +190,7 @@ function ImageCropModal({ imageSrc, onConfirm, onCancel }) {
       touchRef.current = {
         type: "pinch",
         startDist: Math.hypot(dx, dy),
-        startScale: scale,
+        startScale: scale
       };
     }
   };
@@ -200,7 +200,7 @@ function ImageCropModal({ imageSrc, onConfirm, onCancel }) {
     if (touchRef.current.type === "pan" && e.touches.length === 1) {
       setOffset({
         x: touchRef.current.startOffsetX + (e.touches[0].clientX - touchRef.current.startX),
-        y: touchRef.current.startOffsetY + (e.touches[0].clientY - touchRef.current.startY),
+        y: touchRef.current.startOffsetY + (e.touches[0].clientY - touchRef.current.startY)
       });
     } else if (touchRef.current.type === "pinch" && e.touches.length === 2) {
       const dx = e.touches[0].clientX - e.touches[1].clientX;
@@ -209,9 +209,9 @@ function ImageCropModal({ imageSrc, onConfirm, onCancel }) {
       setScale(Math.max(0.3, touchRef.current.startScale * (dist / touchRef.current.startDist)));
     }
   };
-  const onTouchEnd = () => { touchRef.current = null; };
+  const onTouchEnd = () => {touchRef.current = null;};
 
-  // ── scroll zoom ───────────────────────────────────────────
+
   const onWheel = (e) => {
     e.preventDefault();
     setScale((s) => Math.max(0.3, s - e.deltaY * 0.002));
@@ -227,44 +227,44 @@ function ImageCropModal({ imageSrc, onConfirm, onCancel }) {
     setOffset({ x: 0, y: 0 });
   };
 
-  // ── confirm — extract circle from canvas ──────────────────
+
   const handleConfirm = () => {
     const canvas = canvasRef.current;
     const img = imgRef.current;
     if (!canvas || !img) return;
 
-    const OUTPUT = 400; // output image px
+    const OUTPUT = 400;
     const out = document.createElement("canvas");
     out.width = OUTPUT;
     out.height = OUTPUT;
     const ctx = out.getContext("2d");
 
-    const W = canvas.width; // = CANVAS
+    const W = canvas.width;
     const cx = W / 2;
     const r = CROP_SIZE / 2;
 
-    // clip to circle
+
     ctx.beginPath();
     ctx.arc(OUTPUT / 2, OUTPUT / 2, OUTPUT / 2, 0, Math.PI * 2);
     ctx.clip();
 
-    // draw the image region inside the crop circle, scaled to OUTPUT
+
     const ratio = OUTPUT / CROP_SIZE;
     const drawW = img.naturalWidth * scale * ratio;
     const drawH = img.naturalHeight * scale * ratio;
     const srcCenterX = cx + offset.x;
-    const srcCenterY = cx + offset.y; // cy == cx since square
-    const destX = (srcCenterX - (cx - r)) * ratio - ((cx - r) * ratio);
-    const destY = (srcCenterY - (cx - r)) * ratio - ((cx - r) * ratio);
+    const srcCenterY = cx + offset.y;
+    const destX = (srcCenterX - (cx - r)) * ratio - (cx - r) * ratio;
+    const destY = (srcCenterY - (cx - r)) * ratio - (cx - r) * ratio;
     ctx.drawImage(
       img,
       OUTPUT / 2 + offset.x * ratio - drawW / 2,
       OUTPUT / 2 + offset.y * ratio - drawH / 2,
       drawW,
-      drawH,
+      drawH
     );
-    // silence unused var warnings
-    void destX; void destY;
+
+    void destX;void destY;
 
     out.toBlob((blob) => {
       if (!blob) return;
@@ -279,16 +279,16 @@ function ImageCropModal({ imageSrc, onConfirm, onCancel }) {
         className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-      >
+        exit={{ opacity: 0 }}>
+        
         <motion.div
           className="relative w-full max-w-sm rounded-2xl border border-white/10 bg-slate-900/90 shadow-2xl shadow-pink-950/30 overflow-hidden"
           initial={{ scale: 0.94, opacity: 0, y: 24 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.94, opacity: 0, y: 24 }}
-          transition={{ type: "spring", stiffness: 320, damping: 28 }}
-        >
-          {/* header */}
+          transition={{ type: "spring", stiffness: 320, damping: 28 }}>
+          
+          {}
           <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">
             <div className="flex items-center gap-2">
               <Crop className="h-4 w-4 text-pink-400" />
@@ -298,18 +298,18 @@ function ImageCropModal({ imageSrc, onConfirm, onCancel }) {
               type="button"
               onClick={onCancel}
               className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-slate-400 hover:border-pink-500/40 hover:text-white transition-colors"
-              aria-label="Cancel crop"
-            >
+              aria-label="Cancel crop">
+              
               <X className="h-4 w-4" />
             </button>
           </div>
 
-          {/* canvas */}
+          {}
           <div
             ref={containerRef}
             className="flex items-center justify-center bg-black/50 cursor-grab active:cursor-grabbing select-none"
-            style={{ touchAction: "none" }}
-          >
+            style={{ touchAction: "none" }}>
+            
             <canvas
               ref={canvasRef}
               width={CANVAS}
@@ -322,92 +322,92 @@ function ImageCropModal({ imageSrc, onConfirm, onCancel }) {
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
               onWheel={onWheel}
-              style={{ display: "block", maxWidth: "100%" }}
-            />
+              style={{ display: "block", maxWidth: "100%" }} />
+            
           </div>
 
-          {/* hint */}
+          {}
           <p className="text-center text-xs text-slate-500 pt-1 pb-0">Drag to pan · Scroll or pinch to zoom</p>
 
-          {/* zoom controls */}
+          {}
           <div className="flex items-center justify-center gap-3 px-5 py-2">
             <button
               type="button"
               onClick={zoomOut}
               className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 text-slate-300 hover:border-pink-500/40 hover:text-pink-300 transition-colors"
-              aria-label="Zoom out"
-            >
+              aria-label="Zoom out">
+              
               <ZoomOut className="h-4 w-4" />
             </button>
             <div className="flex-1 relative h-1.5 rounded-full bg-white/10">
               <div
                 className="absolute left-0 top-0 h-full rounded-full bg-pink-500 transition-all"
-                style={{ width: `${Math.min(((scale - 0.15) / 7.85) * 100, 100)}%` }}
-              />
+                style={{ width: `${Math.min((scale - 0.15) / 7.85 * 100, 100)}%` }} />
+              
             </div>
             <button
               type="button"
               onClick={zoomIn}
               className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 text-slate-300 hover:border-pink-500/40 hover:text-pink-300 transition-colors"
-              aria-label="Zoom in"
-            >
+              aria-label="Zoom in">
+              
               <ZoomIn className="h-4 w-4" />
             </button>
             <button
               type="button"
               onClick={reset}
               className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 text-slate-400 hover:border-white/30 hover:text-white transition-colors"
-              aria-label="Reset position"
-            >
+              aria-label="Reset position">
+              
               <RotateCcw className="h-3.5 w-3.5" />
             </button>
           </div>
 
-          {/* actions */}
+          {}
           <div className="flex gap-3 px-5 pb-5">
             <button
               type="button"
               onClick={onCancel}
-              className="flex-1 h-11 rounded-xl border border-white/10 bg-white/5 text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
-            >
+              className="flex-1 h-11 rounded-xl border border-white/10 bg-white/5 text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors">
+              
               Cancel
             </button>
             <button
               type="button"
               onClick={handleConfirm}
-              className="flex-1 h-11 rounded-xl bg-pink-600 text-sm font-semibold text-white hover:bg-pink-500 transition-colors shadow-lg shadow-pink-950/40"
-            >
+              className="flex-1 h-11 rounded-xl bg-pink-600 text-sm font-semibold text-white hover:bg-pink-500 transition-colors shadow-lg shadow-pink-950/40">
+              
               Apply Crop
             </button>
           </div>
         </motion.div>
       </motion.div>
-    </AnimatePresence>
-  );
+    </AnimatePresence>);
+
 }
 
-/* ────────────────────────────────────────────────────────────
-   Delete Account Confirmation Modal
-   Two-step: type DELETE → animated progress → done → redirect
-   ──────────────────────────────────────────────────────────── */
+
+
+
+
 function DeleteAccountModal({ onConfirmed, onCancel }) {
-  const [phase, setPhase] = useState("confirm"); // confirm | deleting | done
+  const [phase, setPhase] = useState("confirm");
   const [step, setStep] = useState(0);
 
   const steps = [
-    "Revoking authentication tokens...",
-    "Erasing journal entries...",
-    "Removing habit & tracking data...",
-    "Purging analytics records...",
-    "Deleting account credentials...",
-    "Finalizing deletion...",
-  ];
+  "Revoking authentication tokens...",
+  "Erasing journal entries...",
+  "Removing habit & tracking data...",
+  "Purging analytics records...",
+  "Deleting account credentials...",
+  "Finalizing deletion..."];
+
 
   const handleDelete = async () => {
     setPhase("deleting");
     setStep(0);
 
-    // Animate through steps, then call the real handler
+
     for (let i = 0; i < steps.length; i++) {
       await new Promise((r) => setTimeout(r, 650));
       setStep(i + 1);
@@ -423,21 +423,21 @@ function DeleteAccountModal({ onConfirmed, onCancel }) {
       className="fixed inset-0 z-[300] flex items-center justify-center bg-black/85 backdrop-blur-md p-4"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-    >
+      exit={{ opacity: 0 }}>
+      
       <motion.div
         className="relative w-full max-w-sm rounded-2xl border border-rose-500/25 bg-[#0f0a0a]/95 shadow-2xl shadow-rose-950/50 overflow-hidden"
         initial={{ scale: 0.93, opacity: 0, y: 28 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.93, opacity: 0, y: 28 }}
-        transition={{ type: "spring", stiffness: 300, damping: 26 }}
-      >
-        {/* Glow stripe */}
+        transition={{ type: "spring", stiffness: 300, damping: 26 }}>
+        
+        {}
         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-rose-500/60 to-transparent" />
 
-        {phase === "confirm" && (
-          <div className="p-6 space-y-5">
-            {/* Icon */}
+        {phase === "confirm" &&
+        <div className="p-6 space-y-5">
+            {}
             <div className="flex items-center justify-center">
               <div className="relative flex h-16 w-16 items-center justify-center rounded-full border border-rose-500/30 bg-rose-500/10">
                 <ShieldOff className="h-7 w-7 text-rose-400" />
@@ -445,7 +445,7 @@ function DeleteAccountModal({ onConfirmed, onCancel }) {
               </div>
             </div>
 
-            {/* Title */}
+            {}
             <div className="text-center space-y-2">
               <h2 className="text-lg font-bold text-white">Delete Account?</h2>
               <p className="text-sm text-slate-400 leading-relaxed">
@@ -457,73 +457,73 @@ function DeleteAccountModal({ onConfirmed, onCancel }) {
               </p>
             </div>
 
-            {/* Buttons */}
+            {}
             <div className="flex flex-col gap-2 pt-1">
               <button
-                id="delete-account-confirm-btn"
-                type="button"
-                onClick={handleDelete}
-                className="w-full h-12 rounded-xl bg-rose-600 text-sm font-semibold text-white transition-all shadow-lg shadow-rose-950/50 hover:bg-rose-500 active:scale-[0.97]"
-              >
+              id="delete-account-confirm-btn"
+              type="button"
+              onClick={handleDelete}
+              className="w-full h-12 rounded-xl bg-rose-600 text-sm font-semibold text-white transition-all shadow-lg shadow-rose-950/50 hover:bg-rose-500 active:scale-[0.97]">
+              
                 Yes, Delete My Account
               </button>
               <button
-                id="delete-account-cancel-btn"
-                type="button"
-                onClick={onCancel}
-                className="w-full h-12 rounded-xl border border-white/10 bg-white/5 text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
-              >
+              id="delete-account-cancel-btn"
+              type="button"
+              onClick={onCancel}
+              className="w-full h-12 rounded-xl border border-white/10 bg-white/5 text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors">
+              
                 Cancel
               </button>
             </div>
           </div>
-        )}
+        }
 
-        {phase === "deleting" && (
-          <div className="p-8 space-y-6">
+        {phase === "deleting" &&
+        <div className="p-8 space-y-6">
             <div className="text-center space-y-1">
               <p className="text-xs font-mono uppercase tracking-widest text-rose-400 animate-pulse">Processing deletion</p>
               <h2 className="text-base font-bold text-white">Please wait...</h2>
             </div>
             <div className="space-y-3">
-              {steps.map((s, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={step > i ? { opacity: 1, x: 0 } : {}}
-                  className="flex items-center gap-3 text-sm"
-                >
+              {steps.map((s, i) =>
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: -8 }}
+              animate={step > i ? { opacity: 1, x: 0 } : {}}
+              className="flex items-center gap-3 text-sm">
+              
                   <div className={`h-4 w-4 shrink-0 rounded-full flex items-center justify-center ${
-                    step > i ? "bg-rose-500" : "bg-white/8 border border-white/10"
-                  }`}>
-                    {step > i && (
-                      <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 10 10" fill="none">
+              step > i ? "bg-rose-500" : "bg-white/8 border border-white/10"}`
+              }>
+                    {step > i &&
+                <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 10 10" fill="none">
                         <path d="M2 5l2.5 2.5L8 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
-                    )}
+                }
                   </div>
                   <span className={step > i ? "text-slate-300" : "text-slate-600"}>{s}</span>
                 </motion.div>
-              ))}
+            )}
             </div>
-            {/* Progress bar */}
+            {}
             <div className="h-1 rounded-full bg-white/8 overflow-hidden">
               <motion.div
-                className="h-full bg-rose-500 rounded-full"
-                initial={{ width: "0%" }}
-                animate={{ width: `${(step / steps.length) * 100}%` }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
-              />
+              className="h-full bg-rose-500 rounded-full"
+              initial={{ width: "0%" }}
+              animate={{ width: `${step / steps.length * 100}%` }}
+              transition={{ duration: 0.5, ease: "easeOut" }} />
+            
             </div>
           </div>
-        )}
+        }
 
-        {phase === "done" && (
-          <motion.div
-            className="p-8 flex flex-col items-center gap-4"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-          >
+        {phase === "done" &&
+        <motion.div
+          className="p-8 flex flex-col items-center gap-4"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}>
+          
             <div className="flex h-16 w-16 items-center justify-center rounded-full border border-rose-500/30 bg-rose-500/10">
               <svg className="h-7 w-7 text-rose-400" viewBox="0 0 24 24" fill="none">
                 <path d="M5 12l4 4L19 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -534,38 +534,38 @@ function DeleteAccountModal({ onConfirmed, onCancel }) {
               <p className="text-sm text-slate-500">Your data has been permanently removed. Redirecting...</p>
             </div>
           </motion.div>
-        )}
+        }
       </motion.div>
-    </motion.div>
-  );
+    </motion.div>);
+
 }
 
 export default function ProfilePage() {
   const { user, setUser, loading: authLoading, logout } = useAuth();
   const [passForm, setPassForm] = useState({
     currentPassword: "",
-    newPassword: "",
+    newPassword: ""
   });
   const [status, setStatus] = useState({ type: null, message: "" });
   const [isResetting, setIsResetting] = useState(false);
 
-  // Profile Edit State
+
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState({
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
-    country: user?.country || "",
+    country: user?.country || ""
   });
   const [selectedProfilePicture, setSelectedProfilePicture] = useState(null);
   const [profilePicturePreview, setProfilePicturePreview] = useState("");
   const [enlargedProfilePicture, setEnlargedProfilePicture] = useState("");
 
-  // Crop modal state
-  const [cropSrc, setCropSrc] = useState(""); // raw data-URL fed into cropper
+
+  const [cropSrc, setCropSrc] = useState("");
   const [showCropModal, setShowCropModal] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Delete account state
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
@@ -573,51 +573,51 @@ export default function ProfilePage() {
   const maxNameLength = 30;
   const [profileStatus, setProfileStatus] = useState({
     type: null,
-    message: "",
+    message: ""
   });
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isRemovingProfilePicture, setIsRemovingProfilePicture] =
-    useState(false);
+  useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isAppInstalled, setIsAppInstalled] = useState(false);
   const [installStatus, setInstallStatus] = useState({
     type: null,
-    message: "",
+    message: ""
   });
 
-  // Reminders State
+
   const [reminders, setReminders] = useState({
     habits: {
       enabled: user?.reminderSettings?.habits?.enabled || false,
       time: user?.reminderSettings?.habits?.time || "09:00",
       title: "Habit Check-in",
-      body: "Time to log your daily habits!",
+      body: "Time to log your daily habits!"
     },
     journal: {
       enabled: user?.reminderSettings?.journal?.enabled || false,
       time: user?.reminderSettings?.journal?.time || "21:00",
       title: "Journaling Session",
-      body: "Write down your thoughts for today.",
+      body: "Write down your thoughts for today."
     },
     tracking: {
       enabled: user?.reminderSettings?.tracking?.enabled || false,
       time: user?.reminderSettings?.tracking?.time || "13:00",
       title: "Expense Tracking",
-      body: "Did you track your expenses today?",
+      body: "Did you track your expenses today?"
     },
     dailyLog: {
       enabled: user?.reminderSettings?.dailyLog?.enabled ?? true,
       time: user?.reminderSettings?.dailyLog?.time || "20:00",
       title: "Daily Log",
-      body: "Don't forget to log today! Consistency is key. 🚀",
-    },
+      body: "Don't forget to log today! Consistency is key. 🚀"
+    }
   });
 
   const [goals, setGoals] = useState({
     sleep: 8,
     screenTime: 3,
     work: 6,
-    expenses: 50,
+    expenses: 50
   });
   const [isSavingGoals, setIsSavingGoals] = useState(false);
   const [sessions, setSessions] = useState([]);
@@ -637,27 +637,27 @@ export default function ProfilePage() {
       setDeferredPrompt(null);
       setInstallStatus({
         type: "success",
-        message: "App installed successfully.",
+        message: "App installed successfully."
       });
     };
 
     const isStandalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      window.navigator.standalone === true;
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.navigator.standalone === true;
     setIsAppInstalled(isStandalone);
 
     const checkIsIOS = () => {
       return (
         /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
-      );
+        navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
     };
     setIsIOS(checkIsIOS());
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     window.addEventListener("appinstalled", handleAppInstalled);
 
-    // Load reminders from localStorage
+
     const savedReminders = localStorage.getItem("manolog_reminders");
     if (savedReminders) {
       setReminders(JSON.parse(savedReminders));
@@ -668,7 +668,7 @@ export default function ProfilePage() {
         sleep: user.goals.sleep ?? 8,
         screenTime: user.goals.screenTime ?? 3,
         work: user.goals.work ?? 6,
-        expenses: user.goals.expenses ?? 50,
+        expenses: user.goals.expenses ?? 50
       });
     }
 
@@ -677,7 +677,7 @@ export default function ProfilePage() {
     return () => {
       window.removeEventListener(
         "beforeinstallprompt",
-        handleBeforeInstallPrompt,
+        handleBeforeInstallPrompt
       );
       window.removeEventListener("appinstalled", handleAppInstalled);
     };
@@ -694,11 +694,11 @@ export default function ProfilePage() {
   const handleGoalChange = async (key, value) => {
     const updatedGoals = { ...goals, [key]: Number(value) };
     setGoals(updatedGoals);
-    
-    // Auto-save goals on change
+
+
     try {
       await api.patch("/goals", { goals: updatedGoals });
-      // Update global user context if possible
+
       setUser({ ...user, goals: updatedGoals });
     } catch (err) {
       console.error("Failed to save goals:", err);
@@ -747,12 +747,12 @@ export default function ProfilePage() {
   const handleToggleReminder = async (id) => {
     const updated = {
       ...reminders,
-      [id]: { ...reminders[id], enabled: !reminders[id].enabled },
+      [id]: { ...reminders[id], enabled: !reminders[id].enabled }
     };
     setReminders(updated);
     localStorage.setItem("manolog_reminders", JSON.stringify(updated));
 
-    // Sync with server
+
     try {
       await api.patch("/notifications/settings", { settings: updated });
     } catch (err) {
@@ -762,10 +762,10 @@ export default function ProfilePage() {
     if (updated[id].enabled && Notification.permission !== "granted") {
       requestNotificationPermission().then((granted) => {
         if (!granted) {
-          // Revert if permission denied
+
           const reverted = {
             ...updated,
-            [id]: { ...updated[id], enabled: false },
+            [id]: { ...updated[id], enabled: false }
           };
           setReminders(reverted);
           localStorage.setItem("manolog_reminders", JSON.stringify(reverted));
@@ -777,12 +777,12 @@ export default function ProfilePage() {
   const handleTimeChange = async (id, time) => {
     const updated = {
       ...reminders,
-      [id]: { ...reminders[id], time },
+      [id]: { ...reminders[id], time }
     };
     setReminders(updated);
     localStorage.setItem("manolog_reminders", JSON.stringify(updated));
 
-    // Sync with server
+
     try {
       await api.patch("/notifications/settings", { settings: updated });
     } catch (err) {
@@ -802,7 +802,7 @@ export default function ProfilePage() {
       await api.post("/notifications/test");
     } catch (err) {
       console.error("Server push test failed:", err);
-      // If it failed because of no subscription, try to subscribe first
+
       if (err.response?.status === 400) {
         const success = await subscribeUserToPush();
         if (success) {
@@ -823,7 +823,7 @@ export default function ProfilePage() {
     } catch (err) {
       setStatus({
         type: "error",
-        message: getApiErrorMessage(err, "Failed to connect to server"),
+        message: getApiErrorMessage(err, "Failed to connect to server")
       });
     } finally {
       setIsResetting(false);
@@ -837,7 +837,7 @@ export default function ProfilePage() {
     if (profileForm.firstName.length > maxNameLength) {
       setProfileStatus({
         type: "error",
-        message: `First name must be ${maxNameLength} characters or fewer`,
+        message: `First name must be ${maxNameLength} characters or fewer`
       });
       setIsSavingProfile(false);
       return;
@@ -845,7 +845,7 @@ export default function ProfilePage() {
     if (profileForm.lastName.length > maxNameLength) {
       setProfileStatus({
         type: "error",
-        message: `Last name must be ${maxNameLength} characters or fewer`,
+        message: `Last name must be ${maxNameLength} characters or fewer`
       });
       setIsSavingProfile(false);
       return;
@@ -861,24 +861,24 @@ export default function ProfilePage() {
           "/profile/me/profile-picture",
           formData,
           {
-            headers: { "Content-Type": "multipart/form-data" },
-          },
+            headers: { "Content-Type": "multipart/form-data" }
+          }
         );
         updatedUser = pictureRes.data.user;
       }
 
       setProfileStatus({
         type: "success",
-        message: "Profile updated successfully",
+        message: "Profile updated successfully"
       });
-      setUser(updatedUser); // update the global user context
+      setUser(updatedUser);
       setSelectedProfilePicture(null);
       setProfilePicturePreview("");
       setIsEditingProfile(false);
     } catch (err) {
       setProfileStatus({
         type: "error",
-        message: getApiErrorMessage(err, "Failed to update profile"),
+        message: getApiErrorMessage(err, "Failed to update profile")
       });
     } finally {
       setIsSavingProfile(false);
@@ -889,7 +889,7 @@ export default function ProfilePage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Read as data-URL so the cropper canvas can draw cross-origin-safely
+
     const reader = new FileReader();
     reader.onload = (e) => {
       setCropSrc(e.target.result);
@@ -897,7 +897,7 @@ export default function ProfilePage() {
     };
     reader.readAsDataURL(file);
 
-    // Reset input so the same file can be re-selected after cancel
+
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -925,12 +925,12 @@ export default function ProfilePage() {
       setProfilePicturePreview("");
       setProfileStatus({
         type: "success",
-        message: "Profile picture removed successfully",
+        message: "Profile picture removed successfully"
       });
     } catch (err) {
       setProfileStatus({
         type: "error",
-        message: getApiErrorMessage(err, "Failed to remove profile picture"),
+        message: getApiErrorMessage(err, "Failed to remove profile picture")
       });
     } finally {
       setIsRemovingProfilePicture(false);
@@ -941,7 +941,7 @@ export default function ProfilePage() {
     if (isAppInstalled) {
       setInstallStatus({
         type: "success",
-        message: "App is already installed on this device.",
+        message: "App is already installed on this device."
       });
       return;
     }
@@ -950,9 +950,9 @@ export default function ProfilePage() {
       const isAndroid = /Android/i.test(navigator.userAgent || "");
       setInstallStatus({
         type: "info",
-        message: isAndroid
-          ? "Install prompt not available. In Chrome, open the menu (three dots) and tap 'Add to Home screen'. Note: auto-install requires HTTPS and a PWA manifest."
-          : "Install option not available. On iOS, tap Share and choose 'Add to Home Screen'.",
+        message: isAndroid ?
+        "Install prompt not available. In Chrome, open the menu (three dots) and tap 'Add to Home screen'. Note: auto-install requires HTTPS and a PWA manifest." :
+        "Install option not available. On iOS, tap Share and choose 'Add to Home Screen'."
       });
       return;
     }
@@ -962,12 +962,12 @@ export default function ProfilePage() {
     if (choiceResult?.outcome === "accepted") {
       setInstallStatus({
         type: "success",
-        message: "Install started. Follow the prompts to finish.",
+        message: "Install started. Follow the prompts to finish."
       });
     } else {
       setInstallStatus({
         type: "error",
-        message: "Install dismissed. You can try again anytime.",
+        message: "Install dismissed. You can try again anytime."
       });
     }
     setDeferredPrompt(null);
@@ -991,8 +991,8 @@ export default function ProfilePage() {
             <header className="mb-12">
               <Link
                 to="/dashboard"
-                className="inline-flex items-center text-sm text-slate-500 hover:text-pink-400 transition-colors mb-6 group"
-              >
+                className="inline-flex items-center text-sm text-slate-500 hover:text-pink-400 transition-colors mb-6 group">
+                
                 <ChevronLeft className="mr-1 h-4 w-4 group-hover:-translate-x-1 transition-transform" />{" "}
                 Back to Dashboard
               </Link>
@@ -1005,11 +1005,11 @@ export default function ProfilePage() {
             </header>
 
             <div className="space-y-8">
-              {/* Profile Overview */}
+              {}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
+                animate={{ opacity: 1, y: 0 }}>
+                
                 <Card className="border-white/10 bg-slate-900/40 backdrop-blur-3xl overflow-hidden relative group">
                   <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
                     <User className="w-32 h-32" />
@@ -1023,81 +1023,81 @@ export default function ProfilePage() {
                         Your essential account details.
                       </CardDescription>
                     </div>
-                    {!isEditingProfile && (
-                      <Button
-                        variant="ghost"
-                        onClick={() => {
-                          setProfileForm({
-                            firstName: user?.firstName || "",
-                            lastName: user?.lastName || "",
-                            country: user?.country || "",
-                          });
-                          setSelectedProfilePicture(null);
-                          setProfilePicturePreview("");
-                          setIsEditingProfile(true);
-                          setProfileStatus({ type: null, message: "" });
-                        }}
-                        className="text-pink-400 hover:text-pink-300 hover:bg-pink-500/10 text-sm"
-                      >
+                    {!isEditingProfile &&
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setProfileForm({
+                          firstName: user?.firstName || "",
+                          lastName: user?.lastName || "",
+                          country: user?.country || ""
+                        });
+                        setSelectedProfilePicture(null);
+                        setProfilePicturePreview("");
+                        setIsEditingProfile(true);
+                        setProfileStatus({ type: null, message: "" });
+                      }}
+                      className="text-pink-400 hover:text-pink-300 hover:bg-pink-500/10 text-sm">
+                      
                         Edit Profile
                       </Button>
-                    )}
+                    }
                   </CardHeader>
                   <CardContent className="space-y-6 relative z-10">
-                    {/* Status Message for Profile Update */}
+                    {}
                     <AnimatePresence>
-                      {profileStatus.message && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className={`flex items-center gap-2 p-4 rounded-xl text-sm ${
-                            profileStatus.type === "success"
-                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                              : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
-                          }`}
-                        >
-                          {profileStatus.type === "success" ? (
-                            <CheckCircle className="h-4 w-4" />
-                          ) : (
-                            <AlertCircle className="h-4 w-4" />
-                          )}
+                      {profileStatus.message &&
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className={`flex items-center gap-2 p-4 rounded-xl text-sm ${
+                        profileStatus.type === "success" ?
+                        "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
+                        "bg-rose-500/10 text-rose-400 border border-rose-500/20"}`
+                        }>
+                        
+                          {profileStatus.type === "success" ?
+                        <CheckCircle className="h-4 w-4" /> :
+
+                        <AlertCircle className="h-4 w-4" />
+                        }
                           {profileStatus.message}
                         </motion.div>
-                      )}
+                      }
                     </AnimatePresence>
 
-                    {isEditingProfile ? (
-                      <form onSubmit={handleSaveProfile} className="space-y-4">
+                    {isEditingProfile ?
+                    <form onSubmit={handleSaveProfile} className="space-y-4">
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                           <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-black/30">
                             {profilePicturePreview ||
-                            getProfilePictureUrl(user?.profilePicture) ? (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setEnlargedProfilePicture(
-                                    profilePicturePreview ||
-                                      getProfilePictureUrl(
-                                        user?.profilePicture,
-                                      ),
-                                  )
-                                }
-                                className="h-full w-full"
-                                aria-label="View profile picture"
-                              >
+                          getProfilePictureUrl(user?.profilePicture) ?
+                          <button
+                            type="button"
+                            onClick={() =>
+                            setEnlargedProfilePicture(
+                              profilePicturePreview ||
+                              getProfilePictureUrl(
+                                user?.profilePicture
+                              )
+                            )
+                            }
+                            className="h-full w-full"
+                            aria-label="View profile picture">
+                            
                                 <img
-                                  src={
-                                    profilePicturePreview ||
-                                    getProfilePictureUrl(user?.profilePicture)
-                                  }
-                                  alt=""
-                                  className="h-full w-full object-cover"
-                                />
-                              </button>
-                            ) : (
-                              <User className="h-10 w-10 text-slate-500" />
-                            )}
+                              src={
+                              profilePicturePreview ||
+                              getProfilePictureUrl(user?.profilePicture)
+                              }
+                              alt=""
+                              className="h-full w-full object-cover" />
+                            
+                              </button> :
+
+                          <User className="h-10 w-10 text-slate-500" />
+                          }
                           </div>
                           <div className="min-w-0 flex-1 space-y-2">
                             <label className="text-xs font-mono uppercase tracking-widest text-slate-500">
@@ -1105,16 +1105,16 @@ export default function ProfilePage() {
                             </label>
                             <label className="flex h-11 cursor-pointer items-center justify-center gap-2 rounded-md border border-white/10 bg-black/20 px-3 text-sm font-medium text-slate-200 transition-colors hover:border-pink-500/50 hover:text-white">
                               <Upload className="h-4 w-4 text-pink-400" />
-                              {selectedProfilePicture
-                                ? selectedProfilePicture.name
-                                : "Choose image"}
+                              {selectedProfilePicture ?
+                            selectedProfilePicture.name :
+                            "Choose image"}
                               <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept="image/*"
-                                className="sr-only"
-                                onChange={handleProfilePictureChange}
-                              />
+                              ref={fileInputRef}
+                              type="file"
+                              accept="image/*"
+                              className="sr-only"
+                              onChange={handleProfilePictureChange} />
+                            
                             </label>
                           </div>
                         </div>
@@ -1124,61 +1124,61 @@ export default function ProfilePage() {
                               First Name
                             </label>
                             <Input
-                              className="bg-black/20 border-white/10 text-white h-11 focus:border-pink-500/50"
-                              value={profileForm.firstName}
-                              onChange={(e) =>
-                                setProfileForm({
-                                  ...profileForm,
-                                  firstName: e.target.value,
-                                })
-                              }
-                              maxLength={maxNameLength}
-                              required
-                            />
+                            className="bg-black/20 border-white/10 text-white h-11 focus:border-pink-500/50"
+                            value={profileForm.firstName}
+                            onChange={(e) =>
+                            setProfileForm({
+                              ...profileForm,
+                              firstName: e.target.value
+                            })
+                            }
+                            maxLength={maxNameLength}
+                            required />
+                          
                           </div>
                           <div className="space-y-2">
                             <label className="text-xs font-mono uppercase tracking-widest text-slate-500">
                               Last Name
                             </label>
                             <Input
-                              className="bg-black/20 border-white/10 text-white h-11 focus:border-pink-500/50"
-                              value={profileForm.lastName}
-                              onChange={(e) =>
-                                setProfileForm({
-                                  ...profileForm,
-                                  lastName: e.target.value,
-                                })
-                              }
-                              maxLength={maxNameLength}
-                            />
+                            className="bg-black/20 border-white/10 text-white h-11 focus:border-pink-500/50"
+                            value={profileForm.lastName}
+                            onChange={(e) =>
+                            setProfileForm({
+                              ...profileForm,
+                              lastName: e.target.value
+                            })
+                            }
+                            maxLength={maxNameLength} />
+                          
                           </div>
                           <div className="space-y-2 md:col-span-2">
                             <label className="text-xs font-mono uppercase tracking-widest text-slate-500">
                               Country
                             </label>
                             <select
-                              className="h-11 w-full rounded-md border border-white/10 bg-black/20 px-3 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pink-500/50"
-                              value={profileForm.country}
-                              onChange={(e) =>
-                                setProfileForm({
-                                  ...profileForm,
-                                  country: e.target.value,
-                                })
-                              }
-                              required
-                            >
+                            className="h-11 w-full rounded-md border border-white/10 bg-black/20 px-3 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pink-500/50"
+                            value={profileForm.country}
+                            onChange={(e) =>
+                            setProfileForm({
+                              ...profileForm,
+                              country: e.target.value
+                            })
+                            }
+                            required>
+                            
                               <option value="" disabled className="bg-slate-900">
                                 Select your country
                               </option>
-                              {COUNTRIES.map((country) => (
-                                <option
-                                  key={country}
-                                  value={country}
-                                  className="bg-slate-900"
-                                >
+                              {COUNTRIES.map((country) =>
+                            <option
+                              key={country}
+                              value={country}
+                              className="bg-slate-900">
+                              
                                   {country}
                                 </option>
-                              ))}
+                            )}
                             </select>
                             <p className="text-[10px] text-slate-500 mt-1 pl-1">
                               * Changing country will automatically update your
@@ -1188,77 +1188,77 @@ export default function ProfilePage() {
                         </div>
                         <div className="flex gap-3 justify-end mt-4">
                           <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={() => {
-                              setSelectedProfilePicture(null);
-                              setProfilePicturePreview("");
-                              setIsEditingProfile(false);
-                            }}
-                            className="text-slate-400 hover:text-white"
-                            disabled={isSavingProfile}
-                          >
+                          type="button"
+                          variant="ghost"
+                          onClick={() => {
+                            setSelectedProfilePicture(null);
+                            setProfilePicturePreview("");
+                            setIsEditingProfile(false);
+                          }}
+                          className="text-slate-400 hover:text-white"
+                          disabled={isSavingProfile}>
+                          
                             Cancel
                           </Button>
                           <Button
-                            type="submit"
-                            className="bg-pink-600 hover:bg-pink-500 text-white"
-                            disabled={isSavingProfile}
-                          >
+                          type="submit"
+                          className="bg-pink-600 hover:bg-pink-500 text-white"
+                          disabled={isSavingProfile}>
+                          
                             {isSavingProfile ? "Saving..." : "Save Changes"}
                           </Button>
                         </div>
-                      </form>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      </form> :
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="flex flex-col gap-4 md:col-span-2 sm:flex-row sm:items-center">
                           <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-black/30">
-                            {getProfilePictureUrl(user?.profilePicture) ? (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setEnlargedProfilePicture(
-                                    getProfilePictureUrl(user?.profilePicture),
-                                  )
-                                }
-                                className="h-full w-full"
-                                aria-label="View profile picture"
-                              >
+                            {getProfilePictureUrl(user?.profilePicture) ?
+                          <button
+                            type="button"
+                            onClick={() =>
+                            setEnlargedProfilePicture(
+                              getProfilePictureUrl(user?.profilePicture)
+                            )
+                            }
+                            className="h-full w-full"
+                            aria-label="View profile picture">
+                            
                                 <img
-                                  src={getProfilePictureUrl(
-                                    user?.profilePicture,
-                                  )}
-                                  alt=""
-                                  className="h-full w-full object-cover"
-                                />
-                              </button>
-                            ) : (
-                              <User className="h-10 w-10 text-slate-500" />
-                            )}
+                              src={getProfilePictureUrl(
+                                user?.profilePicture
+                              )}
+                              alt=""
+                              className="h-full w-full object-cover" />
+                            
+                              </button> :
+
+                          <User className="h-10 w-10 text-slate-500" />
+                          }
                           </div>
                           <div className="min-w-0 space-y-1">
                             <p className="text-xs font-mono uppercase tracking-widest text-slate-500">
                               Profile Picture
                             </p>
                             <p className="text-sm text-slate-300">
-                              {getProfilePictureUrl(user?.profilePicture)
-                                ? "Photo added"
-                                : "No picture set"}
+                              {getProfilePictureUrl(user?.profilePicture) ?
+                            "Photo added" :
+                            "No picture set"}
                             </p>
-                            {getProfilePictureUrl(user?.profilePicture) && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                onClick={handleRemoveProfilePicture}
-                                disabled={isRemovingProfilePicture}
-                                className="mt-2 h-9 px-3 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300"
-                              >
+                            {getProfilePictureUrl(user?.profilePicture) &&
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={handleRemoveProfilePicture}
+                            disabled={isRemovingProfilePicture}
+                            className="mt-2 h-9 px-3 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300">
+                            
                                 <Trash2 className="mr-2 h-4 w-4" />
-                                {isRemovingProfilePicture
-                                  ? "Removing..."
-                                  : "Remove"}
+                                {isRemovingProfilePicture ?
+                            "Removing..." :
+                            "Remove"}
                               </Button>
-                            )}
+                          }
                           </div>
                         </div>
                         <div className="space-y-1">
@@ -1302,17 +1302,17 @@ export default function ProfilePage() {
                           </p>
                         </div>
                       </div>
-                    )}
+                    }
                   </CardContent>
                 </Card>
               </motion.div>
 
-              {/* Reminders Card */}
+              {}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.05 }}
-              >
+                transition={{ delay: 0.05 }}>
+                
                 <Card className="border-white/10 bg-slate-900/40 backdrop-blur-3xl overflow-hidden relative group">
                   <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
                     <Bell className="w-32 h-32" />
@@ -1331,15 +1331,15 @@ export default function ProfilePage() {
                         <Button
                           variant="ghost"
                           onClick={handleTestNotification}
-                          className="text-slate-400 hover:text-sky-400 hover:bg-sky-500/10 text-[10px] h-8"
-                        >
+                          className="text-slate-400 hover:text-sky-400 hover:bg-sky-500/10 text-[10px] h-8">
+                          
                           Local Test
                         </Button>
                         <Button
                           variant="ghost"
                           onClick={handleTestServerPush}
-                          className="text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 text-[10px] h-8"
-                        >
+                          className="text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 text-[10px] h-8">
+                          
                           Server Push Test
                         </Button>
                       </div>
@@ -1352,28 +1352,28 @@ export default function ProfilePage() {
                         return (
                           <div
                             key={key}
-                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-black/20 border border-white/5 hover:border-white/10 transition-colors"
-                          >
+                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-black/20 border border-white/5 hover:border-white/10 transition-colors">
+                            
                             <div className="flex items-center gap-4">
                               <div
                                 className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                                  reminder.enabled
-                                    ? "bg-sky-500/20 text-sky-400"
-                                    : "bg-white/5 text-slate-500"
-                                }`}
-                              >
-                                {key === "habits" && (
-                                  <CheckCircle2 className="h-5 w-5" />
-                                )}
-                                {key === "journal" && (
-                                  <BookOpenText className="h-5 w-5" />
-                                )}
-                                {key === "tracking" && (
-                                  <ChartColumnBig className="h-5 w-5" />
-                                )}
-                                {key === "dailyLog" && (
-                                  <PenLine className="h-5 w-5" />
-                                )}
+                                reminder.enabled ?
+                                "bg-sky-500/20 text-sky-400" :
+                                "bg-white/5 text-slate-500"}`
+                                }>
+                                
+                                {key === "habits" &&
+                                <CheckCircle2 className="h-5 w-5" />
+                                }
+                                {key === "journal" &&
+                                <BookOpenText className="h-5 w-5" />
+                                }
+                                {key === "tracking" &&
+                                <ChartColumnBig className="h-5 w-5" />
+                                }
+                                {key === "dailyLog" &&
+                                <PenLine className="h-5 w-5" />
+                                }
                               </div>
                               <div>
                                 <h3 className="font-medium text-white capitalize">
@@ -1386,58 +1386,58 @@ export default function ProfilePage() {
                             </div>
 
                             <div className="flex items-center gap-3 ml-14 sm:ml-0">
-                              {reminder.enabled && (
-                                <div className="relative group/time">
+                              {reminder.enabled &&
+                              <div className="relative group/time">
                                   <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                                     <Clock className="h-3 w-3 text-slate-500 group-focus-within/time:text-sky-400 transition-colors" />
                                   </div>
                                   <input
-                                    type="time"
-                                    value={reminder.time}
-                                    onChange={(e) =>
-                                      handleTimeChange(key, e.target.value)
-                                    }
-                                    className="h-9 w-28 pl-8 pr-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white focus:outline-none focus:border-sky-500/50 transition-colors cursor-pointer"
-                                  />
+                                  type="time"
+                                  value={reminder.time}
+                                  onChange={(e) =>
+                                  handleTimeChange(key, e.target.value)
+                                  }
+                                  className="h-9 w-28 pl-8 pr-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white focus:outline-none focus:border-sky-500/50 transition-colors cursor-pointer" />
+                                
                                 </div>
-                              )}
+                              }
                               <button
                                 onClick={() => handleToggleReminder(key)}
                                 className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                                  reminder.enabled ? "bg-sky-600" : "bg-slate-700"
-                                }`}
-                              >
+                                reminder.enabled ? "bg-sky-600" : "bg-slate-700"}`
+                                }>
+                                
                                 <span
                                   className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                                    reminder.enabled
-                                      ? "translate-x-5"
-                                      : "translate-x-0"
-                                  }`}
-                                />
+                                  reminder.enabled ?
+                                  "translate-x-5" :
+                                  "translate-x-0"}`
+                                  } />
+                                
                               </button>
                             </div>
-                          </div>
-                        );
+                          </div>);
+
                       })}
                     </div>
 
-                    {Notification.permission === "denied" && (
-                      <div className="p-3 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs flex items-center gap-2">
+                    {Notification.permission === "denied" &&
+                    <div className="p-3 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs flex items-center gap-2">
                         <AlertCircle className="h-4 w-4 shrink-0" />
                         Notifications are blocked by your browser. Please enable
                         them in your settings to receive reminders.
                       </div>
-                    )}
+                    }
                   </CardContent>
                 </Card>
               </motion.div>
 
-              {/* Daily Goals Card */}
+              {}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.08 }}
-              >
+                transition={{ delay: 0.08 }}>
+                
                 <Card className="border-white/10 bg-slate-900/40 backdrop-blur-3xl overflow-hidden relative group">
                   <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
                     <Target className="w-32 h-32" />
@@ -1453,17 +1453,17 @@ export default function ProfilePage() {
                   <CardContent className="space-y-6 relative z-10">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {[
-                        { key: "sleep", label: "Sleep Target", icon: Bed, unit: "hrs", min: 4, max: 12, step: 0.5 },
-                        { key: "screenTime", label: "Max Screen Time", icon: Smartphone, unit: "hrs", min: 1, max: 24, step: 0.5 },
-                        { key: "work", label: "Work Hours", icon: Briefcase, unit: "hrs", min: 1, max: 16, step: 0.5 },
-                        { key: "expenses", label: "Spending Limit", icon: Wallet, unit: user?.currency || "USD", min: 0, max: 10000, step: 1 },
-                      ].map((goal) => {
+                      { key: "sleep", label: "Sleep Target", icon: Bed, unit: "hrs", min: 4, max: 12, step: 0.5 },
+                      { key: "screenTime", label: "Max Screen Time", icon: Smartphone, unit: "hrs", min: 1, max: 24, step: 0.5 },
+                      { key: "work", label: "Work Hours", icon: Briefcase, unit: "hrs", min: 1, max: 16, step: 0.5 },
+                      { key: "expenses", label: "Spending Limit", icon: Wallet, unit: user?.currency || "USD", min: 0, max: 10000, step: 1 }].
+                      map((goal) => {
                         const Icon = goal.icon;
                         return (
                           <div
                             key={goal.key}
-                            className="p-4 rounded-2xl bg-black/20 border border-white/5 hover:border-white/10 transition-colors space-y-3"
-                          >
+                            className="p-4 rounded-2xl bg-black/20 border border-white/5 hover:border-white/10 transition-colors space-y-3">
+                            
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
                                 <Icon className="h-4 w-4 text-emerald-400" />
@@ -1482,26 +1482,26 @@ export default function ProfilePage() {
                               step={goal.step}
                               value={goals[goal.key]}
                               onChange={(e) => handleGoalChange(goal.key, e.target.value)}
-                              className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-emerald-500 hover:accent-emerald-400"
-                            />
+                              className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-emerald-500 hover:accent-emerald-400" />
+                            
                             <div className="flex justify-between text-[10px] text-slate-500 font-mono">
                               <span>{goal.min}{goal.unit}</span>
                               <span>{goal.max}{goal.unit}</span>
                             </div>
-                          </div>
-                        );
+                          </div>);
+
                       })}
                     </div>
                   </CardContent>
                 </Card>
               </motion.div>
 
-              {/* Active Sessions Card */}
+              {}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.12 }}
-              >
+                transition={{ delay: 0.12 }}>
+                
                 <Card className="border-white/10 bg-slate-900/40 backdrop-blur-3xl overflow-hidden relative group">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 relative z-10">
                     <div>
@@ -1512,35 +1512,35 @@ export default function ProfilePage() {
                         Manage your logged-in devices.
                       </CardDescription>
                     </div>
-                    {sessions.length > 1 && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleRevokeOthers}
-                        className="text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
-                      >
+                    {sessions.length > 1 &&
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleRevokeOthers}
+                      className="text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-500/10">
+                      
                         Log out all others
                       </Button>
-                    )}
+                    }
                   </CardHeader>
                   <CardContent className="relative z-10">
-                    {isLoadingSessions ? (
-                      <ListSkeleton rows={3} />
-                    ) : sessions.length === 0 ? (
-                      <p className="text-center py-6 text-sm text-slate-500">No active sessions found.</p>
-                    ) : (
-                      <div className="space-y-4">
+                    {isLoadingSessions ?
+                    <ListSkeleton rows={3} /> :
+                    sessions.length === 0 ?
+                    <p className="text-center py-6 text-sm text-slate-500">No active sessions found.</p> :
+
+                    <div className="space-y-4">
                         {sessions.map((session) => {
-                          const DeviceIcon = getDeviceIcon(session.userAgent);
-                          return (
-                            <div
-                              key={session.id}
-                              className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
-                                session.isCurrent
-                                  ? "bg-pink-500/10 border-pink-500/30 ring-1 ring-pink-500/20"
-                                  : "bg-black/20 border-white/5 hover:border-white/10"
-                              }`}
-                            >
+                        const DeviceIcon = getDeviceIcon(session.userAgent);
+                        return (
+                          <div
+                            key={session.id}
+                            className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
+                            session.isCurrent ?
+                            "bg-pink-500/10 border-pink-500/30 ring-1 ring-pink-500/20" :
+                            "bg-black/20 border-white/5 hover:border-white/10"}`
+                            }>
+                            
                               <div className="flex items-center gap-4">
                                 <div className={`p-2.5 rounded-xl ${session.isCurrent ? 'bg-pink-500/20 text-pink-300' : 'bg-white/5 text-slate-400'}`}>
                                   <DeviceIcon className="h-5 w-5" />
@@ -1550,51 +1550,51 @@ export default function ProfilePage() {
                                     <p className="text-sm font-semibold text-white truncate max-w-[140px] sm:max-w-xs">
                                       {session.userAgent || "Unknown Device"}
                                     </p>
-                                    {session.isCurrent && (
-                                      <span className="bg-emerald-500/20 text-emerald-400 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border border-emerald-500/30 pulse-emerald">
+                                    {session.isCurrent &&
+                                  <span className="bg-emerald-500/20 text-emerald-400 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border border-emerald-500/30 pulse-emerald">
                                         Current
                                       </span>
-                                    )}
+                                  }
                                   </div>
                                   <p className="text-[10px] text-slate-500 font-mono mt-1 flex items-center gap-2">
                                     <Globe className="h-3 w-3" /> {session.ip || "Unknown IP"} 
                                     <span className="text-slate-700">•</span>
                                     {new Date(session.lastActive).toLocaleString(undefined, {
-                                      month: 'short',
-                                      day: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })}
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
                                   </p>
                                 </div>
                               </div>
-                              {!session.isCurrent && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleRevokeSession(session.id)}
-                                  className="h-8 px-3 text-xs text-slate-400 hover:text-rose-400 hover:bg-rose-500/10"
-                                >
+                              {!session.isCurrent &&
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRevokeSession(session.id)}
+                              className="h-8 px-3 text-xs text-slate-400 hover:text-rose-400 hover:bg-rose-500/10">
+                              
                                   Revoke
                                 </Button>
-                              )}
-                            </div>
-                          );
-                        })}
+                            }
+                            </div>);
+
+                      })}
                       </div>
-                    )}
+                    }
                   </CardContent>
                 </Card>
               </motion.div>
 
-              {/* Password Reset */}
+              {}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
+                transition={{ delay: 0.1 }}>
+                
                 <Card className="mb-8 border-white/10 bg-slate-900/40 backdrop-blur-3xl overflow-hidden relative">
-                  {/* Decorative background for the install card */}
+                  {}
                   <div className="absolute -top-24 -right-24 w-48 h-48 bg-pink-500/10 blur-[60px] rounded-full pointer-events-none" />
                   
                   <CardHeader className="relative z-10">
@@ -1608,30 +1608,30 @@ export default function ProfilePage() {
                           Enjoy the full premium experience on your mobile device.
                         </CardDescription>
                       </div>
-                      {isAppInstalled && (
-                         <span className="bg-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border border-emerald-500/30">
+                      {isAppInstalled &&
+                      <span className="bg-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border border-emerald-500/30">
                             App Installed
                          </span>
-                      )}
+                      }
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-6 relative z-10">
-                    {installStatus.message && (
-                      <div
-                        className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-sm ${
-                          installStatus.type === "success"
-                            ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-                            : "bg-amber-500/10 border-amber-500/20 text-amber-400"
-                        }`}
-                      >
-                        {installStatus.type === "success" ? (
-                          <CheckCircle className="h-4 w-4" />
-                        ) : (
-                          <AlertCircle className="h-4 w-4" />
-                        )}
+                    {installStatus.message &&
+                    <div
+                      className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-sm ${
+                      installStatus.type === "success" ?
+                      "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" :
+                      "bg-amber-500/10 border-amber-500/20 text-amber-400"}`
+                      }>
+                      
+                        {installStatus.type === "success" ?
+                      <CheckCircle className="h-4 w-4" /> :
+
+                      <AlertCircle className="h-4 w-4" />
+                      }
                         {installStatus.message}
                       </div>
-                    )}
+                    }
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-4">
@@ -1656,18 +1656,18 @@ export default function ProfilePage() {
                       </div>
 
                       <div className="flex flex-col justify-center">
-                        {!isAppInstalled ? (
-                          <>
-                            {deferredPrompt ? (
-                              <Button
-                                onClick={handleInstallApp}
-                                className="w-full bg-pink-600 hover:bg-pink-500 text-white font-bold py-6 rounded-2xl shadow-xl shadow-pink-900/40 group transition-all"
-                              >
+                        {!isAppInstalled ?
+                        <>
+                            {deferredPrompt ?
+                          <Button
+                            onClick={handleInstallApp}
+                            className="w-full bg-pink-600 hover:bg-pink-500 text-white font-bold py-6 rounded-2xl shadow-xl shadow-pink-900/40 group transition-all">
+                            
                                 <Download className="h-5 w-5 mr-2 group-hover:bounce" />
                                 Install Now
-                              </Button>
-                            ) : isIOS ? (
-                              <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-4">
+                              </Button> :
+                          isIOS ?
+                          <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-4">
                                 <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500">iOS Installation Guide</p>
                                 <div className="space-y-3">
                                   <div className="flex items-center gap-3 text-xs text-slate-300">
@@ -1679,9 +1679,9 @@ export default function ProfilePage() {
                                     <span>Select <strong className="text-white flex inline-flex items-center gap-1 mx-1"><PlusSquare className="h-3 w-3" /> Add to Home Screen</strong>.</span>
                                   </div>
                                 </div>
-                              </div>
-                            ) : (
-                              <div className="p-4 rounded-2xl bg-blue-500/5 border border-blue-500/10 text-blue-400">
+                              </div> :
+
+                          <div className="p-4 rounded-2xl bg-blue-500/5 border border-blue-500/10 text-blue-400">
                                 <div className="flex items-center gap-2 mb-2 font-semibold text-sm">
                                   <Info className="h-4 w-4" /> PWA Support
                                 </div>
@@ -1689,13 +1689,13 @@ export default function ProfilePage() {
                                   Use <strong>Chrome</strong> or <strong>Safari</strong> on mobile to install this app for the best experience.
                                 </p>
                               </div>
-                            )}
-                          </>
-                        ) : (
-                           <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 text-center">
+                          }
+                          </> :
+
+                        <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 text-center">
                               <p className="text-emerald-400 text-xs font-medium">You are already running the installed version.</p>
                            </div>
-                        )}
+                        }
                       </div>
                     </div>
                   </CardContent>
@@ -1721,13 +1721,13 @@ export default function ProfilePage() {
                           className="bg-black/20 border-white/10 text-white h-12 focus:border-pink-500/50"
                           value={passForm.currentPassword}
                           onChange={(e) =>
-                            setPassForm({
-                              ...passForm,
-                              currentPassword: e.target.value,
-                            })
+                          setPassForm({
+                            ...passForm,
+                            currentPassword: e.target.value
+                          })
                           }
-                          required
-                        />
+                          required />
+                        
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-mono uppercase tracking-widest text-slate-500">
@@ -1739,72 +1739,72 @@ export default function ProfilePage() {
                           className="bg-black/20 border-white/10 text-white h-12 focus:border-emerald-500/50"
                           value={passForm.newPassword}
                           onChange={(e) =>
-                            setPassForm({
-                              ...passForm,
-                              newPassword: e.target.value,
-                            })
+                          setPassForm({
+                            ...passForm,
+                            newPassword: e.target.value
+                          })
                           }
-                          required
-                        />
+                          required />
+                        
                       </div>
 
                       <AnimatePresence>
-                        {status.message && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className={`flex items-center gap-2 p-4 rounded-xl text-sm ${
-                              status.type === "success"
-                                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                                : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
-                            }`}
-                          >
-                            {status.type === "success" ? (
-                              <CheckCircle className="h-4 w-4" />
-                            ) : (
-                              <AlertCircle className="h-4 w-4" />
-                            )}
+                        {status.message &&
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className={`flex items-center gap-2 p-4 rounded-xl text-sm ${
+                          status.type === "success" ?
+                          "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
+                          "bg-rose-500/10 text-rose-400 border border-rose-500/20"}`
+                          }>
+                          
+                            {status.type === "success" ?
+                          <CheckCircle className="h-4 w-4" /> :
+
+                          <AlertCircle className="h-4 w-4" />
+                          }
                             {status.message}
                           </motion.div>
-                        )}
+                        }
                       </AnimatePresence>
 
                       <Button
                         type="submit"
                         className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold h-12 rounded-xl transition-all shadow-lg shadow-emerald-950/20 disabled:opacity-50"
-                        disabled={isResetting}
-                      >
-                        {isResetting
-                          ? "Synchronising..."
-                          : "Reset Security Keys"}
+                        disabled={isResetting}>
+                        
+                        {isResetting ?
+                        "Synchronising..." :
+                        "Reset Security Keys"}
                       </Button>
                     </form>
                   </CardContent>
                 </Card>
               </motion.div>
 
-              {/* Session Termination */}
+              {}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-              >
+                transition={{ delay: 0.2 }}>
+                
                 <Button
                   onClick={logout}
                   variant="ghost"
-                  className="w-full h-14 border border-rose-500/20 bg-rose-500/5 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 rounded-2xl transition-all"
-                >
+                  className="w-full h-14 border border-rose-500/20 bg-rose-500/5 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 rounded-2xl transition-all">
+                  
                   <LogOut className="mr-2 h-5 w-5" /> Terminate Current Session
                 </Button>
               </motion.div>
 
-              {/* Danger Zone — Delete Account */}
+              {}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-              >
+                transition={{ delay: 0.3 }}>
+                
                 <Card className="border-rose-500/20 bg-rose-950/10 backdrop-blur-3xl overflow-hidden">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-rose-400 flex items-center gap-2 text-base">
@@ -1821,8 +1821,8 @@ export default function ProfilePage() {
                       variant="ghost"
                       onClick={() => setShowDeleteModal(true)}
                       disabled={isDeletingAccount}
-                      className="w-full h-12 border border-rose-500/30 bg-rose-500/5 text-rose-400 hover:bg-rose-500/15 hover:text-rose-300 hover:border-rose-500/50 rounded-xl transition-all font-semibold"
-                    >
+                      className="w-full h-12 border border-rose-500/30 bg-rose-500/5 text-rose-400 hover:bg-rose-500/15 hover:text-rose-300 hover:border-rose-500/50 rounded-xl transition-all font-semibold">
+                      
                       <ShieldOff className="mr-2 h-4 w-4" />
                       Delete My Account
                     </Button>
@@ -1836,65 +1836,65 @@ export default function ProfilePage() {
 
       <MobileTabBar items={navItems} />
 
-      {/* Crop Modal */}
-      {showCropModal && cropSrc && (
-        <ImageCropModal
-          imageSrc={cropSrc}
-          onConfirm={handleCropConfirm}
-          onCancel={handleCropCancel}
-        />
-      )}
+      {}
+      {showCropModal && cropSrc &&
+      <ImageCropModal
+        imageSrc={cropSrc}
+        onConfirm={handleCropConfirm}
+        onCancel={handleCropCancel} />
 
-      {/* Delete Account Modal */}
-      {showDeleteModal && (
-        <DeleteAccountModal
-          onCancel={() => setShowDeleteModal(false)}
-          onConfirmed={async () => {
-            setIsDeletingAccount(true);
-            try {
-              await api.delete("/profile/me");
-            } catch (_) {
-              // even on error we force-logout client-side
-            }
-            logout(); // clear client auth state
-            navigate("/login", { replace: true });
-          }}
-        />
-      )}
+      }
+
+      {}
+      {showDeleteModal &&
+      <DeleteAccountModal
+        onCancel={() => setShowDeleteModal(false)}
+        onConfirmed={async () => {
+          setIsDeletingAccount(true);
+          try {
+            await api.delete("/profile/me");
+          } catch (_) {
+
+          }
+          logout();
+          navigate("/login", { replace: true });
+        }} />
+
+      }
 
       <AnimatePresence>
-        {enlargedProfilePicture && (
-          <motion.div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setEnlargedProfilePicture("")}
-          >
+        {enlargedProfilePicture &&
+        <motion.div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={() => setEnlargedProfilePicture("")}>
+          
             <motion.div
-              className="relative max-h-[86vh] w-full max-w-3xl"
-              initial={{ scale: 0.96, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.96, opacity: 0 }}
-              onClick={(event) => event.stopPropagation()}
-            >
+            className="relative max-h-[86vh] w-full max-w-3xl"
+            initial={{ scale: 0.96, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.96, opacity: 0 }}
+            onClick={(event) => event.stopPropagation()}>
+            
               <button
-                type="button"
-                onClick={() => setEnlargedProfilePicture("")}
-                className="absolute right-2 top-2 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/70 text-white transition hover:bg-white/10"
-                aria-label="Close profile picture"
-              >
+              type="button"
+              onClick={() => setEnlargedProfilePicture("")}
+              className="absolute right-2 top-2 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/70 text-white transition hover:bg-white/10"
+              aria-label="Close profile picture">
+              
                 <X className="h-5 w-5" />
               </button>
               <img
-                src={enlargedProfilePicture}
-                alt=""
-                className="max-h-[86vh] w-full rounded-2xl object-contain"
-              />
+              src={enlargedProfilePicture}
+              alt=""
+              className="max-h-[86vh] w-full rounded-2xl object-contain" />
+            
             </motion.div>
           </motion.div>
-        )}
+        }
       </AnimatePresence>
-    </div>
-  );
+    </div>);
+
 }

@@ -5,34 +5,34 @@ const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"
 const blockSchema = new mongoose.Schema({
   groupId: {
     type: String,
-    default: null,
+    default: null
   },
   day: {
     type: String,
     enum: DAYS,
-    required: true,
+    required: true
   },
   startTime: {
-    type: String, // "HH:MM" 24-hour format
-    required: true,
+    type: String,
+    required: true
   },
   endTime: {
-    type: String, // "HH:MM" 24-hour format
-    required: true,
+    type: String,
+    required: true
   },
   activity: {
     type: String,
     required: true,
-    trim: true,
+    trim: true
   },
   createdAt: {
     type: Date,
-    default: Date.now,
+    default: Date.now
   },
   updatedAt: {
     type: Date,
-    default: Date.now,
-  },
+    default: Date.now
+  }
 });
 
 const timetableSchema = new mongoose.Schema({
@@ -40,13 +40,13 @@ const timetableSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true,
-    unique: true, // one timetable per user
+    unique: true
   },
   blocks: [blockSchema],
   updatedAt: {
     type: Date,
-    default: Date.now,
-  },
+    default: Date.now
+  }
 });
 
 timetableSchema.pre("save", function () {

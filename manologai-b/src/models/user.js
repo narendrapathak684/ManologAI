@@ -6,112 +6,112 @@ const userSchema = new mongoose.Schema({
     required: true,
     unique: true,
     lowercase: true,
-    trim: true,
+    trim: true
   },
   passwordHash: {
     type: String,
-    required: true,
+    required: true
   },
   profile: {
     type: Object,
-    default: {},
+    default: {}
   },
   firstName: {
     type: String,
     trim: true,
-    maxlength: 30,
+    maxlength: 30
   },
   lastName: {
     type: String,
     trim: true,
-    maxlength: 30,
+    maxlength: 30
   },
   profilePicture: {
     url: {
       type: String,
       trim: true,
-      default: "",
+      default: ""
     },
     publicId: {
       type: String,
       trim: true,
-      default: "",
-    },
+      default: ""
+    }
   },
   country: {
     type: String,
-    trim: true,
+    trim: true
   },
   currency: {
     type: String,
     trim: true,
     uppercase: true,
     minlength: 3,
-    maxlength: 3,
+    maxlength: 3
   },
   habits: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Habit",
-    },
-  ],
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Habit"
+  }],
+
   streaks: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Streak",
-    },
-  ],
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Streak"
+  }],
+
   isDeleted: {
     type: Boolean,
-    default: false,
+    default: false
   },
   createdAt: {
     type: Date,
-    default: Date.now,
+    default: Date.now
   },
   pushSubscriptions: [
-    {
-      endpoint: String,
-      keys: {
-        p256dh: String,
-        auth: String,
-      },
-    },
-  ],
+  {
+    endpoint: String,
+    keys: {
+      p256dh: String,
+      auth: String
+    }
+  }],
+
   reminderSettings: {
     habits: {
       enabled: { type: Boolean, default: false },
-      time: { type: String, default: "09:00" },
+      time: { type: String, default: "09:00" }
     },
     journal: {
       enabled: { type: Boolean, default: false },
-      time: { type: String, default: "21:00" },
+      time: { type: String, default: "21:00" }
     },
     tracking: {
       enabled: { type: Boolean, default: false },
-      time: { type: String, default: "13:00" },
+      time: { type: String, default: "13:00" }
     },
     dailyLog: {
-      enabled: { type: Boolean, default: true }, // Default to true as it's a core feature
-      time: { type: String, default: "20:00" },
+      enabled: { type: Boolean, default: true },
+      time: { type: String, default: "20:00" }
     },
-    timezone: { type: String, default: "UTC" },
+    timezone: { type: String, default: "UTC" }
   },
   goals: {
-    sleep: { type: Number, default: 8 }, // hours
-    screenTime: { type: Number, default: 3 }, // hours
-    work: { type: Number, default: 6 }, // hours
-    expenses: { type: Number, default: 50 }, // currency units
+    sleep: { type: Number, default: 8 },
+    screenTime: { type: Number, default: 3 },
+    work: { type: Number, default: 6 },
+    expenses: { type: Number, default: 50 }
   },
   sessions: [
-    {
-      token: String,
-      userAgent: String,
-      ip: String,
-      lastActive: { type: Date, default: Date.now },
-      createdAt: { type: Date, default: Date.now },
-    },
-  ],
+  {
+    token: String,
+    userAgent: String,
+    ip: String,
+    lastActive: { type: Date, default: Date.now },
+    createdAt: { type: Date, default: Date.now }
+  }]
+
 });
 
 module.exports = mongoose.model("User", userSchema);

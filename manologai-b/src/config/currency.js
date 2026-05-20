@@ -193,7 +193,7 @@ const COUNTRY_CURRENCY = {
   Vietnam: "VND",
   Yemen: "YER",
   Zambia: "ZMW",
-  Zimbabwe: "ZWL",
+  Zimbabwe: "ZWL"
 };
 
 function getCurrencyForCountry(country) {
@@ -203,5 +203,5 @@ function getCurrencyForCountry(country) {
 
 module.exports = {
   COUNTRY_CURRENCY,
-  getCurrencyForCountry,
+  getCurrencyForCountry
 };

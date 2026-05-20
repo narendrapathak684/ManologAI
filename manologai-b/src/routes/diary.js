@@ -7,7 +7,7 @@ const router = express.Router();
 const MAX_RANGE_LIMIT = 1000;
 
 function parseDateOnlyToLocalMidnight(dateInput) {
-  // Accepts `YYYY-MM-DD` or a Date (or any parseable string).
+
   if (!dateInput) return null;
 
   if (typeof dateInput === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
@@ -27,7 +27,7 @@ function getTodayLocalMidnight() {
   return today;
 }
 
-// POST /diary - create/update entry for a given date (defaults to today)
+
 router.post("/", auth, async (req, res) => {
   try {
     const userId = req.user?._id;
@@ -35,20 +35,20 @@ router.post("/", auth, async (req, res) => {
 
     const { text, rating, metrics, tags, date: rawDate } = req.body || {};
     const entryDate =
-      parseDateOnlyToLocalMidnight(rawDate) || getTodayLocalMidnight();
+    parseDateOnlyToLocalMidnight(rawDate) || getTodayLocalMidnight();
     const today = getTodayLocalMidnight();
 
     if (entryDate.getTime() > today.getTime()) {
-      return res
-        .status(400)
-        .json({ error: "Future diary entries are not allowed" });
+      return res.
+      status(400).
+      json({ error: "Future diary entries are not allowed" });
     }
 
     if (rating !== undefined && rating !== null) {
       if (typeof rating !== "number" || rating < 0 || rating > 10) {
-        return res
-          .status(400)
-          .json({ error: "rating must be a number between 0 and 10" });
+        return res.
+        status(400).
+        json({ error: "rating must be a number between 0 and 10" });
       }
     }
 
@@ -56,14 +56,14 @@ router.post("/", auth, async (req, res) => {
       ...(text !== undefined ? { text } : {}),
       ...(rating !== undefined ? { rating } : {}),
       ...(metrics !== undefined ? { metrics } : {}),
-      ...(tags !== undefined ? { tags } : {}),
+      ...(tags !== undefined ? { tags } : {})
     };
 
-    // Upsert based on (user, date).
+
     const entry = await DailyEntry.findOneAndUpdate(
       { user: userId, date: entryDate },
       { $set: update },
-      { new: true, upsert: true },
+      { new: true, upsert: true }
     );
 
     return res.status(200).json({ entry });
@@ -73,8 +73,8 @@ router.post("/", auth, async (req, res) => {
   }
 });
 
-// GET /diary/range - entries within a date range
-// Query params: ?from=YYYY-MM-DD&to=YYYY-MM-DD&limit=N
+
+
 router.get("/range", auth, async (req, res) => {
   try {
     const userId = req.user?._id;
@@ -82,9 +82,9 @@ router.get("/range", auth, async (req, res) => {
 
     const { from, to, limit } = req.query;
     if (!from || !to) {
-      return res
-        .status(400)
-        .json({ error: "from and to query params are required" });
+      return res.
+      status(400).
+      json({ error: "from and to query params are required" });
     }
 
     const fromDate = parseDateOnlyToLocalMidnight(from);
@@ -98,27 +98,27 @@ router.get("/range", auth, async (req, res) => {
 
     toDate.setHours(23, 59, 59, 999);
     const safeLimit =
-      limit !== undefined
-        ? Math.max(1, Math.min(Number(limit) || 62, MAX_RANGE_LIMIT))
-        : 62;
+    limit !== undefined ?
+    Math.max(1, Math.min(Number(limit) || 62, MAX_RANGE_LIMIT)) :
+    62;
 
     const entries = await DailyEntry.find({
       user: userId,
-      date: { $gte: fromDate, $lte: toDate },
-    })
-      .sort({ date: 1 })
-      .limit(safeLimit);
+      date: { $gte: fromDate, $lte: toDate }
+    }).
+    sort({ date: 1 }).
+    limit(safeLimit);
 
-    return res
-      .status(200)
-      .json({ entries, range: { from: fromDate, to: toDate } });
+    return res.
+    status(200).
+    json({ entries, range: { from: fromDate, to: toDate } });
   } catch (error) {
     console.error("Diary GET range error:", error);
     return res.status(500).json({ error: "Failed to fetch diary entries" });
   }
 });
 
-// GET /diary/:date - get entry for a specific date
+
 router.get("/:date", auth, async (req, res) => {
   try {
     const userId = req.user?._id;
@@ -137,7 +137,7 @@ router.get("/:date", auth, async (req, res) => {
   }
 });
 
-// GET /diary - recent entries
+
 router.get("/", auth, async (req, res) => {
   try {
     const userId = req.user?._id;
@@ -145,13 +145,13 @@ router.get("/", auth, async (req, res) => {
 
     const limitRaw = req.query.limit;
     const limit = limitRaw !== undefined ? Number(limitRaw) : 10;
-    const safeLimit = Number.isFinite(limit)
-      ? Math.max(1, Math.min(limit, 50))
-      : 10;
+    const safeLimit = Number.isFinite(limit) ?
+    Math.max(1, Math.min(limit, 50)) :
+    10;
 
-    const entries = await DailyEntry.find({ user: userId })
-      .sort({ date: -1 })
-      .limit(safeLimit);
+    const entries = await DailyEntry.find({ user: userId }).
+    sort({ date: -1 }).
+    limit(safeLimit);
 
     return res.status(200).json({ entries });
   } catch (error) {

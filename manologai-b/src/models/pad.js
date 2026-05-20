@@ -3,61 +3,61 @@ const mongoose = require("mongoose");
 const padItemSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: true,
+    required: true
   },
   note: {
     type: String,
-    default: "",
+    default: ""
   },
   startDate: {
     type: Date,
-    default: null,
+    default: null
   },
   endDate: {
     type: Date,
-    default: null,
+    default: null
   },
   done: {
     type: Boolean,
-    default: false,
+    default: false
   },
   createdAt: {
     type: Date,
-    default: Date.now,
+    default: Date.now
   },
   updatedAt: {
     type: Date,
-    default: Date.now,
-  },
+    default: Date.now
+  }
 });
 
 const padSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
-    required: true,
+    required: true
   },
   padType: {
     type: String,
     enum: ["goals", "books", "ideas", "to-do", "to-learn", "to-buy", "custom"],
-    required: true,
+    required: true
   },
   title: {
     type: String,
-    required: true,
+    required: true
   },
   items: [padItemSchema],
   createdAt: {
     type: Date,
-    default: Date.now,
+    default: Date.now
   },
   updatedAt: {
     type: Date,
-    default: Date.now,
-  },
+    default: Date.now
+  }
 });
 
-// Update updatedAt on save
+
 padSchema.pre("save", function () {
   this.updatedAt = new Date();
 });
