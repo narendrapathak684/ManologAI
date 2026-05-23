@@ -24,7 +24,13 @@ const PORT = process.env.PORT || 4545;
 
 const allowedOrigins = new Set([
 "http://localhost:5173",
-"http://127.0.0.1:5173"]
+"http://127.0.0.1:5173",
+"http://51.20.53.120",
+"https://51.20.53.120",
+...(process.env.FRONTEND_ORIGIN || "").
+split(",").
+map((origin) => origin.trim()).
+filter(Boolean)]
 );
 
 app.use(
