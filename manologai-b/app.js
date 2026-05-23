@@ -70,6 +70,10 @@ app.get("/", (req, res) => {
   res.status(200).json({ message: "ManologAI backend is running" });
 });
 
+app.get("/api", (req, res) => {
+  res.status(200).json({ message: "ManologAI backend is running" });
+});
+
 app.use("/auth", authRoutes);
 app.use("/profile", profileRoutes);
 app.use("/diary", diaryRoutes);
@@ -81,6 +85,18 @@ app.use("/emotions", emotionsRoutes);
 app.use("/habits", habitsRoutes);
 app.use("/notifications", notificationRoutes);
 app.use("/goals", goalsRoutes);
+
+app.use("/api/auth", authRoutes);
+app.use("/api/profile", profileRoutes);
+app.use("/api/diary", diaryRoutes);
+app.use("/api/pads", padsRoutes);
+app.use("/api/time-tracker", timeTrackerRoutes);
+app.use("/api/timetable", timetableRoutes);
+app.use("/api/life-ratings", lifeRatingsRoutes);
+app.use("/api/emotions", emotionsRoutes);
+app.use("/api/habits", habitsRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/goals", goalsRoutes);
 
 
 
