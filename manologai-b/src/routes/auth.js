@@ -25,15 +25,27 @@ const generateTokens = (userId) => {
 
 router.post("/signup", async (req, res) => {
   try {
-    const { email, password, firstName, lastName, country } = req.body || {};
+    const { email, password, name, country } = req.body || {};
 
-    const normalizedEmail = String(email).toLowerCase().trim();
+    const normalizedEmail = String(email || "").toLowerCase().trim();
+    const normalizedPassword = String(password || "");
+    const normalizedCountry = String(country || "").trim();
+    const fullName = String(name || "").trim();
+    const firstName = String(req.body?.firstName || fullName.split(" ")[0] || "").trim();
+    const lastName = String(
+      req.body?.lastName || (fullName ? fullName.split(" ").slice(1).join(" ") : "")
+    ).trim();
+
+    if (!normalizedEmail || !normalizedPassword || !firstName) {
+      return res.status(400).json({ error: "Email, password, and name are required" });
+    }
+
     if (!(await User.findOne({ email: normalizedEmail }))) {
       const salt = await bcrypt.genSalt(10);
-      const passwordHash = await bcrypt.hash(password, salt);
+      const passwordHash = await bcrypt.hash(normalizedPassword, salt);
       const user = await User.create({
         email: normalizedEmail, passwordHash, firstName, lastName,
-        country: country?.trim(), currency: getCurrencyForCountry(country?.trim())
+        country: normalizedCountry, currency: getCurrencyForCountry(normalizedCountry)
       });
 
       const { accessToken, refreshToken } = generateTokens(user._id.toString());
@@ -50,6 +62,15 @@ router.post("/signup", async (req, res) => {
     }
     return res.status(409).json({ error: "Email already registered" });
   } catch (error) {
+    console.error("Signup failed:", error);
+    if (error?.code === 11000) {
+      return res.status(409).json({ error: "Email already registered" });
+    }
+
+    if (error?.name === "ValidationError") {
+      return res.status(400).json({ error: "Invalid signup details" });
+    }
+
     return res.status(500).json({ error: "Signup failed" });
   }
 });
