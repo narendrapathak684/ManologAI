@@ -13,6 +13,7 @@ import { SaveAlertProvider } from "./context/SaveAlertContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./components/AppLayout";
+import MobileLaunchScreen from "./components/MobileLaunchScreen";
 import { useEffect } from "react";
 import { checkAndTriggerReminders } from "./lib/NotificationService";
 
@@ -33,6 +34,7 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <SaveAlertProvider>
+          <MobileLaunchScreen />
           <BrowserRouter>
             <Routes>
               {}

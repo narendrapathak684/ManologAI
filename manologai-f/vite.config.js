@@ -22,23 +22,28 @@ export default defineConfig({
       name: 'ManologAI',
       short_name: 'ManologAI',
       description: 'Advanced Agentic Personal Growth Platform',
+      start_url: '/',
+      scope: '/',
       theme_color: '#0f172a',
       background_color: '#0f172a',
-      display: 'standalone',
+      display: 'fullscreen',
+      display_override: ['fullscreen', 'standalone'],
       orientation: 'portrait',
       icons: [
       {
-        src: 'logo.png',
+        src: 'pwa-192x192.png',
         sizes: '192x192',
-        type: 'image/png'
+        type: 'image/png',
+        purpose: 'any'
       },
       {
-        src: 'logo.png',
+        src: 'pwa-512x512.png',
         sizes: '512x512',
-        type: 'image/png'
+        type: 'image/png',
+        purpose: 'any'
       },
       {
-        src: 'logo.png',
+        src: 'maskable-512x512.png',
         sizes: '512x512',
         type: 'image/png',
         purpose: 'maskable'
