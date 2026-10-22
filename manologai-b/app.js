@@ -1,4 +1,5 @@
-require("dotenv").config();
+const dotenvPath = process.env.DOTENV_CONFIG_PATH || ".env.local";
+require("dotenv").config({ path: dotenvPath, override: dotenvPath === ".env.local" });
 const express = require("express");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
@@ -27,7 +28,7 @@ const allowedOrigins = new Set([
 "http://127.0.0.1:5173",
 "http://51.20.53.120",
 "https://51.20.53.120",
-...(process.env.FRONTEND_ORIGIN || "").
+...(process.env.FRONTEND_ORIGIN || process.env.CLIENT_ORIGIN || "").
 split(",").
 map((origin) => origin.trim()).
 filter(Boolean)]
